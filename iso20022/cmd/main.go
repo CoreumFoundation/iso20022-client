@@ -53,9 +53,19 @@ func RootCmd(ctx context.Context) (*cobra.Command, error) {
 	}
 
 	cmd.AddCommand(cli.InitCmd())
-	cmd.AddCommand(cli.StartCmd())
+	cmd.AddCommand(cli.StartCmd(processorProvider))
 	cmd.AddCommand(keyringCoreumCmd)
+	cmd.AddCommand(cli.ClientKeysCmd())
 	cmd.AddCommand(cli.VersionCmd())
 
 	return cmd, nil
+}
+
+func processorProvider(cmd *cobra.Command) (cli.Runner, error) {
+	rnr, err := cli.NewRunnerFromHome(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return rnr, nil
 }
