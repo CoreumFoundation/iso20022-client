@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
 	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
@@ -80,6 +82,7 @@ type Config struct {
 
 // DefaultConfig returns default runner config.
 func DefaultConfig() Config {
+	defaultCoreumContactConfig := coreum.DefaultContractClientConfig(sdk.AccAddress{})
 	defaultClientCtxDefaultCfg := coreumchainclient.DefaultContextConfig()
 
 	defaultLoggerConfig := logger.DefaultZapLoggerConfig()
@@ -103,11 +106,11 @@ func DefaultConfig() Config {
 			Contract: CoreumContractConfig{
 				// TODO: Change to the contract address on mainnet before release
 				ContractAddress:       "testcore1za96naulkx2axrq738x9uke65ztq2grffuyds67kzwms75tj8lfq9272g0",
-				GasAdjustment:         1.4,
-				GasPriceAdjustment:    1.2,
-				PageLimit:             50,
-				OutOfGasRetryDelay:    500 * time.Millisecond,
-				OutOfGasRetryAttempts: 5,
+				GasAdjustment:         defaultCoreumContactConfig.GasAdjustment,
+				GasPriceAdjustment:    defaultCoreumContactConfig.GasPriceAdjustment.MustFloat64(),
+				PageLimit:             defaultCoreumContactConfig.PageLimit,
+				OutOfGasRetryDelay:    defaultCoreumContactConfig.OutOfGasRetryDelay,
+				OutOfGasRetryAttempts: defaultCoreumContactConfig.OutOfGasRetryAttempts,
 
 				RequestTimeout:       defaultClientCtxDefaultCfg.TimeoutConfig.RequestTimeout,
 				TxTimeout:            defaultClientCtxDefaultCfg.TimeoutConfig.TxTimeout,

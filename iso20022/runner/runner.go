@@ -19,6 +19,7 @@ import (
 	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
 	coreumchainconfig "github.com/CoreumFoundation/coreum/v4/pkg/config"
 	coreumchainconstant "github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
@@ -66,10 +67,11 @@ func (r *Runner) Start(ctx context.Context) error {
 
 // Components groups components required by runner.
 type Components struct {
-	Log                logger.Logger
-	RunnerConfig       Config
-	CoreumSDKClientCtx client.Context
-	CoreumClientCtx    coreumchainclient.Context
+	Log                  logger.Logger
+	RunnerConfig         Config
+	CoreumSDKClientCtx   client.Context
+	CoreumClientCtx      coreumchainclient.Context
+	CoreumContractClient *coreum.ContractClient
 }
 
 // NewComponents creates components required by runner and other CLI commands.
@@ -88,6 +90,41 @@ func NewComponents(
 		WithGenerateOnly(coreumSDKClientCtx.GenerateOnly).
 		WithFromAddress(coreumSDKClientCtx.FromAddress)
 
+	if cfg.Coreum.Network.ChainID != "" {
+		coreumChainNetworkConfig, err := coreumchainconfig.NetworkConfigByChainID(
+			coreumchainconstant.ChainID(cfg.Coreum.Network.ChainID),
+		)
+		if err != nil {
+			return Components{}, errors.Wrapf(
+				err,
+				"failed to set get correum network config for the chainID, chainID:%s",
+				cfg.Coreum.Network.ChainID,
+			)
+		}
+		coreumClientCtx = coreumClientCtx.WithChainID(cfg.Coreum.Network.ChainID)
+
+		coreum.SetSDKConfig(coreumChainNetworkConfig.Provider.GetAddressPrefix())
+	}
+
+	var contractAddress sdk.AccAddress
+	if cfg.Coreum.Contract.ContractAddress != "" {
+		var err error
+		contractAddress, err = sdk.AccAddressFromBech32(cfg.Coreum.Contract.ContractAddress)
+		if err != nil {
+			return Components{}, errors.Wrapf(
+				err,
+				"failed to decode contract address to sdk.AccAddress, address:%s",
+				cfg.Coreum.Contract.ContractAddress,
+			)
+		}
+	}
+	contractClientCfg := coreum.DefaultContractClientConfig(contractAddress)
+	contractClientCfg.GasAdjustment = cfg.Coreum.Contract.GasAdjustment
+	contractClientCfg.GasPriceAdjustment = sdk.MustNewDecFromStr(fmt.Sprintf("%f", cfg.Coreum.Contract.GasPriceAdjustment))
+	contractClientCfg.PageLimit = cfg.Coreum.Contract.PageLimit
+	contractClientCfg.OutOfGasRetryDelay = cfg.Coreum.Contract.OutOfGasRetryDelay
+	contractClientCfg.OutOfGasRetryAttempts = cfg.Coreum.Contract.OutOfGasRetryAttempts
+
 	if cfg.Coreum.GRPC.URL != "" {
 		grpcClient, err := getGRPCClientConn(cfg.Coreum.GRPC.URL)
 		if err != nil {
@@ -96,11 +133,14 @@ func NewComponents(
 		coreumClientCtx = coreumClientCtx.WithGRPCClient(grpcClient)
 	}
 
+	contractClient := coreum.NewContractClient(contractClientCfg, log, coreumClientCtx)
+
 	return Components{
-		Log:                log,
-		RunnerConfig:       cfg,
-		CoreumSDKClientCtx: coreumSDKClientCtx,
-		CoreumClientCtx:    coreumClientCtx,
+		Log:                  log,
+		RunnerConfig:         cfg,
+		CoreumSDKClientCtx:   coreumSDKClientCtx,
+		CoreumClientCtx:      coreumClientCtx,
+		CoreumContractClient: contractClient,
 	}, nil
 }
 
