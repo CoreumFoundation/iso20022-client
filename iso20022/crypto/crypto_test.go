@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"crypto/x509"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -15,7 +16,12 @@ func TestGenerateSecp256r1SharedKey(t *testing.T) {
 	privateKey, err := secp256r1.GenPrivKey()
 	require.NoError(t, err)
 
-	sharedKey, err := generateSecp256r1SharedKey(privateKey, privateKey.PubKey().(*secp256r1.PubKey))
+	publicKey := &privateKey.PubKey().(*secp256r1.PubKey).Key.PublicKey
+
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	require.NoError(t, err)
+
+	sharedKey, err := generateSecp256r1SharedKey(privateKey, pubKeyBytes)
 	require.NoError(t, err)
 	require.Len(t, sharedKey, 32)
 }
@@ -25,7 +31,7 @@ func TestGenerateSecp256k1SharedKey(t *testing.T) {
 
 	privateKey := secp256k1.GenPrivKey()
 
-	sharedKey, err := generateSecp256k1SharedKey(privateKey, privateKey.PubKey().(*secp256k1.PubKey))
+	sharedKey, err := generateSecp256k1SharedKey(privateKey, privateKey.PubKey().Bytes())
 	require.NoError(t, err)
 	require.Len(t, sharedKey, 32)
 }
@@ -35,7 +41,7 @@ func TestEncrypt(t *testing.T) {
 
 	privateKey := secp256k1.GenPrivKey()
 
-	sharedKey, err := generateSecp256k1SharedKey(privateKey, privateKey.PubKey().(*secp256k1.PubKey))
+	sharedKey, err := generateSecp256k1SharedKey(privateKey, privateKey.PubKey().Bytes())
 	require.NoError(t, err)
 
 	txt := []byte("hello world")
