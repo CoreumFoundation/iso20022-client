@@ -60,7 +60,7 @@ func (a *AddressBook) Update() error {
 	var content []byte
 
 	if addrUrl.Scheme == "file" {
-		content, err = os.ReadFile(strings.ReplaceAll("file://", "", addr))
+		content, err = os.ReadFile(strings.ReplaceAll(addr, "file://", ""))
 	} else {
 		res, err := http.Get(addr)
 		if err != nil {
