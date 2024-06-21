@@ -80,9 +80,56 @@ type Branch struct {
 	PostalAddress *PostalAddress `json:"postal_address"`
 }
 
+func (b Branch) String() string {
+	return SerializeStruct(b)
+}
+
 type BranchAndIdentification struct {
 	Identification Identification `json:"identification"`
 	Branch         *Branch        `json:"branch"`
+}
+
+// Equal checks if two ISO20022 BranchAndIdentification are equal
+func (b BranchAndIdentification) Equal(other BranchAndIdentification) bool {
+	if b.Branch != nil && other.Branch != nil {
+		if b.Branch.String() != other.Branch.String() {
+			return false
+		}
+	} else if b.Branch == nil && other.Branch != nil || b.Branch != nil && other.Branch == nil {
+		return false
+	}
+
+	actualId := b.Identification
+	expectedId := other.Identification
+
+	if actualId.Bic == expectedId.Bic || actualId.Lei == expectedId.Lei {
+		return true
+	}
+
+	if actualId.ClearingSystemMemberIdentification != nil && expectedId.ClearingSystemMemberIdentification != nil {
+		actualCls := actualId.ClearingSystemMemberIdentification
+		expectedCls := expectedId.ClearingSystemMemberIdentification
+		if actualCls.MemberId == expectedCls.MemberId {
+			return true
+		}
+		if actualCls.ClearingSystemId != nil && expectedCls.ClearingSystemId != nil {
+			if actualCls.ClearingSystemId.String() == expectedCls.ClearingSystemId.String() {
+				return true
+			}
+		}
+	}
+
+	if actualId.PostalAddress != nil && expectedId.PostalAddress != nil {
+		if actualId.Name == expectedId.Name && actualId.PostalAddress.String() == expectedId.PostalAddress.String() {
+			return true
+		}
+	}
+
+	if (actualId.Other != nil && expectedId.Other != nil) && actualId.Other.String() == expectedId.Other.String() {
+		return true
+	}
+
+	return false
 }
 
 type Address struct {

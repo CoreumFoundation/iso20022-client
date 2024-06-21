@@ -110,37 +110,11 @@ func (a *AddressBook) ForEach(f func(address Address) bool) {
 }
 
 // Lookup tries to find a specific entry in the address book using ISO20022 BranchAndIdentification data
-func (a *AddressBook) Lookup(wantedAddress BranchAndIdentification) (*Address, bool) {
+func (a *AddressBook) Lookup(expectedAddress BranchAndIdentification) (*Address, bool) {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 	for _, lookedUpAddress := range a.storedAddressBook.Addresses {
-		lookedUpId := lookedUpAddress.BranchAndIdentification.Identification
-		wantedId := wantedAddress.Identification
-
-		if lookedUpId.Bic == wantedId.Bic || lookedUpId.Lei == wantedId.Lei {
-			return &lookedUpAddress, true
-		}
-
-		if lookedUpId.ClearingSystemMemberIdentification != nil && wantedId.ClearingSystemMemberIdentification != nil {
-			lookedUpCls := lookedUpId.ClearingSystemMemberIdentification
-			wantedCls := wantedId.ClearingSystemMemberIdentification
-			if lookedUpCls.MemberId == wantedCls.MemberId {
-				return &lookedUpAddress, true
-			}
-			if lookedUpCls.ClearingSystemId != nil && wantedCls.ClearingSystemId != nil {
-				if lookedUpCls.ClearingSystemId.String() == wantedCls.ClearingSystemId.String() {
-					return &lookedUpAddress, true
-				}
-			}
-		}
-
-		if lookedUpId.PostalAddress != nil && wantedId.PostalAddress != nil {
-			if lookedUpId.Name == wantedId.Name && lookedUpId.PostalAddress.String() == wantedId.PostalAddress.String() {
-				return &lookedUpAddress, true
-			}
-		}
-
-		if (lookedUpId.Other != nil && wantedId.Other != nil) && lookedUpId.Other.String() == wantedId.Other.String() {
+		if lookedUpAddress.BranchAndIdentification.Equal(expectedAddress) {
 			return &lookedUpAddress, true
 		}
 	}
