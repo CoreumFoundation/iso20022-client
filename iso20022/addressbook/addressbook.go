@@ -1,6 +1,7 @@
 package addressbook
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,44 +14,33 @@ import (
 
 type AddressBook struct {
 	repoAddress       string
-	networkType       string
+	chainId           string
 	storedAddressBook StoredAddressBook
+	lastVersion       string
 	lock              sync.RWMutex
 }
 
-// New creates a new address book and fetch latest update entries
-func New(networkType string) (*AddressBook, error) {
-	addressBook := &AddressBook{
-		"https://github.com/CoreumFoundation/iso20022-addressbook/raw/develop/%s/addressbook.json",
-		networkType,
-		StoredAddressBook{},
-		sync.RWMutex{},
-	}
-	err := addressBook.Update()
-	if err != nil {
-		return nil, err
-	}
-	return addressBook, nil
+// New creates a new address book
+func New(chainId string) *AddressBook {
+	// TODO: replace with main branch after release
+	repo := "https://raw.githubusercontent.com/CoreumFoundation/iso20022-addressbook/develop/%s/addressbook.json"
+	return NewWithRepoAddress(chainId, repo)
 }
 
-// NewWithRepoAddress creates a new address book and fetch latest update entries from requested repo address
-func NewWithRepoAddress(networkType, repoAddress string) (*AddressBook, error) {
-	addressBook := &AddressBook{
+// NewWithRepoAddress creates a new address book from requested repo address
+func NewWithRepoAddress(chainId, repoAddress string) *AddressBook {
+	return &AddressBook{
 		repoAddress,
-		networkType,
+		chainId,
 		StoredAddressBook{},
+		"",
 		sync.RWMutex{},
 	}
-	err := addressBook.Update()
-	if err != nil {
-		return nil, err
-	}
-	return addressBook, nil
 }
 
 // Update fetches latest entries from the repo, whether an url or a file
-func (a *AddressBook) Update() error {
-	addr := fmt.Sprintf(a.repoAddress, a.networkType)
+func (a *AddressBook) Update(ctx context.Context) error {
+	addr := fmt.Sprintf(a.repoAddress, a.chainId)
 
 	addrUrl, err := url.Parse(addr)
 	if err != nil {
@@ -60,9 +50,31 @@ func (a *AddressBook) Update() error {
 	var content []byte
 
 	if addrUrl.Scheme == "file" {
-		content, err = os.ReadFile(strings.ReplaceAll(addr, "file://", ""))
+		filePath := strings.ReplaceAll(addr, "file://", "")
+
+		stat, err := os.Stat(filePath)
+		if err != nil {
+			return err
+		}
+
+		newVersion := stat.ModTime().String()
+		if newVersion == a.lastVersion {
+			return nil
+		}
+
+		content, err = os.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+
+		a.lastVersion = stat.ModTime().String()
 	} else {
-		res, err := http.Get(addr)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, addr, nil)
+		if err != nil {
+			return err
+		}
+
+		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return err
 		}
@@ -75,10 +87,17 @@ func (a *AddressBook) Update() error {
 			return fmt.Errorf("status %d: %s", res.StatusCode, res.Status)
 		}
 
+		newVersion := res.Header.Get("ETag")
+		if newVersion == a.lastVersion {
+			return nil
+		}
+
 		content, err = io.ReadAll(res.Body)
 		if err != nil {
 			return err
 		}
+
+		a.lastVersion = newVersion
 	}
 
 	var response StoredAddressBook

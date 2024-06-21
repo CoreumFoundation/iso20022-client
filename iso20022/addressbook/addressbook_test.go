@@ -1,6 +1,7 @@
 package addressbook
 
 import (
+	"context"
 	"encoding/base64"
 	"testing"
 
@@ -11,8 +12,11 @@ import (
 )
 
 func TestAddressBook(t *testing.T) {
-	ab, err := New("testnet")
-	require.NoError(t, err)
+	ctx := context.Background()
+
+	ab := New("coreum-testnet-1")
+
+	require.NoError(t, ab.Update(ctx))
 
 	addr, ok := ab.Lookup(BranchAndIdentification{
 		Identification: Identification{
