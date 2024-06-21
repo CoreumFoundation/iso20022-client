@@ -63,6 +63,5 @@ func TestPostalAddress(t *testing.T) {
 		CountryCode:        "i",
 		AddressLine:        []string{"j", "k"},
 	}
-	s := p.String()
-	t.Log(s)
+	require.Equal(t, "AddressType=(Code=l/Proprietary=(Id=m/Issuer=n/SchemeName=o))/BuildingNumber=e/CareOf=a/CountryCode=i/Department=b/DistrictName=h/Floor=f/PostalCode=g/StreetName=d/SubDepartment=c", p.String())
 }
