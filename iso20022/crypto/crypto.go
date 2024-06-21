@@ -160,10 +160,15 @@ func generateSecp256r1SharedKey(privateKey *secp256r1.PrivKey, publicKeyBytes []
 
 	// preparing public key
 	pbKey, err := x509.ParsePKIXPublicKey(publicKeyBytes)
+	if err != nil {
+		return nil, err
+	}
+
 	publicKey, ok := pbKey.(*ecdsa.PublicKey)
 	if !ok {
 		return nil, errors.New("unable to cast any to ecdsa.PublicKey") // TODO
 	}
+
 	ecdhPub, err := publicKey.ECDH()
 	if err != nil {
 		return nil, err
