@@ -117,12 +117,12 @@ func (a *AddressBook) KeyAlgo() string {
 	return a.storedAddressBook.KeyAlgo
 }
 
-// ForEach loops through add address book entries
+// ForEach loops through address book entries
 func (a *AddressBook) ForEach(f func(address Address) bool) {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 	for _, addr := range a.storedAddressBook.Addresses {
-		if f(addr) == false {
+		if !f(addr) {
 			return
 		}
 	}
@@ -134,6 +134,18 @@ func (a *AddressBook) Lookup(expectedAddress BranchAndIdentification) (*Address,
 	defer a.lock.RUnlock()
 	for _, lookedUpAddress := range a.storedAddressBook.Addresses {
 		if lookedUpAddress.BranchAndIdentification.Equal(expectedAddress) {
+			return &lookedUpAddress, true
+		}
+	}
+	return nil, false
+}
+
+// LookupByAccountAddress tries to find a specific entry in the address book using bech32-encoded account address
+func (a *AddressBook) LookupByAccountAddress(bech32EncodedAddress string) (*Address, bool) {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+	for _, lookedUpAddress := range a.storedAddressBook.Addresses {
+		if lookedUpAddress.Bech32EncodedAddress == bech32EncodedAddress {
 			return &lookedUpAddress, true
 		}
 	}
