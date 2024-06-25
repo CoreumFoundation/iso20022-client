@@ -46,11 +46,11 @@ func SerializeStruct(p any) string {
 			fieldInterface := field.Interface()
 			var value string
 
-			switch fieldInterface.(type) {
+			switch fieldValue := fieldInterface.(type) {
 			case string:
-				value = strings.ToLower(strings.TrimSpace(fieldInterface.(string)))
+				value = strings.ToLower(strings.TrimSpace(fieldValue))
 			case []string:
-				list := fieldInterface.([]string)
+				list := fieldValue
 				newList := make([]string, 0, len(list))
 
 				for _, item := range list {
