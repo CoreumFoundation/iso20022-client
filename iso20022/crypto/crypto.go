@@ -39,11 +39,11 @@ func GenerateSharedKey(algo string, privateKey cryptotypes.PrivKey, publicKeyByt
 	var err error
 	var sharedKey []byte
 
-	switch privateKey.(type) {
+	switch privateKey := privateKey.(type) {
 	case *secp256r1.PrivKey:
 		switch algo {
 		case "secp256r1":
-			sharedKey, err = generateSecp256r1SharedKey(privateKey.(*secp256r1.PrivKey), publicKeyBytes)
+			sharedKey, err = generateSecp256r1SharedKey(privateKey, publicKeyBytes)
 			if err != nil {
 				return nil, err
 			}
@@ -53,7 +53,7 @@ func GenerateSharedKey(algo string, privateKey cryptotypes.PrivKey, publicKeyByt
 	case *secp256k1.PrivKey:
 		switch algo {
 		case "secp256k1":
-			sharedKey, err = generateSecp256k1SharedKey(privateKey.(*secp256k1.PrivKey), publicKeyBytes)
+			sharedKey, err = generateSecp256k1SharedKey(privateKey, publicKeyBytes)
 			if err != nil {
 				return nil, err
 			}
