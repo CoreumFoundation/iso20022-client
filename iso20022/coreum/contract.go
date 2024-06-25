@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdktxtypes "github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/x/nft"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -25,22 +26,13 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
-// UserType is the contract user type.
-type UserType string
-
-// UserTypes.
-const (
-	UserTypeInitiator   UserType = "initiator"
-	UserTypeDestination UserType = "destination"
-)
-
 // QueryMethod is the contract query method.
 type QueryMethod string
 
 // QueryMethods.
 const (
-	QueryMethodActiveSessions QueryMethod = "active_sessions"
-	QueryMethodClosedSessions QueryMethod = "closed_sessions"
+	QueryMethodUnreadMessages QueryMethod = "unread_messages"
+	QueryMethodReadMessages   QueryMethod = "read_messages"
 )
 
 // NFTInfo is NFT information.
@@ -49,62 +41,39 @@ type NFTInfo struct {
 	Id      string `json:"id"`
 }
 
-// Sessions is a list of sessions.
-type Sessions struct {
-	Sessions []Session `json:"sessions"`
-}
-
-// Session is session information.
-type Session struct {
-	Id                     string         `json:"id"`
-	Initiator              sdk.AccAddress `json:"initiatior"`
-	Destination            sdk.AccAddress `json:"destination"`
-	Messages               []Message      `json:"messages"`
-	FundsInEscrow          []sdk.Coin     `json:"funds_in_escrow"`
-	ConfirmedByInitiator   bool           `json:"confirmed_by_initiatior"`
-	ConfirmedByDestination bool           `json:"confirmed_by_destination"`
+// Messages is a list of messages.
+type Messages struct {
+	Messages []Message `json:"messages"`
 }
 
 // Message is a single message details.
 type Message struct {
-	Sender   sdk.AccAddress `json:"sender"`
-	Receiver sdk.AccAddress `json:"receiver"`
-	Content  NFTInfo        `json:"content"`
+	Sender        sdk.AccAddress `json:"sender"`
+	Receiver      sdk.AccAddress `json:"receiver"`
+	Time          uint64         `json:"time"`
+	Content       NFTInfo        `json:"content"`
+	FundsInEscrow []sdk.Coin     `json:"funds_in_escrow"`
 }
 
 // ******************** Internal transport object  ********************
 
-type startSessionRequest struct {
-	StartSession struct {
-		Message     NFTInfo        `json:"message"`
-		Destination sdk.AccAddress `json:"destination"`
-	} `json:"start_session"`
-}
-
 type sendMessageRequest struct {
 	SendMessage struct {
-		SessionId string  `json:"session_id"`
-		Message   NFTInfo `json:"message"`
+		Destination sdk.AccAddress `json:"destination"`
+		Message     NFTInfo        `json:"message"`
 	} `json:"send_message"`
 }
 
-type confirmSessionRequest struct {
-	ConfirmSession struct {
-		SessionId string `json:"session_id"`
-	} `json:"confirm_session"`
-}
-
-type cancelSessionRequest struct {
-	CancelSession struct {
-		SessionId string `json:"session_id"`
-	} `json:"cancel_session"`
+type markAsReadRequest struct {
+	MarkAsRead struct {
+		Until uint64 `json:"until"`
+	} `json:"mark_as_read"`
 }
 
 type querySessionsRequest struct {
-	StartAfterKey string         `json:"start_after_key,omitempty"`
+	StartAfterKey *string        `json:"start_after_key,omitempty"`
 	Limit         *uint32        `json:"limit,omitempty"`
 	Address       sdk.AccAddress `json:"address"`
-	UserType      UserType       `json:"user_type"`
 }
 
 type execRequest struct {
@@ -190,33 +159,12 @@ func (c *ContractClient) IsInitialized() bool {
 
 // ******************** Execute ********************
 
-// StartSession executes `start_session` method with transfer action.
-func (c *ContractClient) StartSession(
-	ctx context.Context, sender sdk.AccAddress, message NFTInfo, destination sdk.AccAddress,
-) (*sdk.TxResponse, error) {
-	req := startSessionRequest{}
-	req.StartSession.Message = message
-	req.StartSession.Destination = destination
-
-	txRes, err := c.execute(ctx, sender, execRequest{
-		Body: req,
-		//Body: map[ExecMethod]startSessionRequest{
-		//	ExecMethodStartSession: req,
-		//},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return txRes, nil
-}
-
 // SendMessage executes `send_message` method with transfer action.
 func (c *ContractClient) SendMessage(
-	ctx context.Context, sender sdk.AccAddress, sessionId string, message NFTInfo,
+	ctx context.Context, sender, destination sdk.AccAddress, message NFTInfo,
 ) (*sdk.TxResponse, error) {
 	req := sendMessageRequest{}
-	req.SendMessage.SessionId = sessionId
+	req.SendMessage.Destination = destination
 	req.SendMessage.Message = message
 
 	txRes, err := c.execute(ctx, sender, execRequest{
@@ -229,29 +177,12 @@ func (c *ContractClient) SendMessage(
 	return txRes, nil
 }
 
-// ConfirmSession executes `start_session` method with transfer action.
-func (c *ContractClient) ConfirmSession(
-	ctx context.Context, sender sdk.AccAddress, sessionId string,
+// MarkAsRead executes `mark_as_read` method with transfer action.
+func (c *ContractClient) MarkAsRead(
+	ctx context.Context, sender sdk.AccAddress, until uint64,
 ) (*sdk.TxResponse, error) {
-	req := confirmSessionRequest{}
-	req.ConfirmSession.SessionId = sessionId
-
-	txRes, err := c.execute(ctx, sender, execRequest{
-		Body: req,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return txRes, nil
-}
-
-// CancelSession executes `start_session` method with transfer action.
-func (c *ContractClient) CancelSession(
-	ctx context.Context, sender sdk.AccAddress, sessionId string,
-) (*sdk.TxResponse, error) {
-	req := cancelSessionRequest{}
-	req.CancelSession.SessionId = sessionId
+	req := markAsReadRequest{}
+	req.MarkAsRead.Until = until
 
 	txRes, err := c.execute(ctx, sender, execRequest{
 		Body: req,
@@ -290,20 +221,20 @@ func (c *ContractClient) IssueNFTClass(
 func (c *ContractClient) MintNFT(
 	ctx context.Context,
 	sender sdk.AccAddress,
-	classId, Id string,
+	classId, id string,
 	data *types.Any,
 ) (*sdk.TxResponse, error) {
 	msgIssueClass := &nfttypes.MsgMint{
 		Sender:    sender.String(),
 		ClassID:   classId,
-		ID:        Id,
+		ID:        id,
 		Data:      data,
 		Recipient: c.cfg.ContractAddress.String(),
 	}
 
 	txRes, err := client.BroadcastTx(ctx, c.clientCtx.WithFromAddress(sender), c.getTxFactory(), msgIssueClass)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to mint the NFT, classId:%s, id:%s", classId, Id)
+		return nil, errors.Wrapf(err, "failed to mint the NFT, classId:%s, id:%s", classId, id)
 	}
 	c.log.Info(ctx, "NFT minted successfully")
 
@@ -312,52 +243,62 @@ func (c *ContractClient) MintNFT(
 
 // ******************** Query ********************
 
-// GetActiveSessions returns a list of all active sessions.
-func (c *ContractClient) GetActiveSessions(
+// GetUnreadMessages returns a list of all unread messages.
+func (c *ContractClient) GetUnreadMessages(
 	ctx context.Context,
 	address sdk.AccAddress,
-	userType UserType,
-	startAfterKey string,
 	limit *uint32,
-) ([]Session, error) {
-	var response Sessions
+) ([]Message, error) {
+	var response Messages
 	err := c.query(ctx, map[QueryMethod]querySessionsRequest{
-		QueryMethodActiveSessions: {
-			StartAfterKey: startAfterKey,
-			Limit:         limit,
-			Address:       address,
-			UserType:      userType,
+		QueryMethodUnreadMessages: {
+			Limit:   limit,
+			Address: address,
 		},
 	}, &response)
 	if err != nil {
 		return nil, err
 	}
 
-	return response.Sessions, nil
+	return response.Messages, nil
 }
 
-// GetClosedSessions returns a list of all closed sessions.
-func (c *ContractClient) GetClosedSessions(
+// GetReadMessages returns a list of all read messages.
+func (c *ContractClient) GetReadMessages(
 	ctx context.Context,
 	address sdk.AccAddress,
-	userType UserType,
 	startAfterKey string,
 	limit *uint32,
-) ([]Session, error) {
-	var response Sessions
+) ([]Message, error) {
+	var response Messages
 	err := c.query(ctx, map[QueryMethod]querySessionsRequest{
-		QueryMethodClosedSessions: {
-			StartAfterKey: startAfterKey,
+		QueryMethodReadMessages: {
+			StartAfterKey: &startAfterKey,
 			Limit:         limit,
 			Address:       address,
-			UserType:      userType,
 		},
 	}, &response)
 	if err != nil {
 		return nil, err
 	}
 
-	return response.Sessions, nil
+	return response.Messages, nil
+}
+
+// QueryNFT queries the nft.
+func (c *ContractClient) QueryNFT(
+	ctx context.Context,
+	classId, id string,
+) (*types.Any, error) {
+	nftClient := nft.NewQueryClient(c.clientCtx)
+	resp, err := nftClient.NFT(ctx, &nft.QueryNFTRequest{
+		ClassId: classId,
+		Id:      id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Nft.Data, nil
 }
 
 func (c *ContractClient) execute(
