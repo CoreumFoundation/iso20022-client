@@ -57,6 +57,7 @@ func RootCmd(ctx context.Context) (*cobra.Command, error) {
 	cmd.AddCommand(keyringCoreumCmd)
 	cmd.AddCommand(cli.ClientKeysCmd())
 	cmd.AddCommand(cli.VersionCmd())
+	cmd.AddCommand(cli.MessageCmd())
 
 	return cmd, nil
 }

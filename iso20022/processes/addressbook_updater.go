@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
@@ -14,14 +13,14 @@ import (
 type AddressBookUpdaterProcess struct {
 	interval    time.Duration
 	log         logger.Logger
-	addressBook *addressbook.AddressBook
+	addressBook AddressBook
 }
 
 // NewAddressBookUpdaterProcess returns a new instance of the AddressBookUpdaterProcess.
 func NewAddressBookUpdaterProcess(
 	interval time.Duration,
 	log logger.Logger,
-	addressBook *addressbook.AddressBook,
+	addressBook AddressBook,
 ) (*AddressBookUpdaterProcess, error) {
 	if interval < time.Second {
 		return nil, errors.Errorf("failed to init the process, interval cannot be less than one second")

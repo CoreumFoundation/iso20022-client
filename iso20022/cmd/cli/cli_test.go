@@ -1,4 +1,4 @@
-package cli_test
+package cli
 
 import (
 	"bytes"
@@ -21,7 +21,6 @@ import (
 	coreumapp "github.com/CoreumFoundation/coreum/v4/app"
 	"github.com/CoreumFoundation/coreum/v4/pkg/config"
 	"github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
-	"github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli"
 	overridecryptokeyring "github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli/cosmos/override/crypto/keyring"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
 )
@@ -36,14 +35,14 @@ func TestStartCmd(t *testing.T) {
 
 	processorMock := NewMockRunner(ctrl)
 	processorMock.EXPECT().Start(gomock.Any())
-	cmd := cli.StartCmd(func(cmd *cobra.Command) (cli.Runner, error) {
+	cmd := StartCmd(func(cmd *cobra.Command) (Runner, error) {
 		return processorMock, nil
 	})
-	executeCmd(t, cmd, initConfig(t)...) // to disable telemetry server
+	executeCmd(t, cmd, initConfig(t)...)
 }
 
 func TestKeyringCmds(t *testing.T) {
-	cmd, err := cli.KeyringCmd(constant.CoinType, overridecryptokeyring.CoreumAddressFormatter)
+	cmd, err := KeyringCmd(constant.CoinType, overridecryptokeyring.CoreumAddressFormatter)
 	require.NoError(t, err)
 
 	args := append(initConfig(t), "list")
@@ -61,10 +60,10 @@ func TestKeyInfoCmd(t *testing.T) {
 	runnerDefaultCfg := runner.DefaultConfig()
 
 	// add required key
-	addKeyToTestKeyring(t, keyringDir, runnerDefaultCfg.Coreum.ClientKeyName, cli.CoreumKeyringSuffix,
+	addKeyToTestKeyring(t, keyringDir, runnerDefaultCfg.Coreum.ClientKeyName, CoreumKeyringSuffix,
 		sdk.GetConfig().GetFullBIP44Path())
 
-	executeCmd(t, cli.ClientKeysCmd(), args...)
+	executeCmd(t, ClientKeysCmd(), args...)
 }
 
 func executeCmd(t *testing.T, cmd *cobra.Command, args ...string) string {
@@ -147,9 +146,9 @@ func initConfig(t *testing.T) []string {
 	require.NoFileExists(t, configFilePath)
 
 	args := []string{
-		flagWithPrefix(cli.FlagHome), configPath,
+		flagWithPrefix(FlagHome), configPath,
 	}
-	executeCmd(t, cli.InitCmd(), args...)
+	executeCmd(t, InitCmd(), args...)
 	require.FileExists(t, configFilePath)
 
 	return args

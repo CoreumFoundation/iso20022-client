@@ -1,15 +1,23 @@
 package cli
 
 import (
-	"bufio"
 	"context"
+	"crypto/x509"
+	"encoding/base64"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256r1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -21,7 +29,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
 )
 
-//go:generate mockgen -destination=cli_mocks_test.go -package=cli_test . Runner
+//go:generate mockgen -destination=cli_mocks_test.go -package=cli . Runner
 
 func init() {
 	userHomeDir, err := os.UserHomeDir()
@@ -51,8 +59,8 @@ const (
 	FlagCoreumGRPCURL = "coreum-grpc-url"
 	// FlagCoreumContractAddress is the address of the bridge smart contract.
 	FlagCoreumContractAddress = "coreum-contract-address"
-	// FlagInitOnly is init only flag.
-	FlagInitOnly = "init-only"
+	// FlagServerAddress is the address that http server listens to flag.
+	FlagServerAddress = "server-addr"
 )
 
 // Runner is a runner interface.
@@ -79,6 +87,11 @@ func NewRunnerFromHome(cmd *cobra.Command) (*runner.Runner, error) {
 	}
 
 	components, err := NewComponents(cmd, zapLogger)
+	if err != nil {
+		return nil, err
+	}
+
+	err = components.AddressBook.Update(cmd.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +172,16 @@ func GetHomeRunnerConfig(cmd *cobra.Command) (runner.Config, error) {
 		return runner.Config{}, err
 	}
 
+	keyName, err := cmd.Flags().GetString(FlagKeyName)
+	if err == nil && keyName != "" {
+		cfg.Coreum.ClientKeyName = keyName
+	}
+
+	listenAddr, err := cmd.Flags().GetString(FlagServerAddress)
+	if err == nil && listenAddr != "" {
+		cfg.Processes.Server.ListenAddress = listenAddr
+	}
+
 	return cfg, nil
 }
 
@@ -214,6 +237,11 @@ func InitCmd() *cobra.Command {
 			cfg.Coreum.GRPC.URL = coreumGRPCURL
 			cfg.Coreum.Contract.ContractAddress = coreumContractAddress
 
+			keyName, err := cmd.Flags().GetString(FlagKeyName)
+			if err == nil && keyName != "" {
+				cfg.Coreum.ClientKeyName = keyName
+			}
+
 			if err = runner.InitConfig(home, cfg); err != nil {
 				return err
 			}
@@ -241,28 +269,18 @@ func StartCmd(pp RunnerProvider) *cobra.Command {
 		Use:   "start",
 		Short: "Start the client",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			// Scan helps to wait for any input infinitely and just then call the client. That handles
-			// the client restart in the container. Because after the restart, the container is detached, the client
-			// requests the keyring password and fails immediately.
-			log, err := GetCLILogger()
-			if err != nil {
-				return err
-			}
-			log.Info(ctx, "Press any key to start the client.")
-			input := bufio.NewScanner(os.Stdin)
-			input.Scan()
-
 			providedRunner, err := pp(cmd)
 			if err != nil {
 				return err
 			}
 
-			return providedRunner.Start(ctx)
+			return providedRunner.Start(cmd.Context())
 		},
 	}
 	AddHomeFlag(cmd)
 	AddKeyringFlags(cmd)
+	AddKeyNameFlag(cmd)
+	AddServerAddressFlag(cmd)
 
 	return cmd
 }
@@ -287,6 +305,11 @@ func AddKeyringFlags(cmd *cobra.Command) {
 // AddKeyNameFlag adds the key-name flag to the command.
 func AddKeyNameFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(FlagKeyName, "", "Key name from the keyring")
+}
+
+// AddServerAddressFlag adds the server-addr flag to the command.
+func AddServerAddressFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().String(FlagServerAddress, "", "Http server address")
 }
 
 // ClientKeysCmd prints the client keys info.
@@ -318,10 +341,34 @@ func ClientKeysCmd() *cobra.Command {
 					components.RunnerConfig.Coreum.ClientKeyName)
 			}
 
+			pubKey := "unknown"
+
+			switch coreumKeyRecord.PubKey.TypeUrl {
+			case "/cosmos.crypto.secp256k1.PubKey":
+				var key secp256k1.PubKey
+				err = proto.Unmarshal(coreumKeyRecord.PubKey.Value, &key)
+				if err != nil {
+					return err
+				}
+				pubKey = base64.StdEncoding.EncodeToString(key.Key)
+			case "/cosmos.crypto.secp256r1.PubKey":
+				var key secp256r1.PubKey
+				err = proto.Unmarshal(coreumKeyRecord.PubKey.Value, &key)
+				if err != nil {
+					return err
+				}
+				pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.Key.PublicKey)
+				if err != nil {
+					return err
+				}
+				pubKey = base64.StdEncoding.EncodeToString(pubKeyBytes)
+			}
+
 			components.Log.Info(
 				ctx,
 				"Keys info",
 				zap.String("coreumAddress", coreumAddress.String()),
+				zap.String("publicKey", pubKey),
 			)
 
 			return nil
@@ -334,7 +381,7 @@ func ClientKeysCmd() *cobra.Command {
 	return cmd
 }
 
-// KeyringCmd returns cosmos keyring cmd inti with the correct keys home.
+// KeyringCmd returns cosmos keyring cmd init with the correct keys home.
 func KeyringCmd(
 	coinType uint32,
 	addressFormatter overridekeyring.AddressFormatter,
@@ -389,4 +436,145 @@ func VersionCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// MessageCmd returns the message cmd.
+func MessageCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "message",
+		Short: "Send or receive ISO20022 messages",
+	}
+	AddHomeFlag(cmd)
+	AddKeyringFlags(cmd)
+	AddKeyNameFlag(cmd)
+	AddServerAddressFlag(cmd)
+
+	cmd.AddCommand(SendMessageCmd())
+	cmd.AddCommand(ReceiveMessageCmd())
+
+	return cmd
+}
+
+// SendMessageCmd returns a CLI command to interactively send an ISO20022 message to the chain.
+func SendMessageCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "send <message xml file>",
+		Short: "Send an ISO20022 message to the chain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			log, err := GetCLILogger()
+			if err != nil {
+				return err
+			}
+			filePath := args[0]
+
+			cfg, err := GetHomeRunnerConfig(cmd)
+			if err != nil {
+				return err
+			}
+
+			file, err := os.OpenFile(filePath, os.O_RDONLY, 0600)
+			if err != nil {
+				return err
+			}
+
+			defer func(file *os.File) {
+				_ = file.Close()
+			}(file)
+
+			res, err := http.Post(parseListenAddress(cfg.Processes.Server.ListenAddress)+"/v1/send", "application/xml", file)
+			if err != nil {
+				return err
+			}
+
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(res.Body)
+
+			if res.StatusCode != http.StatusCreated {
+				return errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
+			}
+
+			log.Info(cmd.Context(), "Message sent")
+			return nil
+		},
+	}
+
+	AddServerAddressFlag(cmd)
+
+	return cmd
+}
+
+// ReceiveMessageCmd returns a CLI command to interactively receive an ISO20022 message from the chain.
+func ReceiveMessageCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "receive <path to save xml message>",
+		Short: "Receive an ISO20022 message from the chain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			log, err := GetCLILogger()
+			if err != nil {
+				return err
+			}
+			filePath := args[0]
+
+			cfg, err := GetHomeRunnerConfig(cmd)
+			if err != nil {
+				return err
+			}
+
+			file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+			if err != nil {
+				return err
+			}
+
+			defer func(file *os.File) {
+				_ = file.Close()
+			}(file)
+
+			res, err := http.Get(parseListenAddress(cfg.Processes.Server.ListenAddress) + "/v1/receive")
+			if err != nil {
+				return err
+			}
+
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(res.Body)
+
+			if res.StatusCode == http.StatusNoContent {
+				log.Info(cmd.Context(), "No new message")
+				return nil
+			}
+
+			if res.StatusCode != http.StatusOK {
+				return errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
+			}
+
+			_, err = io.Copy(file, res.Body)
+			if err != nil {
+				return err
+			}
+
+			log.Info(cmd.Context(), "Message received")
+			return nil
+		},
+	}
+
+	AddServerAddressFlag(cmd)
+
+	return cmd
+}
+
+func parseListenAddress(address string) string {
+	defaultCfg := runner.DefaultConfig()
+	parts := strings.Split(address, ":")
+	host := "0.0.0.0"
+	port := strings.Split(defaultCfg.Processes.Server.ListenAddress, ":")[1]
+	if len(parts) > 0 && len(parts[0]) > 0 {
+		host = parts[0]
+	}
+	if len(parts) > 1 && len(parts[1]) > 0 {
+		port = parts[1]
+	}
+	return fmt.Sprintf("http://%s:%s", host, port)
 }

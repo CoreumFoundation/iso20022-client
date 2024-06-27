@@ -61,11 +61,25 @@ type CoreumConfig struct {
 	Contract      CoreumContractConfig `yaml:"contract"`
 }
 
-// ProcessesConfig  is processes config.
+// ServerConfig is the server config.
+type ServerConfig struct {
+	ListenAddress string `yaml:"listen_address"`
+}
+
+// AddressBookConfig is the address book config.
+type AddressBookConfig struct {
+	UpdateInterval time.Duration `yaml:"update_interval"`
+}
+
+// ProcessesConfig is processes config.
 type ProcessesConfig struct {
-	RepeatDelay time.Duration `yaml:"repeat_delay"`
-	RetryDelay  time.Duration `yaml:"retry_delay"`
-	ExitOnError bool          `yaml:"-"`
+	Server       ServerConfig      `yaml:"server"`
+	AddressBook  AddressBookConfig `yaml:"address_book"`
+	QueueSize    int               `yaml:"queue_size"`
+	RepeatDelay  time.Duration     `yaml:"repeat_delay"`
+	RetryDelay   time.Duration     `yaml:"retry_delay"`
+	PollInterval time.Duration     `yaml:"poll_interval"`
+	ExitOnError  bool              `yaml:"-"`
 }
 
 // MetricsPeriodicCollectorConfig is metric periodic collector config.
@@ -75,9 +89,10 @@ type MetricsPeriodicCollectorConfig struct {
 
 // Config is runner config.
 type Config struct {
-	Version       string        `yaml:"version"`
-	LoggingConfig LoggingConfig `yaml:"logging"`
-	Coreum        CoreumConfig  `yaml:"coreum"`
+	Version       string          `yaml:"version"`
+	LoggingConfig LoggingConfig   `yaml:"logging"`
+	Coreum        CoreumConfig    `yaml:"coreum"`
+	Processes     ProcessesConfig `yaml:"processes"`
 }
 
 // DefaultConfig returns default runner config.
@@ -98,14 +113,14 @@ func DefaultConfig() Config {
 			ClientKeyName: "iso20022-client",
 			GRPC: CoreumGRPCConfig{
 				// TODO: Change to mainnet url before release
-				URL: "https://full-node.testnet-1.coreum.dev:9090",
+				URL: "https://full-node.devnet-1.coreum.dev:9090",
 			},
 			Network: CoreumNetworkConfig{
 				ChainID: string(DefaultCoreumChainID),
 			},
 			Contract: CoreumContractConfig{
 				// TODO: Change to the contract address on mainnet before release
-				ContractAddress:       "testcore1za96naulkx2axrq738x9uke65ztq2grffuyds67kzwms75tj8lfq9272g0",
+				ContractAddress:       "devcore18cszlvm6pze0x9sz32qnjq4vtd45xehqs8dq7cwy8yhq35wfnn3qx8xp93",
 				GasAdjustment:         defaultCoreumContactConfig.GasAdjustment,
 				GasPriceAdjustment:    defaultCoreumContactConfig.GasPriceAdjustment.MustFloat64(),
 				PageLimit:             defaultCoreumContactConfig.PageLimit,
@@ -116,6 +131,20 @@ func DefaultConfig() Config {
 				TxTimeout:            defaultClientCtxDefaultCfg.TimeoutConfig.TxTimeout,
 				TxStatusPollInterval: defaultClientCtxDefaultCfg.TimeoutConfig.TxStatusPollInterval,
 			},
+		},
+
+		Processes: ProcessesConfig{
+			Server: ServerConfig{
+				ListenAddress: ":2843",
+			},
+			AddressBook: AddressBookConfig{
+				UpdateInterval: 60 * time.Second,
+			},
+			QueueSize:    10,
+			RepeatDelay:  10 * time.Second,
+			RetryDelay:   10 * time.Second,
+			PollInterval: time.Second,
+			ExitOnError:  false,
 		},
 	}
 }

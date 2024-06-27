@@ -102,21 +102,30 @@ func (b BranchAndIdentification) Equal(other BranchAndIdentification) bool {
 	actualId := b.Identification
 	expectedId := other.Identification
 
-	if AreStringsEqual(actualId.Bic, expectedId.Bic) || AreStringsEqual(actualId.Lei, expectedId.Lei) {
-		return true
+	if actualId.Bic != "" || expectedId.Bic != "" {
+		if AreStringsEqual(actualId.Bic, expectedId.Bic) {
+			return true
+		}
+	}
+
+	if actualId.Lei != "" || expectedId.Lei != "" {
+		if AreStringsEqual(actualId.Lei, expectedId.Lei) {
+			return true
+		}
 	}
 
 	if actualId.ClearingSystemMemberIdentification != nil && expectedId.ClearingSystemMemberIdentification != nil {
 		actualCls := actualId.ClearingSystemMemberIdentification
 		expectedCls := expectedId.ClearingSystemMemberIdentification
-		if AreStringsEqual(actualCls.MemberId, expectedCls.MemberId) {
-			return true
+		if !AreStringsEqual(actualCls.MemberId, expectedCls.MemberId) {
+			return false
 		}
 		if actualCls.ClearingSystemId != nil && expectedCls.ClearingSystemId != nil {
-			if AreStringsEqual(actualCls.ClearingSystemId.String(), expectedCls.ClearingSystemId.String()) {
-				return true
+			if !AreStringsEqual(actualCls.ClearingSystemId.String(), expectedCls.ClearingSystemId.String()) {
+				return false
 			}
 		}
+		return true
 	}
 
 	if actualId.PostalAddress != nil && expectedId.PostalAddress != nil {

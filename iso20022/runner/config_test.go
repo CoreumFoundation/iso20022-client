@@ -67,11 +67,11 @@ logging:
 coreum:
     client_key_name: iso20022-client
     grpc:
-        url: https://full-node.testnet-1.coreum.dev:9090
+        url: https://full-node.devnet-1.coreum.dev:9090
     network:
-        chain_id: coreum-testnet-1
+        chain_id: coreum-devnet-1
     contract:
-        contract_address: testcore1za96naulkx2axrq738x9uke65ztq2grffuyds67kzwms75tj8lfq9272g0
+        contract_address: devcore18cszlvm6pze0x9sz32qnjq4vtd45xehqs8dq7cwy8yhq35wfnn3qx8xp93
         gas_adjustment: 1.4
         gas_price_adjustment: 1.2
         page_limit: 50
@@ -80,5 +80,14 @@ coreum:
         request_timeout: 10s
         tx_timeout: 1m0s
         tx_status_poll_interval: 500ms
+processes:
+    server:
+        listen_address: :2843
+    address_book:
+        update_interval: 1m0s
+    queue_size: 10
+    repeat_delay: 10s
+    retry_delay: 10s
+    poll_interval: 1s
 `
 }

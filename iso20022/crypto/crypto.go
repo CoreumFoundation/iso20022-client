@@ -15,7 +15,9 @@ import (
 	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
 )
 
-func GenerateSharedKeyByPrivateKeyName(ctx coreumchainclient.Context, algo string, privateKeyName string, publicKeyBytes []byte) ([]byte, error) {
+type Cryptography struct{}
+
+func (c Cryptography) GenerateSharedKeyByPrivateKeyName(ctx coreumchainclient.Context, algo string, privateKeyName string, publicKeyBytes []byte) ([]byte, error) {
 	// getting private key
 	key, err := ctx.Keyring().Key(privateKeyName)
 	if err != nil {
@@ -32,10 +34,10 @@ func GenerateSharedKeyByPrivateKeyName(ctx coreumchainclient.Context, algo strin
 		return nil, err
 	}
 
-	return GenerateSharedKey(algo, privKey, publicKeyBytes)
+	return c.GenerateSharedKey(algo, privKey, publicKeyBytes)
 }
 
-func GenerateSharedKey(algo string, privateKey cryptotypes.PrivKey, publicKeyBytes []byte) ([]byte, error) {
+func (c Cryptography) GenerateSharedKey(algo string, privateKey cryptotypes.PrivKey, publicKeyBytes []byte) ([]byte, error) {
 	var err error
 	var sharedKey []byte
 
@@ -68,61 +70,6 @@ func GenerateSharedKey(algo string, privateKey cryptotypes.PrivKey, publicKeyByt
 	h := sha256.Sum256(sharedKey)
 	return h[:], nil
 }
-
-//func GenerateSharedKeyByAccount(ctx coreumchainclient.Context, localAccount, remoteAccount sdk.AccAddress) ([]byte, error) {
-//	// getting private key
-//	key, err := ctx.Keyring().KeyByAddress(localAccount)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	recordLocal := key.GetLocal()
-//	if recordLocal == nil {
-//		return nil, errors.New("private key can only be local")
-//	}
-//
-//	privKey, err := extractPrivateKeyFromLocal(recordLocal)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	// getting public key
-//	pubKey, err := coreum.GetPubKey(ctx.SDKContext(), remoteAccount)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var sharedKey []byte
-//
-//	switch privKey.(type) {
-//	case *secp256r1.PrivKey:
-//		switch pubKey.(type) {
-//		case *secp256r1.PubKey:
-//			sharedKey, err = generateSecp256r1SharedKey(privKey.(*secp256r1.PrivKey), pubKey.(*secp256r1.PubKey))
-//			if err != nil {
-//				return nil, err
-//			}
-//		default:
-//			return nil, errors.New("keys are not from the same curve")
-//		}
-//	case *secp256k1.PrivKey:
-//		switch pubKey.(type) {
-//		case *secp256k1.PubKey:
-//			sharedKey, err = generateSecp256k1SharedKey(privKey.(*secp256k1.PrivKey), pubKey.(*secp256k1.PubKey))
-//			if err != nil {
-//				return nil, err
-//			}
-//		default:
-//			return nil, errors.New("keys are not from the same curve")
-//		}
-//	default:
-//		return nil, errors.New("unsupported key type")
-//	}
-//
-//	// TODO: It is recommended to securely hash the result before using as a cryptographic key.
-//	h := sha256.Sum256(sharedKey)
-//	return h[:], nil
-//}
 
 func extractPrivateKeyFromLocal(rl *keyring.Record_Local) (cryptotypes.PrivKey, error) {
 	if rl.PrivKey == nil {

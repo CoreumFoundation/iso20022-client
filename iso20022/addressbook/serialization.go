@@ -30,7 +30,9 @@ func SerializeStruct(p any) string {
 		property := inputType.Field(i)
 		kind := property.Type.Kind()
 
+		isNilable := false
 		for kind == reflect.Pointer {
+			isNilable = true
 			kind = property.Type.Elem().Kind()
 		}
 
@@ -71,7 +73,12 @@ func SerializeStruct(p any) string {
 			kvMap[fieldName] = value
 		case reflect.Struct:
 			fieldName := inputType.Field(i).Name
-			value := SerializeStruct(inputValue.FieldByName(fieldName).Interface())
+			val := inputValue.FieldByName(fieldName)
+			if isNilable && val.IsNil() {
+				continue
+			}
+
+			value := SerializeStruct(val.Interface())
 
 			if len(value) > 0 {
 				keys = append(keys, fieldName)

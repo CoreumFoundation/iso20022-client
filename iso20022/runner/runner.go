@@ -5,22 +5,31 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/url"
+	"runtime/debug"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/CoreumFoundation/coreum-tools/pkg/parallel"
 	coreumapp "github.com/CoreumFoundation/coreum/v4/app"
 	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
 	coreumchainconfig "github.com/CoreumFoundation/coreum/v4/pkg/config"
 	coreumchainconstant "github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/crypto"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/server"
 )
 
 const (
@@ -29,7 +38,7 @@ const (
 	ConfigFileName = "client.yaml"
 	// DefaultCoreumChainID is default chain id.
 	// TODO: Change to ChainIDMain before release
-	DefaultCoreumChainID = coreumchainconstant.ChainIDTest
+	DefaultCoreumChainID = coreumchainconstant.ChainIDDev
 )
 
 // Runner is client runner that aggregates all client components.
@@ -38,6 +47,10 @@ type Runner struct {
 	log           logger.Logger
 	components    Components
 	clientAddress sdk.AccAddress
+
+	contractClientProcess     *processes.ContractClientProcess
+	addressBookUpdaterProcess *processes.AddressBookUpdaterProcess
+	webServer                 *server.Server
 }
 
 // NewRunner return new runner from the config.
@@ -51,27 +64,144 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		return nil, err
 	}
 
+	addressBookUpdaterProcess, err := processes.NewAddressBookUpdaterProcess(
+		cfg.Processes.AddressBook.UpdateInterval,
+		components.Log,
+		components.AddressBook,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	sendCh := make(chan []byte, cfg.Processes.QueueSize)
+	receiveCh := make(chan []byte, cfg.Processes.QueueSize)
+	receiverProcess, err := processes.NewContractClientProcess(
+		processes.ContractClientProcessConfig{
+			CoreumContractAddress: components.CoreumContractClient.GetContractAddress(),
+			ClientAddress:         clientAddress,
+			ClientKeyName:         components.RunnerConfig.Coreum.ClientKeyName,
+			PollInterval:          cfg.Processes.RetryDelay,
+		},
+		components.Log,
+		components.Compressor,
+		components.CoreumClientCtx,
+		components.AddressBook,
+		components.CoreumContractClient,
+		components.Cryptography,
+		sendCh,
+		receiveCh,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	handler := server.CreateHandlers(sendCh, receiveCh)
+	webServer := server.New(cfg.Processes.Server.ListenAddress, handler)
+
 	return &Runner{
 		cfg:           cfg,
 		log:           components.Log,
 		components:    components,
 		clientAddress: clientAddress,
+
+		contractClientProcess:     receiverProcess,
+		addressBookUpdaterProcess: addressBookUpdaterProcess,
+		webServer:                 webServer,
 	}, nil
 }
 
 // Start starts runner.
 func (r *Runner) Start(ctx context.Context) error {
-	// TODO: Write main procedure here
-	return nil
+	runnerProcesses := map[string]func(context.Context) error{
+		"contractClient": taskWithRestartOnError(
+			r.contractClientProcess.Start,
+			r.log,
+			r.cfg.Processes.ExitOnError,
+			r.cfg.Processes.RetryDelay,
+		),
+		"updateAddressBook": taskWithRestartOnError(
+			r.addressBookUpdaterProcess.Start,
+			r.log,
+			r.cfg.Processes.ExitOnError,
+			r.cfg.Processes.RetryDelay,
+		),
+		"webServer": taskWithRestartOnError(
+			r.webServer.Start,
+			r.log,
+			true,
+			r.cfg.Processes.RetryDelay,
+		),
+	}
+
+	err := r.components.AddressBook.Update(ctx)
+	if err != nil {
+		return err
+	}
+
+	return parallel.Run(ctx, func(ctx context.Context, spawn parallel.SpawnFn) error {
+		for name, start := range runnerProcesses {
+			name := name
+			start := start
+			spawn(name, parallel.Continue, start)
+		}
+		return nil
+	})
+}
+
+func taskWithRestartOnError(
+	task parallel.Task,
+	log logger.Logger,
+	exitOnError bool,
+	retryDelay time.Duration,
+) parallel.Task {
+	return func(ctx context.Context) error {
+		for {
+			// start the process and handle the panic
+			err := func() (err error) {
+				defer func() {
+					if p := recover(); p != nil {
+						err = errors.Wrap(parallel.ErrPanic{Value: p, Stack: debug.Stack()}, "handled panic")
+					}
+				}()
+				return task(ctx)
+			}()
+
+			if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return nil
+			}
+
+			// restart the process if it is restartable
+			log.Error(ctx, "Received unexpected error from the process", zap.Error(err))
+			if exitOnError {
+				log.Warn(ctx, "The process is not auto-restartable on error")
+				return err
+			}
+
+			if retryDelay > 0 {
+				log.Info(ctx,
+					"Process is paused and will be restarted later",
+					zap.Duration("retryDelay", retryDelay))
+				select {
+				case <-ctx.Done():
+					return nil
+				case <-time.After(retryDelay):
+				}
+			}
+			log.Info(ctx, "Restarting the process after the error")
+		}
+	}
 }
 
 // Components groups components required by runner.
 type Components struct {
 	Log                  logger.Logger
+	Compressor           *compress.Compressor
 	RunnerConfig         Config
 	CoreumSDKClientCtx   client.Context
 	CoreumClientCtx      coreumchainclient.Context
 	CoreumContractClient *coreum.ContractClient
+	AddressBook          *addressbook.AddressBook
+	Cryptography         *crypto.Cryptography
 }
 
 // NewComponents creates components required by runner and other CLI commands.
@@ -135,12 +265,22 @@ func NewComponents(
 
 	contractClient := coreum.NewContractClient(contractClientCfg, log, coreumClientCtx)
 
+	addressBook := addressbook.New(cfg.Coreum.Network.ChainID)
+
+	compressor, err := compress.New()
+	if err != nil {
+		return Components{}, err
+	}
+
 	return Components{
 		Log:                  log,
+		Compressor:           compressor,
 		RunnerConfig:         cfg,
 		CoreumSDKClientCtx:   coreumSDKClientCtx,
 		CoreumClientCtx:      coreumClientCtx,
 		CoreumContractClient: contractClient,
+		AddressBook:          addressBook,
+		Cryptography:         &crypto.Cryptography{},
 	}, nil
 }
 
