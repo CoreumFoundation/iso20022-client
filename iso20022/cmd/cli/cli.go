@@ -523,7 +523,7 @@ func ReceiveMessageCmd() *cobra.Command {
 				return err
 			}
 
-			file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+			file, err := os.Create(filePath)
 			if err != nil {
 				return err
 			}
