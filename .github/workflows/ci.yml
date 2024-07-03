@@ -119,6 +119,7 @@ jobs:
           crust build
           crust znet remove
           coreum-builder build/me
+          cd $(pwd)/iso20022-client
           make deps
       - name: Run ${{ matrix.ci_step }}
         working-directory: ./iso20022-client
