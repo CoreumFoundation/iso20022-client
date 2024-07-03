@@ -62,6 +62,7 @@ jobs:
           echo "$(pwd)/iso20022-client/bin" >> $GITHUB_PATH
           echo "$(pwd)/coreum/bin" >> $GITHUB_PATH
           echo "$(pwd)/crust/bin" >> $GITHUB_PATH
+          cd $(pwd)/iso20022-client
           make build
       - name: Retrieve go version
         id: goversion
