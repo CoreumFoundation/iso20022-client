@@ -73,8 +73,8 @@ deps:
 	cd iso20022 && go get -v ./...
 
 test:
-	mkdir -p ../coverage/
-	cd iso20022 && go test -v ./... -coverprofile ../coverage/iso20022-cover.out
+	mkdir -v -p $(CURDIR)/coverage/
+	cd iso20022 && go test -v ./... -coverprofile $(CURDIR)/coverage/iso20022-cover.out
 
 vet:
 	cd iso20022 && go vet -v ./...
@@ -109,8 +109,8 @@ lint-new:
 	docker run --rm -v $$(pwd):/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --new-from-rev master ./...
 
 lint:
-	docker pull golangci/golangci-lint:1.59.1
-	docker run --rm -v $$(pwd):/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:1.59.1 golangci-lint run ./...
+	docker pull golangci/golangci-lint:v1.59.1
+	docker run --rm -v $$(pwd):/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run ./...
 
 lint-local:
 	@if test ! -e ./bin/golangci-lint; then \
