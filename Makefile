@@ -74,7 +74,7 @@ deps:
 
 test:
 	mkdir -v -p $(CURDIR)/coverage/
-	cd iso20022 && go test -v ./... -coverprofile $(CURDIR)/coverage/iso20022-cover.out
+	cd iso20022 && go test -v -coverprofile $(CURDIR)/coverage/iso20022-cover.out -covermode=atomic ./...
 
 vet:
 	cd iso20022 && go vet -v ./...
@@ -106,11 +106,11 @@ generate:
 
 lint-new:
 	docker pull golangci/golangci-lint:v1.59.1
-	docker run --rm -v $$(pwd):/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --new-from-rev master ./...
+	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --new-from-rev master ./...
 
 lint:
 	docker pull golangci/golangci-lint:v1.59.1
-	docker run --rm -v $$(pwd):/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run ./...
+	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run ./...
 
 lint-local:
 	@if test ! -e ./bin/golangci-lint; then \
