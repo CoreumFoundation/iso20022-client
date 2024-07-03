@@ -106,11 +106,11 @@ generate:
 
 lint-new:
 	docker pull golangci/golangci-lint:v1.59.1
-	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --new-from-rev master ./...
+	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --timeout 15m --new-from-rev master ./...
 
 lint:
 	docker pull golangci/golangci-lint:v1.59.1
-	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run ./...
+	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --timeout 15m ./...
 
 lint-local:
 	@if test ! -e ./bin/golangci-lint; then \
