@@ -17,7 +17,6 @@ import (
 	"github.com/CoreumFoundation/coreum-tools/pkg/parallel"
 	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
 	nfttypes "github.com/CoreumFoundation/coreum/v4/x/asset/nft/types"
-	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
@@ -42,13 +41,14 @@ type ContractClientProcess struct {
 	addressBook    AddressBook
 	contractClient ContractClient
 	cryptography   Cryptography
+	parser         Parser
 	sendChannel    <-chan []byte
 	receiveChannel chan<- []byte
 	nftClassId     string
 }
 
 // NewContractClientProcess returns a new instance of the ContractClientProcess.
-func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger, compressor *compress.Compressor, clientContext coreumchainclient.Context, addressBook AddressBook, contractClient ContractClient, cryptography Cryptography, sendChannel <-chan []byte, receiveChannel chan<- []byte) (*ContractClientProcess, error) {
+func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger, compressor *compress.Compressor, clientContext coreumchainclient.Context, addressBook AddressBook, contractClient ContractClient, cryptography Cryptography, parser Parser, sendChannel <-chan []byte, receiveChannel chan<- []byte) (*ContractClientProcess, error) {
 	if cfg.CoreumContractAddress.Empty() {
 		return nil, errors.Errorf("failed to init the process, the contract address is nil or empty")
 	}
@@ -64,6 +64,7 @@ func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger
 		addressBook:    addressBook,
 		contractClient: contractClient,
 		cryptography:   cryptography,
+		parser:         parser,
 		sendChannel:    sendChannel,
 		receiveChannel: receiveChannel,
 	}, nil
@@ -103,7 +104,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 			for {
 				select {
 				case msg := <-p.sendChannel:
-					destination, publicKey, err := p.extractDestination(msg)
+					destination, publicKey, err := p.extractDestination(ctx, msg)
 					if err != nil {
 						p.log.Error(
 							ctx,
@@ -264,12 +265,13 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, destination sd
 	return err
 }
 
-func (p *ContractClientProcess) extractDestination(msg []byte) (sdk.AccAddress, []byte, error) {
-	entry, found := p.addressBook.Lookup(addressbook.BranchAndIdentification{
-		Identification: addressbook.Identification{
-			Bic: "6P9YGUDF",
-		},
-	})
+func (p *ContractClientProcess) extractDestination(ctx context.Context, msg []byte) (sdk.AccAddress, []byte, error) {
+	parsedTarget, err := p.parser.ExtractIdentificationFromIsoMessage(ctx, msg)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	entry, found := p.addressBook.Lookup(*parsedTarget)
 	if !found {
 		return nil, nil, errors.New("could not find target institute in the address book")
 	}

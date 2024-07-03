@@ -6,13 +6,14 @@ import (
 	types2 "github.com/cosmos/cosmos-sdk/codec/types"
 	types3 "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/moov-io/iso20022/pkg/document"
 
 	"github.com/CoreumFoundation/coreum/v4/pkg/client"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 )
 
-//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography
+//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser
 
 type ContractClient interface {
 	SetContractAddress(contractAddress types.AccAddress) error
@@ -63,4 +64,9 @@ type AddressBook interface {
 type Cryptography interface {
 	GenerateSharedKeyByPrivateKeyName(ctx client.Context, algo string, privateKeyName string, publicKeyBytes []byte) ([]byte, error)
 	GenerateSharedKey(algo string, privateKey types3.PrivKey, publicKeyBytes []byte) ([]byte, error)
+}
+
+type Parser interface {
+	ParseIsoMessage(msg []byte) (header, doc document.Iso20022Message, err error)
+	ExtractIdentificationFromIsoMessage(ctx context.Context, msg []byte) (*addressbook.BranchAndIdentification, error)
 }

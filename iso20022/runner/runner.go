@@ -28,6 +28,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/crypto"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/messages"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/server"
 )
@@ -88,6 +89,7 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		components.AddressBook,
 		components.CoreumContractClient,
 		components.Cryptography,
+		components.Parser,
 		sendCh,
 		receiveCh,
 	)
@@ -202,6 +204,7 @@ type Components struct {
 	CoreumContractClient *coreum.ContractClient
 	AddressBook          *addressbook.AddressBook
 	Cryptography         *crypto.Cryptography
+	Parser               *messages.Parser
 }
 
 // NewComponents creates components required by runner and other CLI commands.
@@ -272,6 +275,10 @@ func NewComponents(
 		return Components{}, err
 	}
 
+	cryptography := &crypto.Cryptography{}
+
+	parser := messages.NewParser(log)
+
 	return Components{
 		Log:                  log,
 		Compressor:           compressor,
@@ -280,7 +287,8 @@ func NewComponents(
 		CoreumClientCtx:      coreumClientCtx,
 		CoreumContractClient: contractClient,
 		AddressBook:          addressBook,
-		Cryptography:         &crypto.Cryptography{},
+		Cryptography:         cryptography,
+		Parser:               parser,
 	}, nil
 }
 

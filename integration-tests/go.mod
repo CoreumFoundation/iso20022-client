@@ -1,3 +1,3 @@
 module github.com/CoreumFoundation/iso20022-client/integration-tests
 
-go 1.22.1
+go 1.21.4

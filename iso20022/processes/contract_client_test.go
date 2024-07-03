@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	logger2 "github.com/CoreumFoundation/coreum-tools/pkg/logger"
+	coreumlogger "github.com/CoreumFoundation/coreum-tools/pkg/logger"
 	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
 	coreumchainconstant "github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
@@ -32,6 +32,7 @@ func TestContractClient_Start(t *testing.T) {
 		contractClientBuilder func(ctrl *gomock.Controller) processes.ContractClient
 		addressBookBuilder    func(ctrl *gomock.Controller) processes.AddressBook
 		cryptographyBuilder   func(ctrl *gomock.Controller) processes.Cryptography
+		parserBuilder         func(ctrl *gomock.Controller) processes.Parser
 		run                   func(sendCh chan []byte, receiveCh chan []byte) error
 	}{
 		{
@@ -65,9 +66,18 @@ func TestContractClient_Start(t *testing.T) {
 				return addressBookMock
 			},
 			cryptographyBuilder: func(ctrl *gomock.Controller) processes.Cryptography {
-				contractClientMock := NewMockCryptography(ctrl)
-				contractClientMock.EXPECT().GenerateSharedKeyByPrivateKeyName(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]byte("Thirty-two bytes long shared key"), nil)
-				return contractClientMock
+				cryptographyMock := NewMockCryptography(ctrl)
+				cryptographyMock.EXPECT().GenerateSharedKeyByPrivateKeyName(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]byte("Thirty-two bytes long shared key"), nil)
+				return cryptographyMock
+			},
+			parserBuilder: func(ctrl *gomock.Controller) processes.Parser {
+				parserMock := NewMockParser(ctrl)
+				parserMock.EXPECT().ExtractIdentificationFromIsoMessage(gomock.Any(), gomock.Any()).Return(&addressbook.BranchAndIdentification{
+					Identification: addressbook.Identification{
+						Bic: "6P9YGUDF",
+					},
+				}, nil)
+				return parserMock
 			},
 			run: func(sendCh chan []byte, receiveCh chan []byte) error {
 				sendCh <- []byte("hello world")
@@ -79,7 +89,7 @@ func TestContractClient_Start(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := logger2.WithLogger(context.Background(), logger2.New(logger2.ToolDefaultConfig))
+			ctx := coreumlogger.WithLogger(context.Background(), coreumlogger.New(coreumlogger.ToolDefaultConfig))
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			t.Cleanup(cancel)
 
@@ -97,6 +107,10 @@ func TestContractClient_Start(t *testing.T) {
 			var cryptography processes.Cryptography
 			if tt.cryptographyBuilder != nil {
 				cryptography = tt.cryptographyBuilder(ctrl)
+			}
+			var parser processes.Parser
+			if tt.parserBuilder != nil {
+				parser = tt.parserBuilder(ctrl)
 			}
 			sendCh := make(chan []byte, 2)
 			receiveCh := make(chan []byte, 2)
@@ -119,7 +133,7 @@ func TestContractClient_Start(t *testing.T) {
 			comp, err := compress.New()
 			require.NoError(t, err)
 
-			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClient, cryptography, sendCh, receiveCh)
+			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClient, cryptography, parser, sendCh, receiveCh)
 			require.NoError(t, err)
 
 			err = client.Start(ctx)

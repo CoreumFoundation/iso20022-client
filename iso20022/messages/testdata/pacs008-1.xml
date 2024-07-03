@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document
+	xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+	<FIToFICstmrCdtTrf>
+		<GrpHdr>
+			<MsgId>P5607186 298</MsgId>
+			<CreDtTm>9999-12-31T00:00:00+00:00</CreDtTm>
+			<NbOfTxs>1</NbOfTxs>
+			<SttlmInf>
+				<SttlmMtd>INDA</SttlmMtd>
+			</SttlmInf>
+		</GrpHdr>
+		<CdtTrfTxInf>
+			<PmtId>
+				<InstrId>P5607186 298</InstrId>
+				<EndToEndId>NOTPROVIDED</EndToEndId>
+				<UETR>00000000-0000-4000-8000-000000000000</UETR>
+			</PmtId>
+			<PmtTpInf>
+				<SvcLvl>
+					<Cd>G001</Cd>
+				</SvcLvl>
+			</PmtTpInf>
+			<IntrBkSttlmAmt Ccy="EUR">39.36</IntrBkSttlmAmt>
+			<IntrBkSttlmDt>2020-02-12</IntrBkSttlmDt>
+			<SttlmPrty>URGT</SttlmPrty>
+			<InstdAmt Ccy="EUR">39.36</InstdAmt>
+			<ChrgBr>SHAR</ChrgBr>
+			<ChrgsInf>
+				<Amt Ccy="EUR">0</Amt>
+				<Agt>
+					<FinInstnId>
+						<Nm>NOTPROVIDED</Nm>
+						<PstlAdr>
+							<AdrLine>NOTPROVIDED</AdrLine>
+						</PstlAdr>
+					</FinInstnId>
+				</Agt>
+			</ChrgsInf>
+			<InstgAgt>
+				<FinInstnId>
+					<BICFI>CHASDEFXXXX</BICFI>
+				</FinInstnId>
+			</InstgAgt>
+			<InstdAgt>
+				<FinInstnId>
+					<BICFI>6P9YGUDF</BICFI>
+				</FinInstnId>
+			</InstdAgt>
+			<Dbtr>
+				<Nm>SAMPLE_DB_NAME LTD</Nm>
+				<PstlAdr>
+					<StrtNm>SAMPLE_DB_STREET</StrtNm>
+					<BldgNb>123</BldgNb>
+					<PstCd>SAMPLE_Z1P_C0D3</PstCd>
+					<TwnNm>SAMPLE_DB_CITY</TwnNm>
+					<Ctry>GB</Ctry>
+				</PstlAdr>
+			</Dbtr>
+			<DbtrAcct>
+				<Id>
+					<Othr>
+						<Id>123991234</Id>
+					</Othr>
+				</Id>
+			</DbtrAcct>
+			<DbtrAgt>
+				<FinInstnId>
+					<Nm>SAMPLE_DB_AGENT_NAME </Nm>
+					<PstlAdr>
+						<AdrLine>SAMPLE_DB_AGENT_STREET</AdrLine>
+						<AdrLine>SAMPLE_DB_AGENT_CITY Z1P_C0D3</AdrLine>
+					</PstlAdr>
+				</FinInstnId>
+			</DbtrAgt>
+			<CdtrAgt>
+				<FinInstnId>
+					<BICFI>MVBMDE55</BICFI>
+				</FinInstnId>
+			</CdtrAgt>
+			<Cdtr>
+				<Nm>SAMPLE_CR_NAME LTD</Nm>
+				<PstlAdr>
+					<AdrLine>SAMPLE_CR_STREET 56 CITY Z1P_C0D3</AdrLine>
+				</PstlAdr>
+			</Cdtr>
+			<CdtrAcct>
+				<Id>
+					<Othr>
+						<Id>DE1234567890000000000</Id>
+					</Othr>
+				</Id>
+			</CdtrAcct>
+			<InstrForCdtrAgt>
+				<InstrInf>Instruct for creditor agent</InstrInf>
+			</InstrForCdtrAgt>
+			<InstrForNxtAgt>
+				<InstrInf>/PRIORITY/ /FND/</InstrInf>
+			</InstrForNxtAgt>
+			<RmtInf>
+				<Ustrd>/PURP/FUNDING///URI/this is unstructured remittance</Ustrd>
+			</RmtInf>
+		</CdtTrfTxInf>
+	</FIToFICstmrCdtTrf>
+</Document>
