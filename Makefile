@@ -73,6 +73,7 @@ deps:
 	cd iso20022 && go get -v ./...
 
 test:
+	mkdir -p ../coverage/
 	cd iso20022 && go test -v ./... -coverprofile ../coverage/iso20022-cover.out
 
 vet:
