@@ -13,7 +13,6 @@ import (
 	"github.com/CoreumFoundation/coreum/v4/pkg/config"
 	"github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli"
-	overridecryptokeyring "github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli/cosmos/override/crypto/keyring"
 )
 
 func main() {
@@ -47,7 +46,7 @@ func RootCmd(ctx context.Context) (*cobra.Command, error) {
 	}
 	cmd.SetContext(ctx)
 
-	keyringCoreumCmd, err := cli.KeyringCmd(constant.CoinType, overridecryptokeyring.CoreumAddressFormatter)
+	keyringCoreumCmd, err := cli.KeyringCmd(constant.CoinType)
 	if err != nil {
 		return nil, err
 	}

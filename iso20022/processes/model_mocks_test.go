@@ -216,32 +216,6 @@ func (m *MockAddressBook) EXPECT() *MockAddressBookMockRecorder {
 	return m.recorder
 }
 
-// ForEach mocks base method.
-func (m *MockAddressBook) ForEach(arg0 func(addressbook.Address) bool) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ForEach", arg0)
-}
-
-// ForEach indicates an expected call of ForEach.
-func (mr *MockAddressBookMockRecorder) ForEach(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEach", reflect.TypeOf((*MockAddressBook)(nil).ForEach), arg0)
-}
-
-// KeyAlgo mocks base method.
-func (m *MockAddressBook) KeyAlgo() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "KeyAlgo")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// KeyAlgo indicates an expected call of KeyAlgo.
-func (mr *MockAddressBookMockRecorder) KeyAlgo() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "KeyAlgo", reflect.TypeOf((*MockAddressBook)(nil).KeyAlgo))
-}
-
 // Lookup mocks base method.
 func (m *MockAddressBook) Lookup(arg0 addressbook.BranchAndIdentification) (*addressbook.Address, bool) {
 	m.ctrl.T.Helper()
@@ -310,33 +284,33 @@ func (m *MockCryptography) EXPECT() *MockCryptographyMockRecorder {
 }
 
 // GenerateSharedKey mocks base method.
-func (m *MockCryptography) GenerateSharedKey(arg0 string, arg1 types0.PrivKey, arg2 []byte) ([]byte, error) {
+func (m *MockCryptography) GenerateSharedKey(arg0 types0.PrivKey, arg1 []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateSharedKey", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GenerateSharedKey", arg0, arg1)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GenerateSharedKey indicates an expected call of GenerateSharedKey.
-func (mr *MockCryptographyMockRecorder) GenerateSharedKey(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockCryptographyMockRecorder) GenerateSharedKey(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateSharedKey", reflect.TypeOf((*MockCryptography)(nil).GenerateSharedKey), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateSharedKey", reflect.TypeOf((*MockCryptography)(nil).GenerateSharedKey), arg0, arg1)
 }
 
 // GenerateSharedKeyByPrivateKeyName mocks base method.
-func (m *MockCryptography) GenerateSharedKeyByPrivateKeyName(arg0 client.Context, arg1, arg2 string, arg3 []byte) ([]byte, error) {
+func (m *MockCryptography) GenerateSharedKeyByPrivateKeyName(arg0 client.Context, arg1 string, arg2 []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateSharedKeyByPrivateKeyName", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "GenerateSharedKeyByPrivateKeyName", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GenerateSharedKeyByPrivateKeyName indicates an expected call of GenerateSharedKeyByPrivateKeyName.
-func (mr *MockCryptographyMockRecorder) GenerateSharedKeyByPrivateKeyName(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockCryptographyMockRecorder) GenerateSharedKeyByPrivateKeyName(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateSharedKeyByPrivateKeyName", reflect.TypeOf((*MockCryptography)(nil).GenerateSharedKeyByPrivateKeyName), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateSharedKeyByPrivateKeyName", reflect.TypeOf((*MockCryptography)(nil).GenerateSharedKeyByPrivateKeyName), arg0, arg1, arg2)
 }
 
 // MockParser is a mock of Parser interface.

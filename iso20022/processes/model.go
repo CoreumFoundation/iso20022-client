@@ -3,8 +3,8 @@ package processes
 import (
 	"context"
 
-	types2 "github.com/cosmos/cosmos-sdk/codec/types"
-	types3 "github.com/cosmos/cosmos-sdk/crypto/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/moov-io/iso20022/pkg/document"
 
@@ -34,7 +34,7 @@ type ContractClient interface {
 		ctx context.Context,
 		sender types.AccAddress,
 		classId, id string,
-		data *types2.Any,
+		data *codectypes.Any,
 	) (*types.TxResponse, error)
 	GetUnreadMessages(
 		ctx context.Context,
@@ -50,20 +50,18 @@ type ContractClient interface {
 	QueryNFT(
 		ctx context.Context,
 		classId, id string,
-	) (*types2.Any, error)
+	) (*codectypes.Any, error)
 }
 
 type AddressBook interface {
 	Update(ctx context.Context) error
-	KeyAlgo() string
-	ForEach(f func(address addressbook.Address) bool)
 	Lookup(expectedAddress addressbook.BranchAndIdentification) (*addressbook.Address, bool)
 	LookupByAccountAddress(bech32EncodedAddress string) (*addressbook.Address, bool)
 }
 
 type Cryptography interface {
-	GenerateSharedKeyByPrivateKeyName(ctx client.Context, algo string, privateKeyName string, publicKeyBytes []byte) ([]byte, error)
-	GenerateSharedKey(algo string, privateKey types3.PrivKey, publicKeyBytes []byte) ([]byte, error)
+	GenerateSharedKeyByPrivateKeyName(ctx client.Context, privateKeyName string, publicKeyBytes []byte) ([]byte, error)
+	GenerateSharedKey(privateKey cryptotypes.PrivKey, publicKeyBytes []byte) ([]byte, error)
 }
 
 type Parser interface {

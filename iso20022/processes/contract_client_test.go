@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -49,7 +51,6 @@ func TestContractClient_Start(t *testing.T) {
 			addressBookBuilder: func(ctrl *gomock.Controller) processes.AddressBook {
 				addressBookMock := NewMockAddressBook(ctrl)
 				//addressBookMock.EXPECT().Update(gomock.Any()).Return(nil)
-				addressBookMock.EXPECT().KeyAlgo().Return("secp256k1")
 				addressBookMock.EXPECT().Lookup(addressbook.BranchAndIdentification{
 					Identification: addressbook.Identification{
 						Bic: "6P9YGUDF",
@@ -67,7 +68,7 @@ func TestContractClient_Start(t *testing.T) {
 			},
 			cryptographyBuilder: func(ctrl *gomock.Controller) processes.Cryptography {
 				cryptographyMock := NewMockCryptography(ctrl)
-				cryptographyMock.EXPECT().GenerateSharedKeyByPrivateKeyName(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]byte("Thirty-two bytes long shared key"), nil)
+				cryptographyMock.EXPECT().GenerateSharedKeyByPrivateKeyName(gomock.Any(), gomock.Any(), gomock.Any()).Return([]byte("Thirty-two bytes long shared key"), nil)
 				return cryptographyMock
 			},
 			parserBuilder: func(ctrl *gomock.Controller) processes.Parser {
@@ -125,8 +126,8 @@ func TestContractClient_Start(t *testing.T) {
 			}()
 
 			cfg := processes.ContractClientProcessConfig{
-				CoreumContractAddress: coreum.GenAccount(),
-				ClientAddress:         coreum.GenAccount(),
+				CoreumContractAddress: genAccount(),
+				ClientAddress:         genAccount(),
 				ClientKeyName:         "abc",
 				PollInterval:          time.Second,
 			}
@@ -142,4 +143,8 @@ func TestContractClient_Start(t *testing.T) {
 			}
 		})
 	}
+}
+
+func genAccount() sdk.AccAddress {
+	return sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 }

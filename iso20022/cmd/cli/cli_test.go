@@ -21,7 +21,6 @@ import (
 	coreumapp "github.com/CoreumFoundation/coreum/v4/app"
 	"github.com/CoreumFoundation/coreum/v4/pkg/config"
 	"github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
-	overridecryptokeyring "github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli/cosmos/override/crypto/keyring"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
 )
 
@@ -42,7 +41,7 @@ func TestStartCmd(t *testing.T) {
 }
 
 func TestKeyringCmds(t *testing.T) {
-	cmd, err := KeyringCmd(constant.CoinType, overridecryptokeyring.CoreumAddressFormatter)
+	cmd, err := KeyringCmd(constant.CoinType)
 	require.NoError(t, err)
 
 	args := append(initConfig(t), "list")

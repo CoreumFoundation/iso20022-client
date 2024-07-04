@@ -180,7 +180,7 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
-		sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.addressBook.KeyAlgo(), p.cfg.ClientKeyName, publicKeyBytes)
+		sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, publicKeyBytes)
 		if err != nil {
 			p.log.Error(ctx, "could not calculate the shared key", zap.Error(err)) // TODO
 			continue
@@ -216,7 +216,7 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 func (p *ContractClientProcess) sendMessages(ctx context.Context, destination sdk.AccAddress, destinationPubKey, msg []byte) error {
 	classId, id := p.generateNftId()
 
-	sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.addressBook.KeyAlgo(), p.cfg.ClientKeyName, destinationPubKey)
+	sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, destinationPubKey)
 	if err != nil {
 		return err
 	}

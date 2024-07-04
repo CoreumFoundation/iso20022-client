@@ -1,5 +1,7 @@
 package addressbook
 
+import "reflect"
+
 type Proprietary struct {
 	Id         string `json:"id"`
 	Issuer     string `json:"issuer"`
@@ -32,8 +34,8 @@ type PostalAddress struct {
 	AddressLine        []string     `json:"address_line"`
 }
 
-func (p PostalAddress) String() string {
-	return SerializeStruct(p)
+func (p *PostalAddress) Equal(other *PostalAddress) bool {
+	return reflect.DeepEqual(p, other)
 }
 
 type ClearingSystemId struct {
@@ -41,8 +43,8 @@ type ClearingSystemId struct {
 	Proprietary string `json:"proprietary"`
 }
 
-func (c ClearingSystemId) String() string {
-	return SerializeStruct(c)
+func (c *ClearingSystemId) Equal(other *ClearingSystemId) bool {
+	return reflect.DeepEqual(c, other)
 }
 
 type ClearingSystemMemberIdentification struct {
@@ -60,8 +62,8 @@ type Other struct {
 	SchemeName SchemeName `json:"scheme_name"`
 }
 
-func (o Other) String() string {
-	return SerializeStruct(o)
+func (o *Other) Equal(other *Other) bool {
+	return reflect.DeepEqual(o, other)
 }
 
 type Identification struct {
@@ -80,8 +82,8 @@ type Branch struct {
 	PostalAddress *PostalAddress `json:"postal_address"`
 }
 
-func (b Branch) String() string {
-	return SerializeStruct(b)
+func (b *Branch) Equal(other *Branch) bool {
+	return reflect.DeepEqual(b, other)
 }
 
 type BranchAndIdentification struct {
@@ -89,53 +91,56 @@ type BranchAndIdentification struct {
 	Branch         *Branch        `json:"branch"`
 }
 
-// Equal checks if two ISO20022 BranchAndIdentification are equal
-func (b BranchAndIdentification) Equal(other BranchAndIdentification) bool {
-	if b.Branch != nil && other.Branch != nil {
-		if !AreStringsEqual(b.Branch.String(), other.Branch.String()) {
+// Equal checks if two ISO20022 BranchAndIdentification are equal.
+// The expected one can have more fields, and it will match if required fields of the actual one matches
+func (b BranchAndIdentification) Equal(expected BranchAndIdentification) bool {
+	if b.Branch != nil && expected.Branch != nil {
+		if !b.Branch.Equal(expected.Branch) {
 			return false
 		}
-	} else if b.Branch == nil && other.Branch != nil || b.Branch != nil && other.Branch == nil {
+	} else if b.Branch == nil && expected.Branch != nil || b.Branch != nil && expected.Branch == nil {
 		return false
 	}
 
 	actualId := b.Identification
-	expectedId := other.Identification
+	expectedId := expected.Identification
 
-	if actualId.Bic != "" || expectedId.Bic != "" {
-		if AreStringsEqual(actualId.Bic, expectedId.Bic) {
-			return true
-		}
+	if actualId.Bic != "" {
+		return actualId.Bic == expectedId.Bic
 	}
 
-	if actualId.Lei != "" || expectedId.Lei != "" {
-		if AreStringsEqual(actualId.Lei, expectedId.Lei) {
-			return true
-		}
+	if actualId.Lei != "" {
+		return actualId.Lei == expectedId.Lei
 	}
 
-	if actualId.ClearingSystemMemberIdentification != nil && expectedId.ClearingSystemMemberIdentification != nil {
-		actualCls := actualId.ClearingSystemMemberIdentification
-		expectedCls := expectedId.ClearingSystemMemberIdentification
-		if !AreStringsEqual(actualCls.MemberId, expectedCls.MemberId) {
+	if actualId.ClearingSystemMemberIdentification != nil {
+		if expectedId.ClearingSystemMemberIdentification == nil {
 			return false
 		}
-		if actualCls.ClearingSystemId != nil && expectedCls.ClearingSystemId != nil {
-			if !AreStringsEqual(actualCls.ClearingSystemId.String(), expectedCls.ClearingSystemId.String()) {
+
+		actualCls := actualId.ClearingSystemMemberIdentification
+		expectedCls := expectedId.ClearingSystemMemberIdentification
+		if actualCls.MemberId != expectedCls.MemberId || len(actualCls.MemberId) == 0 {
+			return false
+		}
+		if actualCls.ClearingSystemId != nil {
+			if expectedCls.ClearingSystemId == nil {
+				return false
+			}
+
+			if !actualCls.ClearingSystemId.Equal(expectedCls.ClearingSystemId) {
 				return false
 			}
 		}
 		return true
 	}
 
-	if actualId.PostalAddress != nil && expectedId.PostalAddress != nil {
-		if AreStringsEqual(actualId.Name, expectedId.Name) && AreStringsEqual(actualId.PostalAddress.String(), expectedId.PostalAddress.String()) {
-			return true
-		}
+	if actualId.Other != nil {
+		return actualId.Other.Equal(expectedId.Other)
 	}
 
-	if (actualId.Other != nil && expectedId.Other != nil) && AreStringsEqual(actualId.Other.String(), expectedId.Other.String()) {
-		return true
+	if actualId.PostalAddress != nil && expectedId.PostalAddress != nil {
+		return actualId.Name == expectedId.Name && actualId.PostalAddress.Equal(expectedId.PostalAddress)
 	}
 
 	return false
@@ -148,10 +153,5 @@ type Address struct {
 }
 
 type StoredAddressBook struct {
-	Schema       string    `json:"$schema"`
-	ChainId      string    `json:"chain_id"`
-	NetworkType  string    `json:"network_type"`
-	Bech32Prefix string    `json:"bech32_prefix"`
-	KeyAlgo      string    `json:"key_algo"`
-	Addresses    []Address `json:"addresses"`
+	Addresses []Address `json:"addresses"`
 }

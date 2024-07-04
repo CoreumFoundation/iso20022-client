@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -15,7 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256r1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
@@ -24,7 +22,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/CoreumFoundation/iso20022-client/iso20022/buildinfo"
-	overridekeyring "github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli/cosmos/override/crypto/keyring"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
 )
@@ -92,6 +89,11 @@ func NewRunnerFromHome(cmd *cobra.Command) (*runner.Runner, error) {
 	}
 
 	err = components.AddressBook.Update(cmd.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	err = components.AddressBook.Validate()
 	if err != nil {
 		return nil, err
 	}
@@ -343,25 +345,13 @@ func ClientKeysCmd() *cobra.Command {
 
 			pubKey := "unknown"
 
-			switch coreumKeyRecord.PubKey.TypeUrl {
-			case "/cosmos.crypto.secp256k1.PubKey":
+			if coreumKeyRecord.PubKey.TypeUrl == "/cosmos.crypto.secp256k1.PubKey" {
 				var key secp256k1.PubKey
 				err = proto.Unmarshal(coreumKeyRecord.PubKey.Value, &key)
 				if err != nil {
 					return err
 				}
 				pubKey = base64.StdEncoding.EncodeToString(key.Key)
-			case "/cosmos.crypto.secp256r1.PubKey":
-				var key secp256r1.PubKey
-				err = proto.Unmarshal(coreumKeyRecord.PubKey.Value, &key)
-				if err != nil {
-					return err
-				}
-				pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.Key.PublicKey)
-				if err != nil {
-					return err
-				}
-				pubKey = base64.StdEncoding.EncodeToString(pubKeyBytes)
 			}
 
 			components.Log.Info(
@@ -382,10 +372,7 @@ func ClientKeysCmd() *cobra.Command {
 }
 
 // KeyringCmd returns cosmos keyring cmd init with the correct keys home.
-func KeyringCmd(
-	coinType uint32,
-	addressFormatter overridekeyring.AddressFormatter,
-) (*cobra.Command, error) {
+func KeyringCmd(coinType uint32) (*cobra.Command, error) {
 	// We need to set CoinType before initializing keys commands because keys.Commands() sets default
 	// flag value from sdk config. See github.com/cosmos/cosmos-sdk@v0.47.5/client/keys/add.go:78
 	sdk.GetConfig().SetCoinType(coinType)
@@ -394,8 +381,6 @@ func KeyringCmd(
 	cmd := keys.Commands(DefaultHomeDir)
 	for _, childCmd := range cmd.Commands() {
 		childCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
-			overridekeyring.SelectedAddressFormatter = addressFormatter
-
 			log, err := GetCLILogger()
 			if err != nil {
 				return err
@@ -457,6 +442,7 @@ func MessageCmd() *cobra.Command {
 
 // SendMessageCmd returns a CLI command to interactively send an ISO20022 message to the chain.
 func SendMessageCmd() *cobra.Command {
+	// TODO: Should validate fully before sending and there should be a local batch in a WAL style
 	cmd := &cobra.Command{
 		Use:   "send <message xml file>",
 		Short: "Send an ISO20022 message to the chain",

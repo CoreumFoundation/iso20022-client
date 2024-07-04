@@ -102,7 +102,7 @@ version:
 generate:
 	which mockgen || go install go.uber.org/mock/mockgen@v0.4.0
 	cd iso20022 && go generate ./...
-	make golangci-lint-local
+	make lint-local
 
 lint-new:
 	docker pull golangci/golangci-lint:v1.59.1
