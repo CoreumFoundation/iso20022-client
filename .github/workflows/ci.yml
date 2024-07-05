@@ -32,7 +32,7 @@ jobs:
             command: |
               coreum-builder build images
               crust znet start --profiles=1cored --timeout-commit 0.5s
-              make integration-tests
+              make integration-test
             linter-cache: false
             docker-cache: true
             codecov: false

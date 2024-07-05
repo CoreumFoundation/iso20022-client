@@ -140,6 +140,11 @@ func (r *Runner) Start(ctx context.Context) error {
 		return err
 	}
 
+	err = r.components.AddressBook.Validate()
+	if err != nil {
+		return err
+	}
+
 	return parallel.Run(ctx, func(ctx context.Context, spawn parallel.SpawnFn) error {
 		for name, start := range runnerProcesses {
 			name := name
@@ -268,7 +273,12 @@ func NewComponents(
 
 	contractClient := coreum.NewContractClient(contractClientCfg, log, coreumClientCtx)
 
-	addressBook := addressbook.New(cfg.Coreum.Network.ChainID)
+	var addressBook *addressbook.AddressBook
+	if cfg.Processes.AddressBook.CustomRepoAddress != "" {
+		addressBook = addressbook.New(cfg.Coreum.Network.ChainID)
+	} else {
+		addressBook = addressbook.NewWithRepoAddress(cfg.Processes.AddressBook.CustomRepoAddress)
+	}
 
 	compressor, err := compress.New()
 	if err != nil {

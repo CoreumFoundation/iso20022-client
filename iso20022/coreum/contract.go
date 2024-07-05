@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -21,9 +22,14 @@ import (
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	"github.com/CoreumFoundation/coreum/v4/pkg/client"
+	"github.com/CoreumFoundation/coreum/v4/testutil/event"
 	assetfttypes "github.com/CoreumFoundation/coreum/v4/x/asset/ft/types"
 	nfttypes "github.com/CoreumFoundation/coreum/v4/x/asset/nft/types"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
+)
+
+const (
+	contractLabel = "iso20022"
 )
 
 // QueryMethod is the contract query method.
@@ -56,6 +62,8 @@ type Message struct {
 }
 
 // ******************** Internal transport object  ********************
+
+type instantiateRequest struct{}
 
 type sendMessageRequest struct {
 	SendMessage struct {
@@ -134,6 +142,120 @@ func NewContractClient(cfg ContractClientConfig, log logger.Logger, clientCtx cl
 
 		execMu: sync.Mutex{},
 	}
+}
+
+// DeployAndInstantiate instantiates the contract.
+func (c *ContractClient) DeployAndInstantiate(
+	ctx context.Context,
+	sender sdk.AccAddress,
+	contractByteCodePath string,
+) (sdk.AccAddress, error) {
+	_, codeID, err := c.DeployContract(ctx, sender, contractByteCodePath)
+	if err != nil {
+		return nil, err
+	}
+
+	reqPayload, err := json.Marshal(instantiateRequest{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal instantiate payload")
+	}
+
+	issuerFee, err := c.queryAssetFTIssueFee(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &wasmtypes.MsgInstantiateContract{
+		Sender: sender.String(),
+		Admin:  sender.String(),
+		CodeID: codeID,
+		Label:  contractLabel,
+		Msg:    reqPayload,
+		Funds:  sdk.NewCoins(issuerFee),
+	}
+
+	c.log.Info(ctx, "Instantiating contract.", zap.Any("msg", msg))
+	res, err := client.BroadcastTx(ctx, c.clientCtx.WithFromAddress(sender), c.getTxFactory(), msg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to deploy bytecode")
+	}
+
+	contractAddr, err := event.FindStringEventAttribute(
+		res.Events, wasmtypes.EventTypeInstantiate, wasmtypes.AttributeKeyContractAddr,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find contract address in the tx result")
+	}
+
+	sdkContractAddr, err := sdk.AccAddressFromBech32(contractAddr)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert contract address to sdk.AccAddress")
+	}
+	c.log.Info(ctx, "The contract is instantiated.", zap.String("address", sdkContractAddr.String()))
+
+	return sdkContractAddr, nil
+}
+
+// DeployContract deploys the contract bytecode.
+func (c *ContractClient) DeployContract(
+	ctx context.Context,
+	sender sdk.AccAddress,
+	contractByteCodePath string,
+) (*sdk.TxResponse, uint64, error) {
+	c.log.Info(
+		ctx,
+		"Deploying contract",
+		zap.String("path", contractByteCodePath),
+	)
+
+	contactByteCode, err := os.ReadFile(contractByteCodePath)
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "failed to get contract bytecode by path:%s", contractByteCodePath)
+	}
+
+	msgStoreCode := &wasmtypes.MsgStoreCode{
+		Sender:       sender.String(),
+		WASMByteCode: contactByteCode,
+	}
+	c.log.Info(ctx, "Deploying contract bytecode.")
+
+	txRes, err := client.BroadcastTx(ctx, c.clientCtx.WithFromAddress(sender), c.getTxFactory(), msgStoreCode)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to deploy wasm bytecode")
+	}
+	// handle the genereate only case
+	if txRes == nil {
+		return nil, 0, nil
+	}
+	codeID, err := event.FindUint64EventAttribute(txRes.Events, wasmtypes.EventTypeStoreCode, wasmtypes.AttributeKeyCodeID)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to find code ID in the tx result")
+	}
+	c.log.Info(ctx, "The contract bytecode is deployed.", zap.Uint64("codeID", codeID))
+
+	return txRes, codeID, nil
+}
+
+// MigrateContract calls the executes the contract migration.
+func (c *ContractClient) MigrateContract(
+	ctx context.Context,
+	sender sdk.AccAddress,
+	codeID uint64,
+) (*sdk.TxResponse, error) {
+	msgMigrate := &wasmtypes.MsgMigrateContract{
+		Sender:   sender.String(),
+		Contract: c.GetContractAddress().String(),
+		CodeID:   codeID,
+		Msg:      []byte("{}"),
+	}
+
+	txRes, err := client.BroadcastTx(ctx, c.clientCtx.WithFromAddress(sender), c.getTxFactory(), msgMigrate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to migrate contract, codeID:%d", codeID)
+	}
+	c.log.Info(ctx, "Contract migrated successfully")
+
+	return txRes, nil
 }
 
 // SetContractAddress sets the client contract address if it was not set before.
@@ -299,6 +421,15 @@ func (c *ContractClient) QueryNFT(
 		return nil, err
 	}
 	return resp.Nft.Data, nil
+}
+
+func (c *ContractClient) queryAssetFTIssueFee(ctx context.Context) (sdk.Coin, error) {
+	assetFtParamsRes, err := c.assetftClient.Params(ctx, &assetfttypes.QueryParamsRequest{})
+	if err != nil {
+		return sdk.Coin{}, errors.Wrap(err, "failed to get asset ft issue fee")
+	}
+
+	return assetFtParamsRes.Params.IssueFee, nil
 }
 
 func (c *ContractClient) execute(

@@ -198,6 +198,8 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
+		p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
+
 		_, err = p.contractClient.MarkAsRead(
 			ctx,
 			p.cfg.ClientAddress,
@@ -262,7 +264,13 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, destination sd
 	}
 
 	_, err = p.contractClient.SendMessage(ctx, p.cfg.ClientAddress, destination, nft)
-	return err
+	if err != nil {
+		return err
+	}
+
+	p.log.Info(ctx, "Message sent successfully", zap.String("receiver", destination.String()))
+
+	return nil
 }
 
 func (p *ContractClientProcess) extractDestination(ctx context.Context, msg []byte) (sdk.AccAddress, []byte, error) {

@@ -27,6 +27,7 @@ ENTRY_FILE=iso20022/cmd/main.go
 	help \
 	clean \
 	test \
+	integration-test \
 	vet \
 	fmt \
 	env \
@@ -51,6 +52,7 @@ help:
 	@echo '    clean                Remove binaries.'
 	@echo '    deps                 Download and install build time dependencies.'
 	@echo '    test                 Run unit tests.'
+	@echo '    integration-test     Run integration tests.'
 	@echo '    vet                  Run go vet.'
 	@echo '    fmt                  Run go fmt.'
 	@echo '    env                  Display Go environment.'
@@ -75,6 +77,10 @@ deps:
 test:
 	mkdir -v -p $(CURDIR)/coverage/
 	cd iso20022 && go test -v -coverprofile $(CURDIR)/coverage/iso20022-cover.out -covermode=atomic ./...
+
+integration-test:
+	mkdir -v -p $(CURDIR)/coverage/
+	cd integration-tests && go test -v -coverprofile $(CURDIR)/coverage/integration-cover.out -covermode=atomic ./...
 
 vet:
 	cd iso20022 && go vet -v ./...

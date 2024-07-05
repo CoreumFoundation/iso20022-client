@@ -68,7 +68,8 @@ type ServerConfig struct {
 
 // AddressBookConfig is the address book config.
 type AddressBookConfig struct {
-	UpdateInterval time.Duration `yaml:"update_interval"`
+	UpdateInterval    time.Duration `yaml:"update_interval"`
+	CustomRepoAddress string        `yaml:"custom_repo_address"`
 }
 
 // ProcessesConfig is processes config.

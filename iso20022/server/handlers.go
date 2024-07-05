@@ -38,10 +38,15 @@ func Receive(c *gin.Context) {
 	}
 	receiveChannel := recvCh.(<-chan []byte)
 
+	wait, err := time.ParseDuration(c.Query("wait"))
+	if err != nil {
+		wait = time.Second
+	}
+
 	select {
 	case message := <-receiveChannel:
 		c.Data(http.StatusOK, "application/xml", message)
-	case <-time.After(time.Second):
+	case <-time.After(wait):
 		c.Status(http.StatusNoContent)
 	}
 }

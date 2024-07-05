@@ -85,6 +85,7 @@ processes:
         listen_address: :2843
     address_book:
         update_interval: 1m0s
+        custom_repo_address: ""
     queue_size: 10
     repeat_delay: 10s
     retry_delay: 10s
