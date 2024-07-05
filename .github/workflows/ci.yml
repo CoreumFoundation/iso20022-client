@@ -36,6 +36,7 @@ jobs:
             linter-cache: false
             docker-cache: true
             codecov: false
+            codecov-name: integration-cover.out
 
     runs-on: ubuntu-22.04
     steps:
