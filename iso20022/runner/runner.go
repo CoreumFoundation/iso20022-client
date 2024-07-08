@@ -97,7 +97,7 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		return nil, err
 	}
 
-	handler := server.CreateHandlers(sendCh, receiveCh)
+	handler := server.CreateHandlers(components.Parser, sendCh, receiveCh)
 	webServer := server.New(cfg.Processes.Server.ListenAddress, handler)
 
 	return &Runner{

@@ -1,13 +1,15 @@
 package messages
 
 import (
-	"context"
 	"encoding/xml"
 
 	"github.com/moov-io/iso20022/pkg/document"
 	"github.com/moov-io/iso20022/pkg/head_v01"
 	"github.com/moov-io/iso20022/pkg/head_v02"
+	"github.com/moov-io/iso20022/pkg/pacs_v04"
 	"github.com/moov-io/iso20022/pkg/pacs_v08"
+	"github.com/moov-io/iso20022/pkg/pacs_v09"
+	"github.com/moov-io/iso20022/pkg/pacs_v10"
 	"github.com/moov-io/iso20022/pkg/utils"
 	"github.com/pkg/errors"
 
@@ -55,7 +57,7 @@ func (doc Envelope) NameSpace() string {
 	return ""
 }
 
-func (p Parser) ParseIsoMessage(msg []byte) (header, doc document.Iso20022Message, err error) {
+func (p Parser) parseIsoMessage(msg []byte) (header, doc document.Iso20022Message, err error) {
 	dummyDoc := new(documentDummy)
 
 	err = xml.Unmarshal(msg, dummyDoc)
@@ -111,53 +113,83 @@ func (p Parser) ParseIsoMessage(msg []byte) (header, doc document.Iso20022Messag
 	return envelope.AppHdr, envelope.Document.(*document.Iso20022DocumentObject).Message, nil
 }
 
-func (p Parser) ExtractIdentificationFromIsoMessage(ctx context.Context, msg []byte) (*addressbook.BranchAndIdentification, error) {
-	header, containedDoc, err := p.ParseIsoMessage(msg)
+func (p Parser) ExtractIdentificationFromIsoMessage(msg []byte) (*addressbook.Party, error) {
+	headerDoc, containedDoc, err := p.parseIsoMessage(msg)
 	if err != nil {
 		return nil, err
 	}
 
-	res := new(addressbook.BranchAndIdentification)
+	res := new(addressbook.Party)
 
-	if header != nil {
-		switch header := header.(type) {
+	if headerDoc != nil {
+		switch header := headerDoc.(type) {
 		case *head_v01.BusinessApplicationHeaderV01:
-			//header.To.OrgId
-			//header.To.FIId
-			if header.To.FIId.FinInstnId.BICFI != nil {
-				res.Identification.Bic = string(*header.To.FIId.FinInstnId.BICFI)
-			}
+			extractPartyFromHeadV01BranchAndFinancialInstitutionIdentification5(header.To.FIId, res)
 			return res, nil
 		case *head_v02.BusinessApplicationHeaderV02:
-			//header.To.OrgId
-			//header.To.FIId
-			if header.To.FIId.FinInstnId.BICFI != nil {
-				res.Identification.Bic = string(*header.To.FIId.FinInstnId.BICFI)
-			}
+			extractPartyFromHeadV02BranchAndFinancialInstitutionIdentification6(header.To.FIId, res)
 			return res, nil
 		}
 	}
+
 	if containedDoc != nil {
 		switch doc := containedDoc.(type) {
+		case pacs_v04.FIToFIPaymentStatusRequestV04:
+			extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			if len(doc.TxInf) > 0 {
+				extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, res)
+			}
+			return res, nil
+		case *pacs_v04.FinancialInstitutionDirectDebitV04:
+			extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			if len(doc.CdtInstr) > 0 {
+				extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.CdtInstr[0].InstdAgt, res)
+			}
+			return res, nil
 		case *pacs_v08.FIToFICustomerCreditTransferV08:
-			extractFromBranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
 			if len(doc.CdtTrfTxInf) > 0 {
-				extractFromBranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, res)
+				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, res)
+			}
+			return res, nil
+		case *pacs_v08.FIToFICustomerDirectDebitV08:
+			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			if len(doc.DrctDbtTxInf) > 0 {
+				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.DrctDbtTxInf[0].InstdAgt, res)
+			}
+			return res, nil
+		case *pacs_v08.FIToFIPaymentStatusReportV08:
+			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification5(doc.GrpHdr.InstdAgt, res)
+			if len(doc.TxInfAndSts) > 0 {
+				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification5(doc.TxInfAndSts[0].InstdAgt, res)
+			}
+			return res, nil
+		case *pacs_v09.FIToFICustomerCreditTransferV09:
+			extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			if len(doc.CdtTrfTxInf) > 0 {
+				extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, res)
+			}
+			return res, nil
+		case *pacs_v09.FinancialInstitutionCreditTransferV09:
+			extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			if len(doc.CdtTrfTxInf) > 0 {
+				extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, res)
+			}
+			return res, nil
+		case pacs_v10.FIToFIPaymentReversalV10:
+			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			if len(doc.TxInf) > 0 {
+				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, res)
+			}
+			return res, nil
+		case pacs_v10.PaymentReturnV10:
+			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
+			if len(doc.TxInf) > 0 {
+				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, res)
 			}
 			return res, nil
 		}
 	}
 
 	return nil, errors.New("couldn't find identification")
-}
-
-func extractFromBranchAndFinancialInstitutionIdentification6(agent *pacs_v08.BranchAndFinancialInstitutionIdentification6, res *addressbook.BranchAndIdentification) {
-	if agent == nil {
-		return
-	}
-
-	// agent.BrnchId
-	if agent.FinInstnId.BICFI != nil {
-		res.Identification.Bic = string(*agent.FinInstnId.BICFI)
-	}
 }

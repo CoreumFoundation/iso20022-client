@@ -104,7 +104,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 			for {
 				select {
 				case msg := <-p.sendChannel:
-					destination, publicKey, err := p.extractDestination(ctx, msg)
+					destination, publicKey, err := p.extractDestination(msg)
 					if err != nil {
 						p.log.Error(
 							ctx,
@@ -273,15 +273,15 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, destination sd
 	return nil
 }
 
-func (p *ContractClientProcess) extractDestination(ctx context.Context, msg []byte) (sdk.AccAddress, []byte, error) {
-	parsedTarget, err := p.parser.ExtractIdentificationFromIsoMessage(ctx, msg)
+func (p *ContractClientProcess) extractDestination(msg []byte) (sdk.AccAddress, []byte, error) {
+	parsedTarget, err := p.parser.ExtractIdentificationFromIsoMessage(msg)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	entry, found := p.addressBook.Lookup(*parsedTarget)
 	if !found {
-		return nil, nil, errors.New("could not find target institute in the address book")
+		return nil, nil, errors.New("could not find the target party in the address book")
 	}
 
 	address, err := sdk.AccAddressFromBech32(entry.Bech32EncodedAddress)
@@ -300,7 +300,7 @@ func (p *ContractClientProcess) extractDestination(ctx context.Context, msg []by
 func (p *ContractClientProcess) generateNftId() (string, string) {
 	// FIXME
 	addr := p.cfg.ClientAddress.String()
-	classId := fmt.Sprintf("%s-%s", collectionID, addr /*[len(addr)-10:]*/)
+	classId := fmt.Sprintf("%s-%s", collectionID, addr)
 	NftPrefix := fmt.Sprintf("NFT_%s", classId)
 	id := fmt.Sprintf("%s_%d", NftPrefix, time.Now().UnixNano())
 	return classId, id

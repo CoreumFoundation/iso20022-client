@@ -7,15 +7,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 )
 
 type Server struct {
 	httpServer http.Server
 }
 
-func CreateHandlers(sendChannel chan<- []byte, receiveChannel <-chan []byte) http.Handler {
+func CreateHandlers(parser processes.Parser, sendChannel chan<- []byte, receiveChannel <-chan []byte) http.Handler {
 	r := gin.Default()
-	r.Use(InjectDependencies(sendChannel, receiveChannel))
+	r.Use(InjectDependencies(parser, sendChannel, receiveChannel))
 	r.Use(CORSMiddleware())
 
 	v1 := r.Group("/v1")

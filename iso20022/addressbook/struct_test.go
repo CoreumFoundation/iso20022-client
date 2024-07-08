@@ -7,45 +7,74 @@ import (
 )
 
 func TestEqual(t *testing.T) {
+	fi := Party{
+		Identification: Identification{
+			BusinessIdentifiersCode: "abc",
+			LegalEntityIdentifier:   "abc",
+			Name:                    "John Doe",
+			PostalAddress: &PostalAddress{
+				AddressType: &AddressType{
+					Code: AddressTypeCodeBusiness,
+				},
+				CareOf:         "Someone",
+				Department:     "Software department",
+				StreetName:     "Something",
+				BuildingNumber: "Something Building",
+				Floor:          "4",
+				UnitNumber:     "12",
+				PostalCode:     "1234567890",
+				TownName:       "LA",
+				CountryCode:    "US",
+				AddressLine:    []string{"1234 Something"},
+			},
+			Other: &Other{
+				Id: "abc",
+			},
+		},
+		Branch: &Branch{
+			Id: "branch",
+		},
+	}
+
 	testData := []struct {
-		name  string
-		addr1 BranchAndIdentification
-		addr2 BranchAndIdentification
-		equal bool
+		name       string
+		actualFI   Party
+		expectedFI Party
+		equal      bool
 	}{
 		{
-			name:  "empty address",
-			addr1: BranchAndIdentification{},
-			addr2: BranchAndIdentification{},
-			equal: false,
+			name:       "empty address",
+			actualFI:   Party{},
+			expectedFI: Party{},
+			equal:      false,
 		},
 		{
 			name: "equal bic",
-			addr1: BranchAndIdentification{
+			actualFI: Party{
 				Identification: Identification{
-					Bic: "abc",
+					BusinessIdentifiersCode: "abc",
 				},
 			},
-			addr2: BranchAndIdentification{
+			expectedFI: Party{
 				Identification: Identification{
-					Bic: "abc",
+					BusinessIdentifiersCode: "abc",
 				},
 			},
 			equal: true,
 		},
 		{
 			name: "equal bic different branch",
-			addr1: BranchAndIdentification{
+			actualFI: Party{
 				Identification: Identification{
-					Bic: "abc",
+					BusinessIdentifiersCode: "abc",
 				},
 				Branch: &Branch{
 					Id: "b1",
 				},
 			},
-			addr2: BranchAndIdentification{
+			expectedFI: Party{
 				Identification: Identification{
-					Bic: "abc",
+					BusinessIdentifiersCode: "abc",
 				},
 				Branch: &Branch{
 					Id: "b2",
@@ -55,7 +84,7 @@ func TestEqual(t *testing.T) {
 		},
 		{
 			name: "equal clearing system different member id",
-			addr1: BranchAndIdentification{
+			actualFI: Party{
 				Identification: Identification{
 					ClearingSystemMemberIdentification: &ClearingSystemMemberIdentification{
 						ClearingSystemId: &ClearingSystemId{
@@ -66,7 +95,7 @@ func TestEqual(t *testing.T) {
 					},
 				},
 			},
-			addr2: BranchAndIdentification{
+			expectedFI: Party{
 				Identification: Identification{
 					ClearingSystemMemberIdentification: &ClearingSystemMemberIdentification{
 						ClearingSystemId: &ClearingSystemId{
@@ -79,6 +108,182 @@ func TestEqual(t *testing.T) {
 			},
 			equal: false,
 		},
+		{
+			name: "equal lei",
+			actualFI: Party{
+				Identification: Identification{
+					LegalEntityIdentifier: "abc",
+				},
+			},
+			expectedFI: Party{
+				Identification: Identification{
+					LegalEntityIdentifier: "abc",
+				},
+			},
+			equal: true,
+		},
+		{
+			name: "equal other",
+			actualFI: Party{
+				Identification: Identification{
+					Other: &Other{
+						Id: "abc",
+					},
+				},
+			},
+			expectedFI: Party{
+				Identification: Identification{
+					Other: &Other{
+						Id: "abc",
+					},
+				},
+			},
+			equal: true,
+		},
+		{
+			name: "equal address",
+			actualFI: Party{
+				Identification: Identification{
+					Name: "John Doe",
+					PostalAddress: &PostalAddress{
+						AddressType: &AddressType{
+							Code: AddressTypeCodeBusiness,
+						},
+						CareOf:         "Someone",
+						Department:     "Software department",
+						StreetName:     "Something",
+						BuildingNumber: "Something Building",
+						Floor:          "4",
+						UnitNumber:     "12",
+						PostalCode:     "1234567890",
+						TownName:       "LA",
+						CountryCode:    "US",
+						AddressLine:    []string{"1234 Something"},
+					},
+				},
+			},
+			expectedFI: Party{
+				Identification: Identification{
+					Name: "John Doe",
+					PostalAddress: &PostalAddress{
+						AddressType: &AddressType{
+							Code: AddressTypeCodeBusiness,
+						},
+						CareOf:         "Someone",
+						Department:     "Software department",
+						StreetName:     "Something",
+						BuildingNumber: "Something Building",
+						Floor:          "4",
+						UnitNumber:     "12",
+						PostalCode:     "1234567890",
+						TownName:       "LA",
+						CountryCode:    "US",
+						AddressLine:    []string{"1234 Something"},
+					},
+				},
+			},
+			equal: true,
+		},
+
+		{
+			name:     "equal bic",
+			actualFI: fi,
+			expectedFI: Party{
+				Identification: Identification{
+					BusinessIdentifiersCode: "abc",
+				},
+				Branch: &Branch{
+					Id: "branch",
+				},
+			},
+			equal: true,
+		},
+		{
+			name: "equal bic different branch",
+			actualFI: Party{
+				Identification: Identification{
+					BusinessIdentifiersCode: "abc",
+				},
+				Branch: &Branch{
+					Id: "b2",
+				},
+			},
+			expectedFI: fi,
+			equal:      false,
+		},
+		{
+			name: "equal clearing system different member id",
+			actualFI: Party{
+				Identification: Identification{
+					ClearingSystemMemberIdentification: &ClearingSystemMemberIdentification{
+						ClearingSystemId: &ClearingSystemId{
+							Code:        "a",
+							Proprietary: "b",
+						},
+						MemberId: "2",
+					},
+				},
+			},
+			expectedFI: fi,
+			equal:      false,
+		},
+		{
+			name: "equal lei",
+			actualFI: Party{
+				Identification: Identification{
+					LegalEntityIdentifier: "abc",
+				},
+				Branch: &Branch{
+					Id: "branch",
+				},
+			},
+			expectedFI: fi,
+			equal:      true,
+		},
+		{
+			name: "equal other",
+			actualFI: Party{
+				Identification: Identification{
+					Other: &Other{
+						Id: "abc",
+					},
+				},
+				Branch: &Branch{
+					Id: "branch",
+				},
+			},
+			expectedFI: fi,
+			equal:      true,
+		},
+		{
+			name: "equal address",
+			actualFI: Party{
+				Identification: Identification{
+					Name: "John Doe",
+					PostalAddress: &PostalAddress{
+						AddressType: &AddressType{
+							Code: AddressTypeCodeBusiness,
+						},
+						CareOf:         "Someone",
+						Department:     "Software department",
+						StreetName:     "Something",
+						BuildingNumber: "Something Building",
+						Floor:          "4",
+						UnitNumber:     "12",
+						PostalCode:     "1234567890",
+						TownName:       "LA",
+						CountryCode:    "US",
+						AddressLine:    []string{"1234 Something"},
+					},
+				},
+				Branch: &Branch{
+					Id: "branch",
+				},
+			},
+			expectedFI: fi,
+			equal:      true,
+		},
+
 		// TODO: Add more cases
 	}
 
@@ -86,9 +291,9 @@ func TestEqual(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.equal {
-				require.True(t, tt.addr1.Equal(tt.addr2))
+				require.True(t, tt.actualFI.Equal(tt.expectedFI))
 			} else {
-				require.False(t, tt.addr1.Equal(tt.addr2))
+				require.False(t, tt.actualFI.Equal(tt.expectedFI))
 			}
 		})
 	}

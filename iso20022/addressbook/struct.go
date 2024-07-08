@@ -8,9 +8,24 @@ type Proprietary struct {
 	SchemeName string `json:"scheme_name"`
 }
 
+type AddressTypeCode string
+
+const (
+	AddressTypeCodeAddress   AddressTypeCode = "ADDR"
+	AddressTypeCodePostalBox AddressTypeCode = "PBOX"
+	AddressTypeCodeHome      AddressTypeCode = "HOME"
+	AddressTypeCodeBusiness  AddressTypeCode = "BIZZ"
+	AddressTypeCodeMailTo    AddressTypeCode = "MLTO"
+	AddressTypeCodeDelivery  AddressTypeCode = "DLVY"
+)
+
+func (a AddressTypeCode) String() string {
+	return string(a)
+}
+
 type AddressType struct {
-	Code        string       `json:"code"`
-	Proprietary *Proprietary `json:"proprietary"`
+	Code        AddressTypeCode `json:"code"`
+	Proprietary *Proprietary    `json:"proprietary"`
 }
 
 type PostalAddress struct {
@@ -58,8 +73,9 @@ type SchemeName struct {
 }
 
 type Other struct {
-	Issuer     string     `json:"issuer"`
-	SchemeName SchemeName `json:"scheme_name"`
+	Id         string      `json:"id"`
+	Issuer     string      `json:"issuer"`
+	SchemeName *SchemeName `json:"scheme_name"`
 }
 
 func (o *Other) Equal(other *Other) bool {
@@ -67,33 +83,33 @@ func (o *Other) Equal(other *Other) bool {
 }
 
 type Identification struct {
-	Bic                                string                              `json:"bic"`
+	BusinessIdentifiersCode            string                              `json:"bic"`
 	ClearingSystemMemberIdentification *ClearingSystemMemberIdentification `json:"clearing_system_member_identification"`
-	Lei                                string                              `json:"lei"`
+	LegalEntityIdentifier              string                              `json:"lei"`
 	Name                               string                              `json:"name"`
 	PostalAddress                      *PostalAddress                      `json:"postal_address"`
 	Other                              *Other                              `json:"other"`
 }
 
 type Branch struct {
-	Id            string         `json:"id"`
-	Lei           string         `json:"lei"`
-	Name          string         `json:"name"`
-	PostalAddress *PostalAddress `json:"postal_address"`
+	Id                    string         `json:"id"`
+	LegalEntityIdentifier string         `json:"lei"`
+	Name                  string         `json:"name"`
+	PostalAddress         *PostalAddress `json:"postal_address"`
 }
 
 func (b *Branch) Equal(other *Branch) bool {
 	return reflect.DeepEqual(b, other)
 }
 
-type BranchAndIdentification struct {
+type Party struct {
 	Identification Identification `json:"identification"`
 	Branch         *Branch        `json:"branch"`
 }
 
-// Equal checks if two ISO20022 BranchAndIdentification are equal.
+// Equal checks if two ISO20022 Party are equal.
 // The expected one can have more fields, and it will match if required fields of the actual one matches
-func (b BranchAndIdentification) Equal(expected BranchAndIdentification) bool {
+func (b Party) Equal(expected Party) bool {
 	if b.Branch != nil && expected.Branch != nil {
 		if !b.Branch.Equal(expected.Branch) {
 			return false
@@ -105,12 +121,12 @@ func (b BranchAndIdentification) Equal(expected BranchAndIdentification) bool {
 	actualId := b.Identification
 	expectedId := expected.Identification
 
-	if actualId.Bic != "" {
-		return actualId.Bic == expectedId.Bic
+	if actualId.BusinessIdentifiersCode != "" {
+		return actualId.BusinessIdentifiersCode == expectedId.BusinessIdentifiersCode
 	}
 
-	if actualId.Lei != "" {
-		return actualId.Lei == expectedId.Lei
+	if actualId.LegalEntityIdentifier != "" {
+		return actualId.LegalEntityIdentifier == expectedId.LegalEntityIdentifier
 	}
 
 	if actualId.ClearingSystemMemberIdentification != nil {
@@ -147,9 +163,9 @@ func (b BranchAndIdentification) Equal(expected BranchAndIdentification) bool {
 }
 
 type Address struct {
-	Bech32EncodedAddress    string                  `json:"bech32_encoded_address"`
-	PublicKey               string                  `json:"public_key"`
-	BranchAndIdentification BranchAndIdentification `json:"branch_and_identification"`
+	Bech32EncodedAddress string `json:"bech32_encoded_address"`
+	PublicKey            string `json:"public_key"`
+	Party                Party  `json:"party"`
 }
 
 type StoredAddressBook struct {

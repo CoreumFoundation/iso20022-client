@@ -19,7 +19,6 @@ import (
 	types "github.com/cosmos/cosmos-sdk/codec/types"
 	types0 "github.com/cosmos/cosmos-sdk/crypto/types"
 	types1 "github.com/cosmos/cosmos-sdk/types"
-	document "github.com/moov-io/iso20022/pkg/document"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -217,7 +216,7 @@ func (m *MockAddressBook) EXPECT() *MockAddressBookMockRecorder {
 }
 
 // Lookup mocks base method.
-func (m *MockAddressBook) Lookup(arg0 addressbook.BranchAndIdentification) (*addressbook.Address, bool) {
+func (m *MockAddressBook) Lookup(arg0 addressbook.Party) (*addressbook.Address, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Lookup", arg0)
 	ret0, _ := ret[0].(*addressbook.Address)
@@ -337,32 +336,16 @@ func (m *MockParser) EXPECT() *MockParserMockRecorder {
 }
 
 // ExtractIdentificationFromIsoMessage mocks base method.
-func (m *MockParser) ExtractIdentificationFromIsoMessage(arg0 context.Context, arg1 []byte) (*addressbook.BranchAndIdentification, error) {
+func (m *MockParser) ExtractIdentificationFromIsoMessage(arg0 []byte) (*addressbook.Party, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExtractIdentificationFromIsoMessage", arg0, arg1)
-	ret0, _ := ret[0].(*addressbook.BranchAndIdentification)
+	ret := m.ctrl.Call(m, "ExtractIdentificationFromIsoMessage", arg0)
+	ret0, _ := ret[0].(*addressbook.Party)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ExtractIdentificationFromIsoMessage indicates an expected call of ExtractIdentificationFromIsoMessage.
-func (mr *MockParserMockRecorder) ExtractIdentificationFromIsoMessage(arg0, arg1 any) *gomock.Call {
+func (mr *MockParserMockRecorder) ExtractIdentificationFromIsoMessage(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtractIdentificationFromIsoMessage", reflect.TypeOf((*MockParser)(nil).ExtractIdentificationFromIsoMessage), arg0, arg1)
-}
-
-// ParseIsoMessage mocks base method.
-func (m *MockParser) ParseIsoMessage(arg0 []byte) (document.Iso20022Message, document.Iso20022Message, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ParseIsoMessage", arg0)
-	ret0, _ := ret[0].(document.Iso20022Message)
-	ret1, _ := ret[1].(document.Iso20022Message)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// ParseIsoMessage indicates an expected call of ParseIsoMessage.
-func (mr *MockParserMockRecorder) ParseIsoMessage(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParseIsoMessage", reflect.TypeOf((*MockParser)(nil).ParseIsoMessage), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtractIdentificationFromIsoMessage", reflect.TypeOf((*MockParser)(nil).ExtractIdentificationFromIsoMessage), arg0)
 }

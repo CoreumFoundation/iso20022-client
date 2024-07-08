@@ -1,7 +1,6 @@
 package messages
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -15,7 +14,6 @@ import (
 func TestParseIsoMessage(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
 	parser := NewParser(logMock)
@@ -23,15 +21,15 @@ func TestParseIsoMessage(t *testing.T) {
 	tests := []struct {
 		name            string
 		messageFilePath string
-		identification  *addressbook.BranchAndIdentification
+		identification  *addressbook.Party
 		hasError        bool
 	}{
 		{
 			name:            "pacs008",
 			messageFilePath: "testdata/pacs008-1.xml",
-			identification: &addressbook.BranchAndIdentification{
+			identification: &addressbook.Party{
 				Identification: addressbook.Identification{
-					Bic: "6P9YGUDF",
+					BusinessIdentifiersCode: "6P9YGUDF",
 				},
 			},
 			hasError: false,
@@ -39,9 +37,9 @@ func TestParseIsoMessage(t *testing.T) {
 		{
 			name:            "pacs008 within envelope",
 			messageFilePath: "testdata/pacs008-2.xml",
-			identification: &addressbook.BranchAndIdentification{
+			identification: &addressbook.Party{
 				Identification: addressbook.Identification{
-					Bic: "6P9YGUDF",
+					BusinessIdentifiersCode: "6P9YGUDF",
 				},
 			},
 			hasError: false,
@@ -54,7 +52,7 @@ func TestParseIsoMessage(t *testing.T) {
 			fileContent, err := os.ReadFile(tt.messageFilePath)
 			require.NoError(t, err)
 
-			identification, err := parser.ExtractIdentificationFromIsoMessage(ctx, fileContent)
+			identification, err := parser.ExtractIdentificationFromIsoMessage(fileContent)
 			require.NoError(t, err)
 			require.NotNil(t, identification)
 			require.True(t, tt.identification.Equal(*identification))

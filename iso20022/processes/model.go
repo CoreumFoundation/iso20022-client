@@ -6,7 +6,6 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/moov-io/iso20022/pkg/document"
 
 	"github.com/CoreumFoundation/coreum/v4/pkg/client"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
@@ -55,7 +54,7 @@ type ContractClient interface {
 
 type AddressBook interface {
 	Update(ctx context.Context) error
-	Lookup(expectedAddress addressbook.BranchAndIdentification) (*addressbook.Address, bool)
+	Lookup(expectedAddress addressbook.Party) (*addressbook.Address, bool)
 	LookupByAccountAddress(bech32EncodedAddress string) (*addressbook.Address, bool)
 }
 
@@ -65,6 +64,5 @@ type Cryptography interface {
 }
 
 type Parser interface {
-	ParseIsoMessage(msg []byte) (header, doc document.Iso20022Message, err error)
-	ExtractIdentificationFromIsoMessage(ctx context.Context, msg []byte) (*addressbook.BranchAndIdentification, error)
+	ExtractIdentificationFromIsoMessage(msg []byte) (*addressbook.Party, error)
 }

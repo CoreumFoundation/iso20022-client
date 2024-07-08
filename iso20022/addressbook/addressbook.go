@@ -146,7 +146,7 @@ func (a *AddressBook) Validate() error {
 		matches := make([]string, 0, 1)
 
 		for _, address2 := range a.storedAddressBook.Addresses {
-			if address.BranchAndIdentification.Equal(address2.BranchAndIdentification) {
+			if address.Party.Equal(address2.Party) {
 				matches = append(matches, address2.Bech32EncodedAddress)
 				if len(matches) > 1 {
 					break
@@ -156,7 +156,7 @@ func (a *AddressBook) Validate() error {
 
 		if len(matches) > 1 {
 			return fmt.Errorf(
-				"ISO20022 branch and identification data of entry %q and %q conflicts",
+				"ISO20022 party of entry %q and %q conflicts",
 				matches[0],
 				matches[1],
 			)
@@ -166,12 +166,12 @@ func (a *AddressBook) Validate() error {
 	return nil
 }
 
-// Lookup tries to find a specific entry in the address book using ISO20022 BranchAndIdentification data
-func (a *AddressBook) Lookup(expectedAddress BranchAndIdentification) (*Address, bool) {
+// Lookup tries to find a specific entry in the address book using ISO20022 Party data
+func (a *AddressBook) Lookup(expectedAddress Party) (*Address, bool) {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 	for _, lookedUpAddress := range a.storedAddressBook.Addresses {
-		if lookedUpAddress.BranchAndIdentification.Equal(expectedAddress) {
+		if lookedUpAddress.Party.Equal(expectedAddress) {
 			return &lookedUpAddress, true
 		}
 	}

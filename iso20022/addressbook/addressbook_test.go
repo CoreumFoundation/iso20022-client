@@ -11,14 +11,12 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/crypto"
 )
 
-// TODO: Mock file/web reads
-
 func TestEmptyAddressBook(t *testing.T) {
 	ab := NewWithRepoAddress("file://./testdata/coreum-devnet-1/addressbook.json")
 
-	addr, ok := ab.Lookup(BranchAndIdentification{
+	addr, ok := ab.Lookup(Party{
 		Identification: Identification{
-			Bic: "6P9YGUDF",
+			BusinessIdentifiersCode: "6P9YGUDF",
 		},
 	})
 	require.False(t, ok)
@@ -35,9 +33,9 @@ func TestLookup(t *testing.T) {
 
 	require.NoError(t, ab.Validate())
 
-	addr, ok := ab.Lookup(BranchAndIdentification{
+	addr, ok := ab.Lookup(Party{
 		Identification: Identification{
-			Bic: "6P9YGUDF",
+			BusinessIdentifiersCode: "6P9YGUDF",
 		},
 	})
 	require.True(t, ok)
@@ -63,7 +61,7 @@ func TestLookupByAccountAddress(t *testing.T) {
 	addr, ok := ab.LookupByAccountAddress("devcore1kdujjkp8u0j9lww3n7qs7r5fwkljelvecsq43d")
 
 	require.True(t, ok)
-	require.Equal(t, "6P9YGUDF", addr.BranchAndIdentification.Identification.Bic)
+	require.Equal(t, "6P9YGUDF", addr.Party.Identification.BusinessIdentifiersCode)
 }
 
 func TestUpdate(t *testing.T) {
