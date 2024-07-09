@@ -2,6 +2,7 @@ package messages
 
 import (
 	"encoding/xml"
+	"reflect"
 
 	"github.com/moov-io/iso20022/pkg/document"
 	"github.com/moov-io/iso20022/pkg/head_v01"
@@ -31,7 +32,7 @@ type Envelope struct {
 	XMLName  xml.Name
 	Attrs    []xml.Attr               `xml:",any,attr,omitempty" json:",omitempty"`
 	AppHdr   document.Iso20022Message `xml:"AppHdr"`
-	Document document.Iso20022Message `xml:"Document"`
+	Document document.Iso20022Message `xml:",any"`
 }
 
 func (doc Envelope) Validate() error {
@@ -75,24 +76,64 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc document.Iso20022Messag
 		return nil, actualDoc.Message, err
 	}
 
-	headerNamespace := dummyDoc.AppHdr.NameSpace()
-	if headerNamespace == "" {
-		return nil, nil, utils.NewErrOmittedNameSpace()
+	var headerConstructor func() document.Iso20022Message
+
+	if dummyDoc.AppHdr != nil {
+		headerNamespace := dummyDoc.AppHdr.NameSpace()
+		if headerNamespace == "" {
+			innerDoc := new(elementDummy)
+			err = xml.Unmarshal(dummyDoc.AppHdr.Rest, innerDoc)
+			if err != nil {
+				return nil, nil, err
+			}
+			for _, attr := range dummyDoc.Attrs {
+				if attr.Name.Local == innerDoc.XMLName.Space {
+					headerNamespace = attr.Value
+					break
+				}
+			}
+			if headerNamespace == "" {
+				return nil, nil, utils.NewErrOmittedNameSpace()
+			}
+		}
+
+		headerConstructor = messageConstructor[headerNamespace]
+		if headerConstructor == nil {
+			return nil, nil, utils.NewErrUnsupportedNameSpace()
+		}
+	} else {
+		headerConstructor = func() document.Iso20022Message {
+			return nil
+		}
 	}
 
-	headerConstructor := messageConstructor[headerNamespace]
-	if headerConstructor == nil {
-		return nil, nil, utils.NewErrUnsupportedNameSpace()
-	}
-
+	var containedDoc document.Iso20022Message
 	documentNamespace := dummyDoc.Document.NameSpace()
 	if documentNamespace == "" {
-		return nil, nil, utils.NewErrOmittedNameSpace()
-	}
-
-	containedDoc, err := document.NewDocument(documentNamespace)
-	if err != nil {
-		return nil, nil, err
+		innerDoc := new(elementDummy)
+		err = xml.Unmarshal(dummyDoc.Document.Rest, innerDoc)
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, attr := range dummyDoc.Attrs {
+			if attr.Name.Local == innerDoc.XMLName.Space {
+				documentNamespace = attr.Value
+				break
+			}
+		}
+		if documentNamespace == "" {
+			return nil, nil, utils.NewErrOmittedNameSpace()
+		}
+		documentConstructor := messageConstructor[documentNamespace]
+		if documentConstructor == nil {
+			return nil, nil, utils.NewErrUnsupportedNameSpace()
+		}
+		containedDoc = documentConstructor()
+	} else {
+		containedDoc, err = document.NewDocument(documentNamespace)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	envelope := &Envelope{
@@ -105,91 +146,147 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc document.Iso20022Messag
 		return nil, nil, err
 	}
 
-	err = envelope.Validate()
-	if err != nil {
-		return nil, nil, err
+	if envelope.AppHdr != nil {
+		err = envelope.AppHdr.Validate()
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
-	return envelope.AppHdr, envelope.Document.(*document.Iso20022DocumentObject).Message, nil
+	var resDoc document.Iso20022Message
+
+	if innerDoc, ok := envelope.Document.(*document.Iso20022DocumentObject); ok {
+		err = innerDoc.Message.Validate()
+		if err != nil {
+			return nil, nil, err
+		}
+		resDoc = innerDoc.Message
+	} else {
+		resDoc = envelope.Document
+	}
+
+	return envelope.AppHdr, resDoc, nil
 }
 
-func (p Parser) ExtractIdentificationFromIsoMessage(msg []byte) (*addressbook.Party, error) {
-	headerDoc, containedDoc, err := p.parseIsoMessage(msg)
+func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (id string, party *addressbook.Party, err error) {
+	headDoc, containedDoc, err := p.parseIsoMessage(msg)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	res := new(addressbook.Party)
+	party = new(addressbook.Party)
+	emptyParty := new(addressbook.Party)
 
-	if headerDoc != nil {
-		switch header := headerDoc.(type) {
+	if headDoc != nil {
+		switch head := headDoc.(type) {
 		case *head_v01.BusinessApplicationHeaderV01:
-			extractPartyFromHeadV01BranchAndFinancialInstitutionIdentification5(header.To.FIId, res)
-			return res, nil
+			extractPartyFromHeadV01BranchAndFinancialInstitutionIdentification5(head.To.FIId, party)
+			return string(head.BizMsgIdr), party, nil
 		case *head_v02.BusinessApplicationHeaderV02:
-			extractPartyFromHeadV02BranchAndFinancialInstitutionIdentification6(header.To.FIId, res)
-			return res, nil
+			extractPartyFromHeadV02BranchAndFinancialInstitutionIdentification6(head.To.FIId, party)
+			return string(head.BizMsgIdr), party, nil
 		}
 	}
 
 	if containedDoc != nil {
 		switch doc := containedDoc.(type) {
-		case pacs_v04.FIToFIPaymentStatusRequestV04:
-			extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.TxInf) > 0 {
-				extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, res)
+		case *pacs_v04.FIToFIPaymentStatusRequestV04:
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInf) > 0 {
+				if id == "" && doc.TxInf[0].StsReqId != nil {
+					id = string(*doc.TxInf[0].StsReqId)
+				}
+				extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, party)
 			}
-			return res, nil
 		case *pacs_v04.FinancialInstitutionDirectDebitV04:
-			extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.CdtInstr) > 0 {
-				extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.CdtInstr[0].InstdAgt, res)
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtInstr) > 0 {
+				if id == "" {
+					id = string(doc.CdtInstr[0].CdtId)
+				}
+				extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.CdtInstr[0].InstdAgt, party)
 			}
-			return res, nil
 		case *pacs_v08.FIToFICustomerCreditTransferV08:
-			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.CdtTrfTxInf) > 0 {
-				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, res)
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
+					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
+				}
+				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, party)
 			}
-			return res, nil
 		case *pacs_v08.FIToFICustomerDirectDebitV08:
-			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.DrctDbtTxInf) > 0 {
-				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.DrctDbtTxInf[0].InstdAgt, res)
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.DrctDbtTxInf) > 0 {
+				if id == "" && doc.DrctDbtTxInf[0].PmtId.InstrId != nil {
+					id = string(*doc.DrctDbtTxInf[0].PmtId.InstrId)
+				}
+				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.DrctDbtTxInf[0].InstdAgt, party)
 			}
-			return res, nil
 		case *pacs_v08.FIToFIPaymentStatusReportV08:
-			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification5(doc.GrpHdr.InstdAgt, res)
-			if len(doc.TxInfAndSts) > 0 {
-				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification5(doc.TxInfAndSts[0].InstdAgt, res)
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification5(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				if id == "" && doc.TxInfAndSts[0].StsId != nil {
+					id = string(*doc.TxInfAndSts[0].StsId)
+				}
+				extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification5(doc.TxInfAndSts[0].InstdAgt, party)
 			}
-			return res, nil
 		case *pacs_v09.FIToFICustomerCreditTransferV09:
-			extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.CdtTrfTxInf) > 0 {
-				extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, res)
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
+					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
+				}
+				if doc.CdtTrfTxInf[0].InstdAgt != nil {
+					extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, party)
+				} else {
+					extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(&doc.CdtTrfTxInf[0].CdtrAgt, party)
+				}
 			}
-			return res, nil
 		case *pacs_v09.FinancialInstitutionCreditTransferV09:
-			extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.CdtTrfTxInf) > 0 {
-				extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, res)
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
+					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
+				}
+				if doc.CdtTrfTxInf[0].InstdAgt != nil {
+					extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].InstdAgt, party)
+				} else {
+					extractPartyFromPacsV09BranchAndFinancialInstitutionIdentification6(doc.CdtTrfTxInf[0].CdtrAgt, party)
+				}
 			}
-			return res, nil
-		case pacs_v10.FIToFIPaymentReversalV10:
-			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.TxInf) > 0 {
-				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, res)
+		case *pacs_v10.FIToFIPaymentReversalV10:
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInf) > 0 {
+				if id == "" && doc.TxInf[0].RvslId != nil {
+					id = string(*doc.TxInf[0].RvslId)
+				}
+				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, party)
 			}
-			return res, nil
-		case pacs_v10.PaymentReturnV10:
-			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, res)
-			if len(doc.TxInf) > 0 {
-				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, res)
+		case *pacs_v10.PaymentReturnV10:
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInf) > 0 {
+				if id == "" && doc.TxInf[0].RtrId != nil {
+					id = string(*doc.TxInf[0].RtrId)
+				}
+				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, party)
 			}
-			return res, nil
+		default:
+			return "", nil, errors.New("couldn't find party")
 		}
 	}
 
-	return nil, errors.New("couldn't find identification")
+	if party == nil || reflect.DeepEqual(party, emptyParty) {
+		return "", nil, errors.New("couldn't find party")
+	}
+
+	return
 }
