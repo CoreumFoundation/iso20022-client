@@ -24,11 +24,10 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 // InjectDependencies injects message parser and channels
-func InjectDependencies(parser processes.Parser, sendChannel chan<- []byte, receiveChannel <-chan []byte) gin.HandlerFunc {
+func InjectDependencies(parser processes.Parser, messageQueue processes.MessageQueue) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("parser", parser)
-		c.Set("sendChannel", sendChannel)
-		c.Set("receiveChannel", receiveChannel)
+		c.Set("messageQueue", messageQueue)
 
 		c.Next()
 	}

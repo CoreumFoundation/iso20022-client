@@ -26,16 +26,15 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-//nolint:tparallel // the test is parallel, but test cases are not
 func TestContractClient_Start(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name                  string
 		contractClientBuilder func(ctrl *gomock.Controller) processes.ContractClient
 		addressBookBuilder    func(ctrl *gomock.Controller) processes.AddressBook
 		cryptographyBuilder   func(ctrl *gomock.Controller) processes.Cryptography
 		parserBuilder         func(ctrl *gomock.Controller) processes.Parser
-		run                   func(sendCh chan []byte, receiveCh chan []byte) error
+		messageQueueBuilder   func(ctrl *gomock.Controller, queue chan [][]byte) processes.MessageQueue
+		run                   func(messageQueue processes.MessageQueue) error
 	}{
 		{
 			name: "sending_one_message",
@@ -50,7 +49,6 @@ func TestContractClient_Start(t *testing.T) {
 			},
 			addressBookBuilder: func(ctrl *gomock.Controller) processes.AddressBook {
 				addressBookMock := NewMockAddressBook(ctrl)
-				//addressBookMock.EXPECT().Update(gomock.Any()).Return(nil)
 				addressBookMock.EXPECT().Lookup(addressbook.Party{
 					Identification: addressbook.Identification{
 						BusinessIdentifiersCode: "6P9YGUDF",
@@ -73,15 +71,33 @@ func TestContractClient_Start(t *testing.T) {
 			},
 			parserBuilder: func(ctrl *gomock.Controller) processes.Parser {
 				parserMock := NewMockParser(ctrl)
-				parserMock.EXPECT().ExtractIdentificationFromIsoMessage(gomock.Any()).Return(&addressbook.Party{
-					Identification: addressbook.Identification{
-						BusinessIdentifiersCode: "6P9YGUDF",
+				parserMock.EXPECT().ExtractMetadataFromIsoMessage(gomock.Any()).Return(
+					"abc123",
+					&addressbook.Party{
+						Identification: addressbook.Identification{
+							BusinessIdentifiersCode: "6P9YGUDF",
+						},
 					},
-				}, nil)
+					nil,
+				)
 				return parserMock
 			},
-			run: func(sendCh chan []byte, receiveCh chan []byte) error {
-				sendCh <- []byte("hello world")
+			messageQueueBuilder: func(ctrl *gomock.Controller, queue chan [][]byte) processes.MessageQueue {
+				queueMock := NewMockMessageQueue(ctrl)
+				queueMock.EXPECT().PushToSend(gomock.Any())
+				queueMock.EXPECT().PopFromSend(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+					func(ctx context.Context, n int, dur time.Duration) [][]byte {
+						return <-queue
+					},
+				).MinTimes(1).MaxTimes(2)
+				queueMock.EXPECT().Close().DoAndReturn(func() {
+					close(queue)
+				})
+				queue <- [][]byte{[]byte("hello world")}
+				return queueMock
+			},
+			run: func(messageQueue processes.MessageQueue) error {
+				messageQueue.PushToSend([]byte("hello world"))
 				return nil
 			},
 		},
@@ -92,7 +108,6 @@ func TestContractClient_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := coreumlogger.WithLogger(context.Background(), coreumlogger.New(coreumlogger.ToolDefaultConfig))
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			t.Cleanup(cancel)
 
 			ctrl := gomock.NewController(t)
 			logMock := logger.NewAnyLogMock(ctrl)
@@ -113,16 +128,19 @@ func TestContractClient_Start(t *testing.T) {
 			if tt.parserBuilder != nil {
 				parser = tt.parserBuilder(ctrl)
 			}
-			sendCh := make(chan []byte, 2)
-			receiveCh := make(chan []byte, 2)
+			var messageQueue processes.MessageQueue
+			if tt.messageQueueBuilder != nil {
+				queue := make(chan [][]byte, 1)
+				messageQueue = tt.messageQueueBuilder(ctrl, queue)
+			}
+			t.Cleanup(cancel)
 			go func() {
 				go func() {
-					runRrr := tt.run(sendCh, receiveCh)
+					runRrr := tt.run(messageQueue)
 					require.NoError(t, runRrr)
 				}()
 				<-ctx.Done()
-				close(receiveCh)
-				close(sendCh)
+				messageQueue.Close()
 			}()
 
 			cfg := processes.ContractClientProcessConfig{
@@ -134,7 +152,7 @@ func TestContractClient_Start(t *testing.T) {
 			comp, err := compress.New()
 			require.NoError(t, err)
 
-			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClient, cryptography, parser, sendCh, receiveCh)
+			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClient, cryptography, parser, messageQueue)
 			require.NoError(t, err)
 
 			err = client.Start(ctx)

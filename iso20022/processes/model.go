@@ -2,6 +2,7 @@ package processes
 
 import (
 	"context"
+	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -12,7 +13,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 )
 
-//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser
+//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser,MessageQueue
 
 type ContractClient interface {
 	SetContractAddress(contractAddress types.AccAddress) error
@@ -65,5 +66,13 @@ type Cryptography interface {
 }
 
 type Parser interface {
-	ExtractIdentificationFromIsoMessage(msg []byte) (*addressbook.Party, error)
+	ExtractMetadataFromIsoMessage(msg []byte) (id string, party *addressbook.Party, err error)
+}
+
+type MessageQueue interface {
+	PushToSend(msg []byte)
+	PushToReceive(msg []byte)
+	PopFromSend(ctx context.Context, n int, dur time.Duration) [][]byte
+	PopFromReceive() ([]byte, bool)
+	Close()
 }

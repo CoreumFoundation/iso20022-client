@@ -30,6 +30,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/messages"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/server"
 )
 
@@ -74,8 +75,6 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		return nil, err
 	}
 
-	sendCh := make(chan []byte, cfg.Processes.QueueSize)
-	receiveCh := make(chan []byte, cfg.Processes.QueueSize)
 	receiverProcess, err := processes.NewContractClientProcess(
 		processes.ContractClientProcessConfig{
 			CoreumContractAddress: components.CoreumContractClient.GetContractAddress(),
@@ -90,15 +89,13 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		components.CoreumContractClient,
 		components.Cryptography,
 		components.Parser,
-		sendCh,
-		receiveCh,
+		components.MessageQueue,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	handler := server.CreateHandlers(components.Parser, sendCh, receiveCh)
-	webServer := server.New(cfg.Processes.Server.ListenAddress, handler)
+	webServer := server.New(components.Parser, components.MessageQueue, cfg.Processes.Server.ListenAddress)
 
 	return &Runner{
 		cfg:           cfg,
@@ -210,6 +207,7 @@ type Components struct {
 	AddressBook          *addressbook.AddressBook
 	Cryptography         *crypto.Cryptography
 	Parser               *messages.Parser
+	MessageQueue         *queue.MessageQueue
 }
 
 // NewComponents creates components required by runner and other CLI commands.
@@ -289,6 +287,8 @@ func NewComponents(
 
 	parser := messages.NewParser(log)
 
+	messageQueue := queue.NewWithQueueSize(cfg.Processes.QueueSize)
+
 	return Components{
 		Log:                  log,
 		Compressor:           compressor,
@@ -299,6 +299,7 @@ func NewComponents(
 		AddressBook:          addressBook,
 		Cryptography:         cryptography,
 		Parser:               parser,
+		MessageQueue:         messageQueue,
 	}, nil
 }
 

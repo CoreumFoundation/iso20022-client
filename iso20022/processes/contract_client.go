@@ -42,13 +42,12 @@ type ContractClientProcess struct {
 	contractClient ContractClient
 	cryptography   Cryptography
 	parser         Parser
-	sendChannel    <-chan []byte
-	receiveChannel chan<- []byte
+	messageQueue   MessageQueue
 	nftClassId     string
 }
 
 // NewContractClientProcess returns a new instance of the ContractClientProcess.
-func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger, compressor *compress.Compressor, clientContext coreumchainclient.Context, addressBook AddressBook, contractClient ContractClient, cryptography Cryptography, parser Parser, sendChannel <-chan []byte, receiveChannel chan<- []byte) (*ContractClientProcess, error) {
+func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger, compressor *compress.Compressor, clientContext coreumchainclient.Context, addressBook AddressBook, contractClient ContractClient, cryptography Cryptography, parser Parser, messageQueue MessageQueue) (*ContractClientProcess, error) {
 	if cfg.CoreumContractAddress.Empty() {
 		return nil, errors.Errorf("failed to init the process, the contract address is nil or empty")
 	}
@@ -65,8 +64,7 @@ func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger
 		contractClient: contractClient,
 		cryptography:   cryptography,
 		parser:         parser,
-		sendChannel:    sendChannel,
-		receiveChannel: receiveChannel,
+		messageQueue:   messageQueue,
 	}, nil
 }
 
@@ -75,9 +73,10 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 	p.log.Info(ctx, "Starting the contract client process")
 	return parallel.Run(ctx, func(ctx context.Context, spawn parallel.SpawnFn) error {
 		spawn("msg-receiver", parallel.Fail, func(ctx context.Context) error {
+			ticker := time.NewTicker(p.cfg.PollInterval)
 			for {
 				select {
-				case <-time.After(p.cfg.PollInterval):
+				case <-ticker.C:
 					err := p.receiveMessages(ctx)
 					if err != nil {
 						if errors.Is(err, context.Canceled) {
@@ -96,44 +95,51 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 						}
 					}
 				case <-ctx.Done():
+					ticker.Stop()
 					return errors.WithStack(ctx.Err())
 				}
 			}
 		})
 		spawn("msg-sender", parallel.Fail, func(ctx context.Context) error {
 			for {
-				select {
-				case msg := <-p.sendChannel:
-					destination, publicKey, err := p.extractDestination(msg)
-					if err != nil {
+				msgs := p.messageQueue.PopFromSend(ctx, 1, time.Second)
+				if len(msgs) == 0 {
+					return errors.WithStack(ctx.Err())
+				}
+
+				// TODO: Batch
+				msg := msgs[0]
+				id, destination, publicKey, err := p.extractMetadata(msg)
+				if err != nil {
+					p.log.Error(
+						ctx,
+						"Failed to process the message",
+						zap.Error(err),
+						zap.Any("id", id),
+						zap.Any("destination", destination),
+						zap.Any("msg", msg),
+					)
+					continue
+				}
+
+				if err = p.sendMessages(ctx, destination, publicKey, msg); err != nil {
+					if errors.Is(err, context.Canceled) {
+						p.log.Warn(
+							ctx,
+							"Context canceled during the message processing",
+							zap.String("error", err.Error()),
+						)
+					} else {
 						p.log.Error(
 							ctx,
-							"Failed to process the message",
+							"Failed to send the message",
 							zap.Error(err),
+							zap.Any("id", id),
+							zap.Any("destination", destination),
 							zap.Any("msg", msg),
 						)
 						continue
 					}
-
-					if err = p.sendMessages(ctx, destination, publicKey, msg); err != nil {
-						if errors.Is(err, context.Canceled) {
-							p.log.Warn(
-								ctx,
-								"Context canceled during the message processing",
-								zap.String("error", err.Error()),
-							)
-						} else {
-							p.log.Error(
-								ctx,
-								"Failed to send the message",
-								zap.Error(err),
-								zap.Any("msg", msg),
-							)
-							continue
-						}
-					}
-				case <-ctx.Done():
-					return errors.WithStack(ctx.Err())
 				}
 			}
 		})
@@ -209,7 +215,7 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			return err
 		}
 
-		p.receiveChannel <- data.Data
+		p.messageQueue.PushToReceive(data.Data)
 	}
 
 	return nil
@@ -273,28 +279,28 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, destination sd
 	return nil
 }
 
-func (p *ContractClientProcess) extractDestination(msg []byte) (sdk.AccAddress, []byte, error) {
-	parsedTarget, err := p.parser.ExtractIdentificationFromIsoMessage(msg)
+func (p *ContractClientProcess) extractMetadata(msg []byte) (string, sdk.AccAddress, []byte, error) {
+	messageId, parsedTarget, err := p.parser.ExtractMetadataFromIsoMessage(msg)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	entry, found := p.addressBook.Lookup(*parsedTarget)
 	if !found {
-		return nil, nil, errors.New("could not find the target party in the address book")
+		return "", nil, nil, errors.New("could not find the target party in the address book")
 	}
 
 	address, err := sdk.AccAddressFromBech32(entry.Bech32EncodedAddress)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	publicKeyBytes, err := base64.StdEncoding.DecodeString(entry.PublicKey)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	return address, publicKeyBytes, nil
+	return messageId, address, publicKeyBytes, nil
 }
 
 func (p *ContractClientProcess) generateNftId() (string, string) {

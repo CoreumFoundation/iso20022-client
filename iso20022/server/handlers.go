@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -10,18 +11,18 @@ import (
 )
 
 func Send(c *gin.Context) {
-	sendCh, ok := c.Get("sendChannel")
+	mq, ok := c.Get("messageQueue")
 	if !ok {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	sendChannel := sendCh.(chan<- []byte)
+	messageQueue := mq.(processes.MessageQueue)
 
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(c.Request.Body)
 
-	body, err := io.ReadAll(c.Request.Body)
+	message, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -34,31 +35,32 @@ func Send(c *gin.Context) {
 	}
 	parser := p.(processes.Parser)
 
-	_, err = parser.ExtractIdentificationFromIsoMessage(body)
+	messageId, _, err := parser.ExtractMetadataFromIsoMessage(message)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
+	// TODO: Check for duplicate messages by ID
+	fmt.Printf("Sending message with ID : %s\n", messageId)
+
 	c.Status(http.StatusCreated)
 
-	go func() {
-		sendChannel <- body
-	}()
+	go messageQueue.PushToSend(message)
 }
 
 func Receive(c *gin.Context) {
-	recvCh, ok := c.Get("receiveChannel")
+	mq, ok := c.Get("messageQueue")
 	if !ok {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	receiveChannel := recvCh.(<-chan []byte)
+	messageQueue := mq.(processes.MessageQueue)
 
-	select {
-	case message := <-receiveChannel:
+	message, ok := messageQueue.PopFromReceive()
+	if ok {
 		c.Data(http.StatusOK, "application/xml", message)
-	default:
+	} else {
 		c.Status(http.StatusNoContent)
 	}
 }
