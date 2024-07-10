@@ -68,6 +68,7 @@ func TestContractClient_Start(t *testing.T) {
 			cryptographyBuilder: func(ctrl *gomock.Controller) processes.Cryptography {
 				cryptographyMock := NewMockCryptography(ctrl)
 				cryptographyMock.EXPECT().GenerateSharedKeyByPrivateKeyName(gomock.Any(), gomock.Any(), gomock.Any()).Return([]byte("Thirty-two bytes long shared key"), nil)
+				cryptographyMock.EXPECT().EncryptSymmetric(gomock.Any(), gomock.Any()).Return([]byte("encrypted"))
 				return cryptographyMock
 			},
 			parserBuilder: func(ctrl *gomock.Controller) processes.Parser {

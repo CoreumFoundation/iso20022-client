@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/crypto/xsalsa20symmetric"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
@@ -203,7 +202,7 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
-		data.Data, err = xsalsa20symmetric.DecryptSymmetric(data.Data, sharedKey)
+		data.Data, err = p.cryptography.DecryptSymmetric(data.Data, sharedKey)
 		if err != nil {
 			p.log.Error(ctx, "could not decrypt the message", zap.Error(err)) // TODO
 			continue
@@ -261,7 +260,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 
 		msg := p.compressor.Compress(message.Message)
 
-		msg = xsalsa20symmetric.EncryptSymmetric(msg, sharedKey)
+		msg = p.cryptography.EncryptSymmetric(msg, sharedKey)
 
 		data, err := types.NewAnyWithValue(&nfttypes.DataBytes{Data: msg})
 		if err != nil {

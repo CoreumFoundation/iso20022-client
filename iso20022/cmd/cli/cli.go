@@ -45,8 +45,8 @@ const (
 	FlagHome = "home"
 	// FlagKeyName is the key name flag.
 	FlagKeyName = "key-name"
-	// FlagCoreumChainID is chain-id flag.
-	FlagCoreumChainID = "coreum-chain-id"
+	// FlagChainID is chain-id flag.
+	FlagChainID = "chain-id"
 	// FlagCoreumGRPCURL is Coreum GRPC URL flag.
 	FlagCoreumGRPCURL = "coreum-grpc-url"
 	// FlagCoreumContractAddress is the address of the bridge smart contract.
@@ -223,9 +223,9 @@ func InitCmd() *cobra.Command {
 			}
 			log.Info(ctx, "Generating settings", zap.String("home", home))
 
-			chainID, err := cmd.Flags().GetString(FlagCoreumChainID)
+			chainID, err := cmd.Flags().GetString(FlagChainID)
 			if err != nil {
-				return errors.Wrapf(err, "failed to read %s", FlagCoreumChainID)
+				return errors.Wrapf(err, "failed to read %s", FlagChainID)
 			}
 			coreumGRPCURL, err := cmd.Flags().GetString(FlagCoreumGRPCURL)
 			if err != nil {
@@ -264,7 +264,7 @@ func InitCmd() *cobra.Command {
 }
 
 func addCoreumChainIDFlag(cmd *cobra.Command) *string {
-	return cmd.PersistentFlags().String(FlagCoreumChainID, string(runner.DefaultCoreumChainID), "Coreum chain ID")
+	return cmd.PersistentFlags().String(FlagChainID, string(runner.DefaultCoreumChainID), "Coreum chain ID")
 }
 
 // StartCmd returns the start cmd.

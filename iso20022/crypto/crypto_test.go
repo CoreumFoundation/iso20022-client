@@ -5,7 +5,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/crypto/xsalsa20symmetric"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,6 +20,7 @@ func TestGenerateSecp256k1SharedKey(t *testing.T) {
 
 func TestEncrypt(t *testing.T) {
 	t.Parallel()
+	c := Cryptography{}
 
 	privateKey := secp256k1.GenPrivKey()
 
@@ -28,14 +28,15 @@ func TestEncrypt(t *testing.T) {
 	require.NoError(t, err)
 
 	txt := []byte("hello world")
-	cypherText := xsalsa20symmetric.EncryptSymmetric(txt, sharedKey)
+	cypherText := c.EncryptSymmetric(txt, sharedKey)
 
-	plainText, err := xsalsa20symmetric.DecryptSymmetric(cypherText, sharedKey)
+	plainText, err := c.DecryptSymmetric(cypherText, sharedKey)
 	require.NoError(t, err)
 	require.Equal(t, txt, plainText)
 }
 
 func TestGenerateSharedKey(t *testing.T) {
+	t.Parallel()
 	c := Cryptography{}
 
 	privateKey := secp256k1.GenPrivKey()
@@ -75,6 +76,7 @@ func TestGenerateSharedKey(t *testing.T) {
 }
 
 func TestGenerateSameSharedKeyForBothParties(t *testing.T) {
+	t.Parallel()
 	c := Cryptography{}
 
 	privateKey1 := secp256k1.GenPrivKey()

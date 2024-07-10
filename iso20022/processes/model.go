@@ -72,6 +72,8 @@ type AddressBook interface {
 type Cryptography interface {
 	GenerateSharedKeyByPrivateKeyName(ctx client.Context, privateKeyName string, publicKeyBytes []byte) ([]byte, error)
 	GenerateSharedKey(privateKey cryptotypes.PrivKey, publicKeyBytes []byte) ([]byte, error)
+	EncryptSymmetric(plaintext []byte, secret []byte) (ciphertext []byte)
+	DecryptSymmetric(ciphertext []byte, secret []byte) (plaintext []byte, err error)
 }
 
 type Parser interface {

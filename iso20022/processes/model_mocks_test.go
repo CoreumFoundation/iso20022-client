@@ -338,6 +338,35 @@ func (m *MockCryptography) EXPECT() *MockCryptographyMockRecorder {
 	return m.recorder
 }
 
+// DecryptSymmetric mocks base method.
+func (m *MockCryptography) DecryptSymmetric(arg0, arg1 []byte) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecryptSymmetric", arg0, arg1)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DecryptSymmetric indicates an expected call of DecryptSymmetric.
+func (mr *MockCryptographyMockRecorder) DecryptSymmetric(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecryptSymmetric", reflect.TypeOf((*MockCryptography)(nil).DecryptSymmetric), arg0, arg1)
+}
+
+// EncryptSymmetric mocks base method.
+func (m *MockCryptography) EncryptSymmetric(arg0, arg1 []byte) []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EncryptSymmetric", arg0, arg1)
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// EncryptSymmetric indicates an expected call of EncryptSymmetric.
+func (mr *MockCryptographyMockRecorder) EncryptSymmetric(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptSymmetric", reflect.TypeOf((*MockCryptography)(nil).EncryptSymmetric), arg0, arg1)
+}
+
 // GenerateSharedKey mocks base method.
 func (m *MockCryptography) GenerateSharedKey(arg0 types0.PrivKey, arg1 []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
