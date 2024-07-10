@@ -290,6 +290,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		return err
 	}
 
+	p.log.Info(ctx, "Messages sent successfully", zap.Int("count", len(messages)))
 	_, err = p.contractClient.SendMessages(ctx, p.cfg.ClientAddress, sendMessages...)
 	if err != nil {
 		return err
