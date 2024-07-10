@@ -2,6 +2,7 @@ package runner_test
 
 import (
 	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -90,11 +91,11 @@ processes:
         custom_repo_address: ""
     queue:
         size: 50
-        path: {{TEMP_DIR}}iso20022-client
+        path: {{QUEUE_PATH}}
         status_cache_duration: 1h0m0s
     repeat_delay: 10s
     retry_delay: 10s
     poll_interval: 1s
 `
-	return strings.ReplaceAll(config, "{{TEMP_DIR}}", os.TempDir())
+	return strings.ReplaceAll(config, "{{QUEUE_PATH}}", path.Join(os.TempDir(), "iso20022-client"))
 }
