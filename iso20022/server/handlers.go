@@ -46,7 +46,7 @@ func Send(c *gin.Context) {
 
 	c.Status(http.StatusCreated)
 
-	go messageQueue.PushToSend(message)
+	go messageQueue.PushToSend(messageId, message)
 }
 
 func Receive(c *gin.Context) {

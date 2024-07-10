@@ -19,6 +19,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
+	isoqueue "github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 )
 
 func TestMain(m *testing.M) {
@@ -43,8 +44,8 @@ func TestContractClient_Start(t *testing.T) {
 				contractClientMock.EXPECT().IsInitialized().Return(true)
 				contractClientMock.EXPECT().GetUnreadMessages(gomock.Any(), gomock.Any(), gomock.Any()).Return([]coreum.Message{}, nil).AnyTimes()
 				contractClientMock.EXPECT().IssueNFTClass(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
-				contractClientMock.EXPECT().MintNFT(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
-				contractClientMock.EXPECT().SendMessage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+				contractClientMock.EXPECT().BroadcastMessages(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+				contractClientMock.EXPECT().SendMessages(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
 				return contractClientMock
 			},
 			addressBookBuilder: func(ctrl *gomock.Controller) processes.AddressBook {
@@ -84,12 +85,13 @@ func TestContractClient_Start(t *testing.T) {
 			},
 			messageQueueBuilder: func(ctrl *gomock.Controller, queue chan [][]byte) processes.MessageQueue {
 				queueMock := NewMockMessageQueue(ctrl)
-				queueMock.EXPECT().PushToSend(gomock.Any())
+				queueMock.EXPECT().PushToSend(gomock.Any(), gomock.Any())
 				queueMock.EXPECT().PopFromSend(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
 					func(ctx context.Context, n int, dur time.Duration) [][]byte {
 						return <-queue
 					},
 				).MinTimes(1).MaxTimes(2)
+				queueMock.EXPECT().SetStatus("abc123", isoqueue.StatusSent)
 				queueMock.EXPECT().Close().DoAndReturn(func() {
 					close(queue)
 				})
@@ -97,7 +99,7 @@ func TestContractClient_Start(t *testing.T) {
 				return queueMock
 			},
 			run: func(messageQueue processes.MessageQueue) error {
-				messageQueue.PushToSend([]byte("hello world"))
+				messageQueue.PushToSend("id", []byte("hello world"))
 				return nil
 			},
 		},

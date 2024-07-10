@@ -1,6 +1,8 @@
 package runner_test
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -60,7 +62,7 @@ func TestInitAndReadConfig(t *testing.T) {
 
 // the func returns the default config snapshot as string.
 func getDefaultConfigString() string {
-	return `version: v1
+	config := `version: v1
 logging:
     level: info
     format: console
@@ -71,7 +73,7 @@ coreum:
     network:
         chain_id: coreum-devnet-1
     contract:
-        contract_address: devcore18cszlvm6pze0x9sz32qnjq4vtd45xehqs8dq7cwy8yhq35wfnn3qx8xp93
+        contract_address: devcore1hz83rpzpduazzaaj0vg9gyehe2cjymsfy4thdlvhlmvvlulvn59swq29nh
         gas_adjustment: 1.4
         gas_price_adjustment: 1.2
         page_limit: 50
@@ -86,9 +88,13 @@ processes:
     address_book:
         update_interval: 1m0s
         custom_repo_address: ""
-    queue_size: 10
+    queue:
+        size: 50
+        path: {{TEMP_DIR}}iso20022-client
+        status_cache_duration: 1h0m0s
     repeat_delay: 10s
     retry_delay: 10s
     poll_interval: 1s
 `
+	return strings.ReplaceAll(config, "{{TEMP_DIR}}", os.TempDir())
 }

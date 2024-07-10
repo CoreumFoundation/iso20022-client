@@ -17,6 +17,7 @@ import (
 	client "github.com/CoreumFoundation/coreum/v4/pkg/client"
 	addressbook "github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	coreum "github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
+	queue "github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 	types "github.com/cosmos/cosmos-sdk/codec/types"
 	types0 "github.com/cosmos/cosmos-sdk/crypto/types"
 	types1 "github.com/cosmos/cosmos-sdk/types"
@@ -44,6 +45,26 @@ func NewMockContractClient(ctrl *gomock.Controller) *MockContractClient {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockContractClient) EXPECT() *MockContractClientMockRecorder {
 	return m.recorder
+}
+
+// BroadcastMessages mocks base method.
+func (m *MockContractClient) BroadcastMessages(arg0 context.Context, arg1 types1.AccAddress, arg2 ...types1.Msg) (*types1.TxResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BroadcastMessages", varargs...)
+	ret0, _ := ret[0].(*types1.TxResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BroadcastMessages indicates an expected call of BroadcastMessages.
+func (mr *MockContractClientMockRecorder) BroadcastMessages(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMessages", reflect.TypeOf((*MockContractClient)(nil).BroadcastMessages), varargs...)
 }
 
 // GetContractAddress mocks base method.
@@ -177,6 +198,26 @@ func (m *MockContractClient) SendMessage(arg0 context.Context, arg1, arg2 types1
 func (mr *MockContractClientMockRecorder) SendMessage(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockContractClient)(nil).SendMessage), arg0, arg1, arg2, arg3)
+}
+
+// SendMessages mocks base method.
+func (m *MockContractClient) SendMessages(arg0 context.Context, arg1 types1.AccAddress, arg2 ...coreum.MessageWithDestination) (*types1.TxResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SendMessages", varargs...)
+	ret0, _ := ret[0].(*types1.TxResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendMessages indicates an expected call of SendMessages.
+func (mr *MockContractClientMockRecorder) SendMessages(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessages", reflect.TypeOf((*MockContractClient)(nil).SendMessages), varargs...)
 }
 
 // SetContractAddress mocks base method.
@@ -443,13 +484,41 @@ func (mr *MockMessageQueueMockRecorder) PushToReceive(arg0 any) *gomock.Call {
 }
 
 // PushToSend mocks base method.
-func (m *MockMessageQueue) PushToSend(arg0 []byte) {
+func (m *MockMessageQueue) PushToSend(arg0 string, arg1 []byte) queue.Status {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PushToSend", arg0)
+	ret := m.ctrl.Call(m, "PushToSend", arg0, arg1)
+	ret0, _ := ret[0].(queue.Status)
+	return ret0
 }
 
 // PushToSend indicates an expected call of PushToSend.
-func (mr *MockMessageQueueMockRecorder) PushToSend(arg0 any) *gomock.Call {
+func (mr *MockMessageQueueMockRecorder) PushToSend(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushToSend", reflect.TypeOf((*MockMessageQueue)(nil).PushToSend), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushToSend", reflect.TypeOf((*MockMessageQueue)(nil).PushToSend), arg0, arg1)
+}
+
+// SetStatus mocks base method.
+func (m *MockMessageQueue) SetStatus(arg0 string, arg1 queue.Status) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetStatus", arg0, arg1)
+}
+
+// SetStatus indicates an expected call of SetStatus.
+func (mr *MockMessageQueueMockRecorder) SetStatus(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStatus", reflect.TypeOf((*MockMessageQueue)(nil).SetStatus), arg0, arg1)
+}
+
+// Start mocks base method.
+func (m *MockMessageQueue) Start(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockMessageQueueMockRecorder) Start(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockMessageQueue)(nil).Start), arg0)
 }

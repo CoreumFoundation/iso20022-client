@@ -2,33 +2,51 @@ package queue
 
 import (
 	"context"
+	"os"
+	"path"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+
+	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
 func TestSendQueue(t *testing.T) {
-	requireT := require.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	q := New()
-	t.Cleanup(q.Close)
+	requireT := require.New(t)
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
+	cacheDir := path.Join(os.TempDir(), "iso20022-test")
+
+	q := New(logMock, cacheDir)
+	go func() {
+		err := q.Start(ctx)
+		requireT.NoError(err)
+	}()
+	t.Cleanup(func() {
+		q.Close()
+		err := os.RemoveAll(cacheDir)
+		require.NoError(t, err)
+	})
 	message := []byte("message")
 
 	ch := make(chan struct{})
 
 	go func() {
 		<-time.After(2 * time.Second)
-		for i := 0; i < 20; i++ {
-			q.PushToSend(message)
-			<-time.After(99 * time.Millisecond)
+		for i := 0; i < 5; i++ {
+			go q.PushToSend(strconv.Itoa(i), message)
+			<-time.After(599 * time.Millisecond)
 		}
 		close(ch)
 	}()
-	messages := q.PopFromSend(ctx, 11, time.Second)
-	requireT.Len(messages, 10)
-	messages = q.PopFromSend(ctx, 10, time.Second)
-	requireT.Len(messages, 10)
+	messages := q.PopFromSend(ctx, 11, 2*time.Second)
+	requireT.Len(messages, 4)
+	messages = q.PopFromSend(ctx, 1, 2*time.Second)
+	requireT.Len(messages, 1)
 	<-ch
 	cancel()
 	messages = q.PopFromSend(ctx, 1, time.Millisecond)
@@ -36,10 +54,22 @@ func TestSendQueue(t *testing.T) {
 }
 
 func TestReceiveQueue(t *testing.T) {
-	requireT := require.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	q := New()
-	t.Cleanup(q.Close)
+	requireT := require.New(t)
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
+	cacheDir := path.Join(os.TempDir(), "iso20022-test")
+
+	q := New(logMock, cacheDir)
+	go func() {
+		err := q.Start(ctx)
+		requireT.NoError(err)
+	}()
+	t.Cleanup(func() {
+		q.Close()
+		err := os.RemoveAll(cacheDir)
+		require.NoError(t, err)
+	})
 	msg := []byte("message")
 
 	ch := make(chan struct{})
@@ -63,7 +93,19 @@ func TestReceiveQueue(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	q := New()
-	t.Cleanup(q.Close)
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
+	cacheDir := path.Join(os.TempDir(), "iso20022-test")
+
+	q := New(logMock, cacheDir)
+	go func() {
+		err := q.Start(context.Background())
+		require.NoError(t, err)
+	}()
+	t.Cleanup(func() {
+		q.Close()
+		err := os.RemoveAll(cacheDir)
+		require.NoError(t, err)
+	})
 	q.Close()
 }

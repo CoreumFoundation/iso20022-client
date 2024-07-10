@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -180,11 +181,11 @@ func createDevRunner(
 	runnerCfg.Coreum.GRPC.URL = chain.Coreum.Config().GRPCAddress
 	runnerCfg.Coreum.Contract.ContractAddress = contractAddress.String()
 	runnerCfg.Coreum.Network.ChainID = chain.Coreum.ChainSettings.ChainID
-	// make operation fetcher fast
 	runnerCfg.Processes.RepeatDelay = 500 * time.Millisecond
 	runnerCfg.Processes.AddressBook.CustomRepoAddress = chain.Coreum.Config().AddressBookRepoAddress
 	port, err := getFreePort()
 	require.NoError(t, err)
+	runnerCfg.Processes.Queue.Path = mnemonicToTempPath(accountMnemonics)
 	runnerCfg.Processes.Server.ListenAddress = ":" + strconv.Itoa(port)
 
 	// exit on errors
@@ -206,6 +207,11 @@ func createDevRunner(
 func uniqueNameFromMnemonic(mnemonic string) string {
 	return fmt.Sprintf("iso20022-integration-test-%x", md5.Sum([]byte(mnemonic)))
 }
+
+func mnemonicToTempPath(mnemonic string) string {
+	return path.Join(os.TempDir(), uniqueNameFromMnemonic(mnemonic))
+}
+
 func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 	file, err := os.OpenFile(messageFilePath, os.O_RDONLY, 0600)
 	if err != nil {

@@ -2,7 +2,11 @@ package integrationtests
 
 import (
 	"context"
+	"crypto/md5"
 	"flag"
+	"fmt"
+	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -61,6 +65,10 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
+func mnemonicToTempPath(mnemonic string) string {
+	return path.Join(os.TempDir(), fmt.Sprintf("iso20022-integration-test-%x", md5.Sum([]byte(mnemonic))))
+}
+
 // NewTestingContext returns the configured coreum chain and new context for the integration tests.
 func NewTestingContext(t *testing.T) (context.Context, Chain) {
 	ctx := coreumlogger.WithLogger(context.Background(), coreumlogger.New(coreumlogger.ToolDefaultConfig))
@@ -68,6 +76,10 @@ func NewTestingContext(t *testing.T) (context.Context, Chain) {
 	t.Cleanup(func() {
 		require.NoError(t, testCtx.Err())
 		testCtxCancel()
+		err := os.RemoveAll(mnemonicToTempPath(chain.Coreum.Config().Account1Mnemonic))
+		require.NoError(t, err)
+		err = os.RemoveAll(mnemonicToTempPath(chain.Coreum.Config().Account2Mnemonic))
+		require.NoError(t, err)
 	})
 
 	return testCtx, chain

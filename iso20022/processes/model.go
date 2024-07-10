@@ -11,6 +11,7 @@ import (
 	"github.com/CoreumFoundation/coreum/v4/pkg/client"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 )
 
 //go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser,MessageQueue
@@ -19,8 +20,16 @@ type ContractClient interface {
 	SetContractAddress(contractAddress types.AccAddress) error
 	GetContractAddress() types.AccAddress
 	IsInitialized() bool
+	BroadcastMessages(
+		ctx context.Context,
+		sender types.AccAddress,
+		messages ...types.Msg,
+	) (*types.TxResponse, error)
 	SendMessage(
 		ctx context.Context, sender, destination types.AccAddress, message coreum.NFTInfo,
+	) (*types.TxResponse, error)
+	SendMessages(
+		ctx context.Context, sender types.AccAddress, messages ...coreum.MessageWithDestination,
 	) (*types.TxResponse, error)
 	MarkAsRead(
 		ctx context.Context, sender types.AccAddress, until uint64,
@@ -70,9 +79,11 @@ type Parser interface {
 }
 
 type MessageQueue interface {
-	PushToSend(msg []byte)
+	Start(ctx context.Context) error
+	PushToSend(id string, msg []byte) queue.Status
 	PushToReceive(msg []byte)
 	PopFromSend(ctx context.Context, n int, dur time.Duration) [][]byte
 	PopFromReceive() ([]byte, bool)
+	SetStatus(id string, status queue.Status)
 	Close()
 }

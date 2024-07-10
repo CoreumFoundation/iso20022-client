@@ -112,6 +112,12 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 // Start starts runner.
 func (r *Runner) Start(ctx context.Context) error {
 	runnerProcesses := map[string]func(context.Context) error{
+		"messageQueue": taskWithRestartOnError(
+			r.components.MessageQueue.Start,
+			r.log,
+			true,
+			r.cfg.Processes.RetryDelay,
+		),
 		"contractClient": taskWithRestartOnError(
 			r.contractClientProcess.Start,
 			r.log,
@@ -287,7 +293,12 @@ func NewComponents(
 
 	parser := messages.NewParser(log)
 
-	messageQueue := queue.NewWithQueueSize(cfg.Processes.QueueSize)
+	messageQueue := queue.NewWithQueueSizeAndCacheDur(
+		log,
+		cfg.Processes.Queue.Path,
+		cfg.Processes.Queue.Size,
+		cfg.Processes.Queue.StatusCacheDuration,
+	)
 
 	return Components{
 		Log:                  log,

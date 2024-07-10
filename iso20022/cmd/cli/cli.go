@@ -53,6 +53,8 @@ const (
 	FlagCoreumContractAddress = "coreum-contract-address"
 	// FlagServerAddress is the address that http server listens to flag.
 	FlagServerAddress = "server-addr"
+	// FlagCachePath is the path to save caches
+	FlagCachePath = "cache-path"
 )
 
 // Runner is a runner interface.
@@ -179,6 +181,11 @@ func GetHomeRunnerConfig(cmd *cobra.Command) (runner.Config, error) {
 		cfg.Processes.Server.ListenAddress = listenAddr
 	}
 
+	cachePath, err := cmd.Flags().GetString(FlagCachePath)
+	if err == nil && cachePath != "" {
+		cfg.Processes.Queue.Path = listenAddr
+	}
+
 	return cfg, nil
 }
 
@@ -278,6 +285,7 @@ func StartCmd(pp RunnerProvider) *cobra.Command {
 	AddKeyringFlags(cmd)
 	AddKeyNameFlag(cmd)
 	AddServerAddressFlag(cmd)
+	AddCachePathFlag(cmd)
 
 	return cmd
 }
@@ -307,6 +315,11 @@ func AddKeyNameFlag(cmd *cobra.Command) {
 // AddServerAddressFlag adds the server-addr flag to the command.
 func AddServerAddressFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(FlagServerAddress, "", "Http server address")
+}
+
+// AddCachePathFlag adds the cache-path flag to the command.
+func AddCachePathFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().String(FlagCachePath, "", "Cache path")
 }
 
 // VersionCmd returns a CLI command to interactively print the application binary version information.
