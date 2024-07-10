@@ -183,7 +183,7 @@ func GetHomeRunnerConfig(cmd *cobra.Command) (runner.Config, error) {
 
 	cachePath, err := cmd.Flags().GetString(FlagCachePath)
 	if err == nil && cachePath != "" {
-		cfg.Processes.Queue.Path = listenAddr
+		cfg.Processes.Queue.Path = cachePath
 	}
 
 	return cfg, nil
