@@ -210,10 +210,6 @@ func uniqueNameFromMnemonic(mnemonic string) string {
 	return fmt.Sprintf("iso20022-integration-test-%x", md5.Sum([]byte(mnemonic)))
 }
 
-func mnemonicToTempPath(mnemonic string) string {
-	return path.Join(os.TempDir(), uniqueNameFromMnemonic(mnemonic))
-}
-
 func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 	file, err := os.OpenFile(messageFilePath, os.O_RDONLY, 0600)
 	if err != nil {
