@@ -56,6 +56,7 @@ type RunnerEnv struct {
 	RunnersParallelGroup *parallel.Group
 	Runner               *runner.Runner
 	RunnerComponent      runner.Components
+	AccountAddress       sdk.AccAddress
 }
 
 // NewRunnerEnv returns new instance of the RunnerEnv.
@@ -88,7 +89,7 @@ func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain 
 		require.NoError(t, contractClient.SetContractAddress(*cfg.CustomContractAddress))
 	}
 
-	rnrComponents, rnr := createDevRunner(
+	rnrComponents, rnr, accountAddress := createDevRunner(
 		ctx,
 		t,
 		chain,
@@ -104,6 +105,7 @@ func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain 
 		RunnersParallelGroup: parallel.NewGroup(ctx),
 		Runner:               rnr,
 		RunnerComponent:      rnrComponents,
+		AccountAddress:       accountAddress,
 	}
 	t.Cleanup(func() {
 		// we can cancel the context now and wait for the runner to stop gracefully
@@ -168,7 +170,7 @@ func createDevRunner(
 	chain integrationtests.Chain,
 	contractAddress sdk.AccAddress,
 	accountMnemonics string,
-) (runner.Components, *runner.Runner) {
+) (runner.Components, *runner.Runner, sdk.AccAddress) {
 	t.Helper()
 
 	uniqueName := uniqueNameFromMnemonic(accountMnemonics)
@@ -185,7 +187,7 @@ func createDevRunner(
 	runnerCfg.Processes.AddressBook.CustomRepoAddress = chain.Coreum.Config().AddressBookRepoAddress
 	port, err := getFreePort()
 	require.NoError(t, err)
-	runnerCfg.Processes.Queue.Path = mnemonicToTempPath(accountMnemonics)
+	runnerCfg.Processes.Queue.Path = path.Join(os.TempDir(), uniqueName)
 	runnerCfg.Processes.Server.ListenAddress = ":" + strconv.Itoa(port)
 
 	// exit on errors
@@ -201,7 +203,7 @@ func createDevRunner(
 
 	rnr, err := runner.NewRunner(components, runnerCfg)
 	require.NoError(t, err)
-	return components, rnr
+	return components, rnr, accountAddress
 }
 
 func uniqueNameFromMnemonic(mnemonic string) string {
