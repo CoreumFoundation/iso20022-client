@@ -17,7 +17,9 @@ type Server struct {
 }
 
 func createHandlers(parser processes.Parser, messageQueue processes.MessageQueue) http.Handler {
-	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(gin.Logger(), gin.Recovery())
 	r.Use(InjectDependencies(parser, messageQueue))
 	r.Use(CORSMiddleware())
 

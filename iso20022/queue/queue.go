@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sync/atomic"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
@@ -28,7 +29,7 @@ type MessageQueue struct {
 	cacheDir       string
 	sendChannel    chan []byte
 	receiveChannel chan []byte
-	closed         bool
+	closed         atomic.Bool
 	statuses       *ttlcache.Cache[string, Status]
 }
 
@@ -50,7 +51,7 @@ func NewWithQueueSizeAndCacheDur(log logger.Logger, cacheDir string, queueSize i
 	}
 
 	stateFile := path.Join(cacheDir, "state.json")
-	if _, err := os.Stat(stateFile); os.IsNotExist(err) {
+	if stat, err := os.Stat(stateFile); os.IsNotExist(err) || stat.Size() == 0 {
 		err = os.WriteFile(stateFile, []byte("[]"), 0777)
 		if err != nil {
 			log.Error(ctx, "could not write the state file", zap.String("path", stateFile), zap.Error(err))
@@ -75,6 +76,7 @@ func (m *MessageQueue) Start(ctx context.Context) error {
 	m.statuses.Start()
 	<-ctx.Done()
 	m.Close()
+	m.log.Info(context.Background(), "saved state before exiting the program")
 	return nil
 }
 
@@ -160,10 +162,9 @@ func (m *MessageQueue) SetStatus(id string, status Status) {
 }
 
 func (m *MessageQueue) Close() {
-	if m.closed {
+	if !m.closed.CompareAndSwap(false, true) {
 		return
 	}
-	m.closed = true
 	m.statuses.Stop()
 	m.save()
 	close(m.receiveChannel)
@@ -194,16 +195,17 @@ func (m *MessageQueue) onEviction(_ context.Context, reason ttlcache.EvictionRea
 }
 
 func (m *MessageQueue) load(ctx context.Context) {
-	data, err := os.ReadFile(path.Join(m.cacheDir, "state.json"))
+	stateFilePath := path.Join(m.cacheDir, "state.json")
+	data, err := os.ReadFile(stateFilePath)
 	if err != nil {
-		m.log.Error(context.Background(), "could not load the state", zap.Error(err))
+		m.log.Error(context.Background(), "could not load the state", zap.String("path", stateFilePath), zap.Error(err))
 		return
 	}
 
 	var items []cacheItem
 	err = json.Unmarshal(data, &items)
 	if err != nil {
-		m.log.Error(context.Background(), "could not unmarshal the state", zap.Error(err))
+		m.log.Warn(context.Background(), "could not unmarshal the state. starting fresh", zap.String("path", stateFilePath), zap.Error(err))
 		return
 	}
 
@@ -214,7 +216,7 @@ func (m *MessageQueue) load(ctx context.Context) {
 			continue
 		}
 
-		ttl := time.Since(time.UnixMicro(item.ExpiresAt))
+		ttl := time.Until(time.UnixMicro(item.ExpiresAt))
 		if ttl <= 0 {
 			ttl = 10 * time.Millisecond
 		}

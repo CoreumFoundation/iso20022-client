@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -278,7 +279,11 @@ func StartCmd(pp RunnerProvider) *cobra.Command {
 				return err
 			}
 
-			return providedRunner.Start(cmd.Context())
+			err = providedRunner.Start(cmd.Context())
+			// Let the services finish
+			// FIXME
+			<-time.After(2 * time.Second)
+			return err
 		},
 	}
 	AddHomeFlag(cmd)
