@@ -114,6 +114,50 @@ func TestParseIsoMessage(t *testing.T) {
 			hasError: false,
 		},
 		{
+			name:            "pacs008 - First FIToFICustomerCreditTransfer",
+			messageFilePath: "testdata/pacs008-9.xml",
+			id:              "BBBB/150928-CCT/JPY/123",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "AAAAGB2L",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs008 - Second FIToFICustomerCreditTransfer",
+			messageFilePath: "testdata/pacs008-10.xml",
+			id:              "BBBB/150928-CT/EUR/912",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "EEEEDEFF",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs008 - Third FIToFICustomerCreditTransfer",
+			messageFilePath: "testdata/pacs008-11.xml",
+			id:              "BBBB/150928-CCT/USD/897",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "BBBBUS66",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs008 - Fourth FIToFICustomerCreditTransfer",
+			messageFilePath: "testdata/pacs008-12.xml",
+			id:              "EEEE/150929-EUR/059",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "DDDDBEBB",
+				},
+			},
+			hasError: false,
+		},
+		{
 			name:            "pacs009 within envelope",
 			messageFilePath: "testdata/pacs009-1.xml",
 			id:              "BISSD20220720GRENCHZZ002B9194560468",
@@ -168,7 +212,6 @@ func TestParseIsoMessage(t *testing.T) {
 			},
 			hasError: false,
 		},
-
 		{
 			name:            "pacs002 within envelope 3",
 			messageFilePath: "testdata/pacs002-7.xml",
@@ -235,6 +278,72 @@ func TestParseIsoMessage(t *testing.T) {
 			hasError:        true,
 		},
 		{
+			name:            "pacs002 - FIToFIPaymentStatusReport",
+			messageFilePath: "testdata/pacs002-10.xml",
+			id:              "ABABUS23-STATUS-456/04",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "AAAAUS29",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs003 - FIToFICustomerDirectDebit",
+			messageFilePath: "testdata/pacs003-1.xml",
+			id:              "AAAA100628-123v",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "ABABUS23",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs004 - First PaymentReturn",
+			messageFilePath: "testdata/pacs004-7.xml",
+			id:              "CCCC/151122-PR007",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "BBBBIE2D",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs004 - Second PaymentReturn",
+			messageFilePath: "testdata/pacs004-8.xml",
+			id:              "BBBB/151122-PR05",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "AAAAGB2L",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs004 - First PaymentReturn - 2",
+			messageFilePath: "testdata/pacs004-9.xml",
+			id:              "BBBBUS39-RETURN-0123",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "ABABUS23",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs004 - Second PaymentReturn - 2",
+			messageFilePath: "testdata/pacs004-10.xml",
+			id:              "ABABUS23RETURN-546",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "AAAAUS29",
+				},
+			},
+			hasError: false,
+		},
+		{
 			name:            "pacs004 within envelope - return",
 			messageFilePath: "testdata/pacs004-1.xml",
 			id:              "BISSD20220719GRENCHZZ002B7173301669",
@@ -245,7 +354,6 @@ func TestParseIsoMessage(t *testing.T) {
 			},
 			hasError: false,
 		},
-
 		{
 			name:            "pacs004 within envelope - cancellation",
 			messageFilePath: "testdata/pacs004-4.xml",
@@ -268,7 +376,6 @@ func TestParseIsoMessage(t *testing.T) {
 			},
 			hasError: false,
 		},
-
 		{
 			name:            "pacs004 within envelope without head - cancellation",
 			messageFilePath: "testdata/pacs004-5.xml",
@@ -287,7 +394,6 @@ func TestParseIsoMessage(t *testing.T) {
 			party:           &addressbook.Party{},
 			hasError:        true,
 		},
-
 		{
 			name:            "pacs004 within envelope without header - cancellation",
 			messageFilePath: "testdata/pacs004-6.xml",
@@ -295,11 +401,23 @@ func TestParseIsoMessage(t *testing.T) {
 			party:           &addressbook.Party{},
 			hasError:        true,
 		},
+		{
+			name:            "pacs007 - FIToFIPaymentReversal",
+			messageFilePath: "testdata/pacs007-1.xml",
+			id:              "AAAAUS29-REVERSAL/0012",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "ABABUS23",
+				},
+			},
+			hasError: false,
+		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			fileContent, err := os.ReadFile(tt.messageFilePath)
 			require.NoError(t, err)
 

@@ -1,12 +1,12 @@
 package messages
 
 import (
-	"github.com/moov-io/iso20022/pkg/pacs_v04"
+	"github.com/moov-io/iso20022/pkg/pacs_v11"
 
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 )
 
-func extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(agent *pacs_v04.BranchAndFinancialInstitutionIdentification6, res *addressbook.Party) {
+func extractPartyFromPacsV11BranchAndFinancialInstitutionIdentification6(agent *pacs_v11.BranchAndFinancialInstitutionIdentification6, res *addressbook.Party) {
 	if agent == nil {
 		return
 	}
@@ -22,7 +22,7 @@ func extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(agent *
 		if agent.BrnchId.Nm != nil {
 			res.Branch.Name = string(*agent.BrnchId.Nm)
 		}
-		res.Branch.PostalAddress = postalAddressFromPacsV04PostalAddress24(agent.BrnchId.PstlAdr)
+		res.Branch.PostalAddress = postalAddressFromPacsV11PostalAddress24(agent.BrnchId.PstlAdr)
 	}
 
 	if agent.FinInstnId.BICFI != nil {
@@ -44,7 +44,7 @@ func extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(agent *
 	}
 	if agent.FinInstnId.Nm != nil && agent.FinInstnId.PstlAdr != nil {
 		res.Identification.Name = string(*agent.FinInstnId.Nm)
-		res.Identification.PostalAddress = postalAddressFromPacsV04PostalAddress24(agent.FinInstnId.PstlAdr)
+		res.Identification.PostalAddress = postalAddressFromPacsV11PostalAddress24(agent.FinInstnId.PstlAdr)
 	}
 	if agent.FinInstnId.Othr != nil {
 		res.Identification.Other = &addressbook.Other{
@@ -62,7 +62,7 @@ func extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(agent *
 	}
 }
 
-func postalAddressFromPacsV04PostalAddress24(po24 *pacs_v04.PostalAddress24) (res *addressbook.PostalAddress) {
+func postalAddressFromPacsV11PostalAddress24(po24 *pacs_v11.PostalAddress24) (res *addressbook.PostalAddress) {
 	if po24 == nil {
 		return nil
 	}

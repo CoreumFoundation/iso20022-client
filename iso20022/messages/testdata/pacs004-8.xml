@@ -1,0 +1,61 @@
+<PmtRtr>
+    <GrpHdr>
+        <MsgId>BBBB/151122-PR05</MsgId>
+        <CreDtTm>2015-11-22T11:15:00</CreDtTm>
+        <NbOfTxs>1</NbOfTxs>
+        <SttlmInf>
+            <SttlmMtd>INGA</SttlmMtd>
+        </SttlmInf>
+        <InstgAgt>
+            <FinInstnId>
+                <BICFI>BBBBIE2D</BICFI>
+            </FinInstnId>
+        </InstgAgt>
+        <InstdAgt>
+            <FinInstnId>
+                <BICFI>AAAAGB2L</BICFI>
+            </FinInstnId>
+        </InstdAgt>
+    </GrpHdr>
+    <OrgnlGrpInf>
+        <OrgnlMsgId>AAAA/151109-CCT/EUR443</OrgnlMsgId>
+        <OrgnlMsgNmId>pacs.008.001.12</OrgnlMsgNmId>
+        <OrgnlCreDtTm>2015-11-09T10:03:13</OrgnlCreDtTm>
+    </OrgnlGrpInf>
+    <TxInf>
+        <RtrId>BBBB/151122-PR05/1</RtrId>
+        <OrgnlInstrId>AAAA/151109-CCT/EUR443/1</OrgnlInstrId>
+        <OrgnlEndToEndId>CROPS/SX-25T/2015-10-13</OrgnlEndToEndId>
+        <OrgnlTxId>AAAA/151109-CCT/EUR443/1</OrgnlTxId>
+        <OrgnlIntrBkSttlmAmt Ccy="EUR">75000</OrgnlIntrBkSttlmAmt>
+        <RtrdIntrBkSttlmAmt Ccy="EUR">74650</RtrdIntrBkSttlmAmt>
+        <IntrBkSttlmDt>2015-11-22</IntrBkSttlmDt>
+        <RtrdInstdAmt Ccy="EUR">74850</RtrdInstdAmt>
+        <ChrgBr>CRED</ChrgBr>
+        <ChrgsInf>
+            <Amt Ccy="EUR">100</Amt>
+            <Agt>
+                <FinInstnId>
+                    <BICFI>CCCCIE2D</BICFI>
+                </FinInstnId>
+            </Agt>
+        </ChrgsInf>
+        <ChrgsInf>
+            <Amt Ccy="EUR">100</Amt>
+            <Agt>
+                <FinInstnId>
+                    <BICFI>BBBBIE2D</BICFI>
+                </FinInstnId>
+            </Agt>
+        </ChrgsInf>
+        <RtrRsnInf>
+            <Orgtr>
+                <Nm>Seed Inc.</Nm>
+            </Orgtr>
+            <Rsn>
+                <Cd>NARR</Cd>
+            </Rsn>
+            <AddtlInf>RETURN AFTER ACCEPTED PAYMENT CANCELLATION REQUEST</AddtlInf>
+        </RtrRsnInf>
+    </TxInf>
+</PmtRtr>

@@ -2,15 +2,19 @@ package messages
 
 import (
 	"encoding/xml"
+	"fmt"
 	"reflect"
 
 	"github.com/moov-io/iso20022/pkg/document"
 	"github.com/moov-io/iso20022/pkg/head_v01"
 	"github.com/moov-io/iso20022/pkg/head_v02"
 	"github.com/moov-io/iso20022/pkg/pacs_v04"
+	"github.com/moov-io/iso20022/pkg/pacs_v06"
+	"github.com/moov-io/iso20022/pkg/pacs_v07"
 	"github.com/moov-io/iso20022/pkg/pacs_v08"
 	"github.com/moov-io/iso20022/pkg/pacs_v09"
 	"github.com/moov-io/iso20022/pkg/pacs_v10"
+	"github.com/moov-io/iso20022/pkg/pacs_v11"
 	"github.com/moov-io/iso20022/pkg/utils"
 	"github.com/pkg/errors"
 
@@ -64,6 +68,20 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc document.Iso20022Messag
 	err = xml.Unmarshal(msg, dummyDoc)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if dummyDoc.XMLName.Local != "" {
+		constructors := extendedMessageConstructor[dummyDoc.XMLName.Local]
+		if constructors != nil {
+			for _, constructor := range constructors {
+				doc = constructor()
+				err = xml.Unmarshal(msg, doc)
+				if err == nil {
+					return
+				}
+			}
+			return
+		}
 	}
 
 	constructor := messageConstructor[dummyDoc.NameSpace()]
@@ -208,6 +226,24 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (id string, party *add
 				}
 				extractPartyFromPacsV04BranchAndFinancialInstitutionIdentification6(doc.CdtInstr[0].InstdAgt, party)
 			}
+		case *pacs_v06.FIToFICustomerCreditTransferV06:
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV06BranchAndFinancialInstitutionIdentification5(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
+					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
+				}
+				extractPartyFromPacsV06BranchAndFinancialInstitutionIdentification5(doc.CdtTrfTxInf[0].InstdAgt, party)
+			}
+		case *pacs_v07.FIToFIPaymentStatusReportV07:
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV07BranchAndFinancialInstitutionIdentification5(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				if id == "" && doc.TxInfAndSts[0].StsId != nil {
+					id = string(*doc.TxInfAndSts[0].StsId)
+				}
+				extractPartyFromPacsV07BranchAndFinancialInstitutionIdentification5(doc.TxInfAndSts[0].InstdAgt, party)
+			}
 		case *pacs_v08.FIToFICustomerCreditTransferV08:
 			id = string(doc.GrpHdr.MsgId)
 			extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
@@ -270,6 +306,15 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (id string, party *add
 				}
 				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, party)
 			}
+		case *pacs_v10.FIToFIPaymentStatusReportV10:
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				if id == "" && doc.TxInfAndSts[0].StsId != nil {
+					id = string(*doc.TxInfAndSts[0].StsId)
+				}
+				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInfAndSts[0].InstdAgt, party)
+			}
 		case *pacs_v10.PaymentReturnV10:
 			id = string(doc.GrpHdr.MsgId)
 			extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
@@ -279,8 +324,17 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (id string, party *add
 				}
 				extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(doc.TxInf[0].InstdAgt, party)
 			}
+		case *pacs_v11.FIToFIPaymentStatusReportV11:
+			id = string(doc.GrpHdr.MsgId)
+			extractPartyFromPacsV11BranchAndFinancialInstitutionIdentification6(doc.GrpHdr.InstdAgt, party)
+			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				if id == "" && doc.TxInfAndSts[0].StsId != nil {
+					id = string(*doc.TxInfAndSts[0].StsId)
+				}
+				extractPartyFromPacsV11BranchAndFinancialInstitutionIdentification6(doc.TxInfAndSts[0].InstdAgt, party)
+			}
 		default:
-			return "", nil, errors.New("couldn't find party")
+			return "", nil, fmt.Errorf("couldn't find party from %v", reflect.TypeOf(containedDoc).String())
 		}
 	}
 
