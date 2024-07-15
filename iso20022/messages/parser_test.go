@@ -412,6 +412,28 @@ func TestParseIsoMessage(t *testing.T) {
 			},
 			hasError: false,
 		},
+		{
+			name:            "pacs010 - FinancialInstitutionDirectDebit",
+			messageFilePath: "testdata/pacs010-1.xml",
+			id:              "MMMM/151121 PPPP_OOOO_EUR",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "NNNNDEFF",
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs028 - FIToFIPaymentStatusRequest",
+			messageFilePath: "testdata/pacs028-1.xml",
+			id:              "BBBB/150929-CCT/JPY/456",
+			party: &addressbook.Party{
+				Identification: addressbook.Identification{
+					BusinessIdentifiersCode: "AAAAGB2L",
+				},
+			},
+			hasError: false,
+		},
 	}
 
 	for _, tt := range tests {

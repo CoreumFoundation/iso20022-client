@@ -1,0 +1,97 @@
+<FIToFIPmtStsReq>
+    <GrpHdr>
+        <MsgId>BBBB/150929-CCT/JPY/456</MsgId>
+        <CreDtTm>2015-09-28T16:06:00</CreDtTm>
+        <InstgAgt>
+            <FinInstnId>
+                <BICFI>BBBBUS33</BICFI>
+            </FinInstnId>
+        </InstgAgt>
+        <InstdAgt>
+            <FinInstnId>
+                <BICFI>AAAAGB2L</BICFI>
+            </FinInstnId>
+        </InstdAgt>
+    </GrpHdr>
+    <OrgnlGrpInf>
+        <OrgnlMsgId>BBBB/150928-CCT/JPY/123</OrgnlMsgId>
+        <OrgnlMsgNmId>pacs.008.001.12 </OrgnlMsgNmId>
+        <OrgnlCreDtTm>2015-09-28T16:00:00</OrgnlCreDtTm>
+    </OrgnlGrpInf>
+    <TxInf>
+        <StsReqId>BBBB/150928-CCT/JPY/456Request</StsReqId>
+        <OrgnlInstrId>BBBB/150928-CCT/JPY/123/1</OrgnlInstrId>
+        <OrgnlEndToEndId>ABC/4562/2015-09-08</OrgnlEndToEndId>
+        <OrgnlTxId>BBBB/150928-CCT/JPY/123/1</OrgnlTxId>
+        <AccptncDtTm>2015-09-28T15:45:00</AccptncDtTm>
+        <OrgnlTxRef>
+            <IntrBkSttlmAmt Ccy="JPY">10000000</IntrBkSttlmAmt>
+            <IntrBkSttlmDt>2015-09-28</IntrBkSttlmDt>
+            <PmtTpInf>
+                <InstrPrty>NORM</InstrPrty>
+            </PmtTpInf>
+            <RmtInf>
+                <Strd>
+                    <RfrdDocInf>
+                        <Tp>
+                            <CdOrPrtry>
+                                <Cd>CINV</Cd>
+                            </CdOrPrtry>
+                        </Tp>
+                        <Nb>4562</Nb>
+                        <RltdDt>2015-09-08</RltdDt>
+                    </RfrdDocInf>
+                </Strd>
+            </RmtInf>
+            <Dbtr>
+                <Pty>
+                    <Nm>ABC Corporation</Nm>
+                    <PstlAdr>
+                        <StrtNm>Times Square</StrtNm>
+                        <BldgNb>7</BldgNb>
+                        <PstCd>NY 10036</PstCd>
+                        <TwnNm>New York</TwnNm>
+                        <Ctry>US</Ctry>
+                    </PstlAdr>
+                </Pty>
+            </Dbtr>
+            <DbtrAcct>
+                <Id>
+                    <Othr>
+                        <Id>00125574999</Id>
+                    </Othr>
+                </Id>
+            </DbtrAcct>
+            <DbtrAgt>
+                <FinInstnId>
+                    <BICFI>BBBBUS33</BICFI>
+                </FinInstnId>
+            </DbtrAgt>
+            <CdtrAgt>
+                <FinInstnId>
+                    <BICFI>AAAAGB2L</BICFI>
+                </FinInstnId>
+            </CdtrAgt>
+            <Cdtr>
+                <Pty>
+                    <Nm>DEF Electronics</Nm>
+                    <PstlAdr>
+                        <StrtNm>Mark Lane</StrtNm>
+                        <BldgNb>55</BldgNb>
+                        <PstCd>EC3R7NE</PstCd>
+                        <TwnNm>London</TwnNm>
+                        <Ctry>GB</Ctry>
+                        <AdrLine>Corn Exchange 5th Floor</AdrLine>
+                    </PstlAdr>
+                </Pty>
+            </Cdtr>
+            <CdtrAcct>
+                <Id>
+                    <Othr>
+                        <Id>23683707994215</Id>
+                    </Othr>
+                </Id>
+            </CdtrAcct>
+        </OrgnlTxRef>
+    </TxInf>
+</FIToFIPmtStsReq>
