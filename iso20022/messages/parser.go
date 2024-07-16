@@ -3,7 +3,6 @@ package messages
 import (
 	"bytes"
 	"encoding/xml"
-	"fmt"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -374,7 +373,7 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (id string, party *add
 				}
 			}
 		default:
-			return "", nil, fmt.Errorf("couldn't find party from %v", reflect.TypeOf(containedDoc).String())
+			return "", nil, errors.New("couldn't find party from " + reflect.TypeOf(containedDoc).String())
 		}
 	}
 
