@@ -22,3 +22,8 @@ And then receive it:
 ```bash
 ./bin/iso20022-client message receive /path/to/pacs008-response.xml --server-addr=':2844'
 ```
+
+## TODO
+
+- [ ] Add new messages from [ISO20022 message definitions](https://www.iso20022.org/iso-20022-message-definitions).
+- [ ] Add old messages from [ISO20022 message archive](https://www.iso20022.org/catalogue-messages/iso-20022-messages-archive).

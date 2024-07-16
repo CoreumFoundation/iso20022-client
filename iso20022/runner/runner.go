@@ -346,7 +346,7 @@ func getGRPCClientConn(grpcURL string) (*grpc.ClientConn, error) {
 
 	// https - tls grpc
 	if parsedURL.Scheme == "https" {
-		grpcClient, err := grpc.Dial(
+		grpcClient, err := grpc.NewClient(
 			host,
 			grpc.WithDefaultCallOptions(grpc.ForceCodec(pc.GRPCCodec())),
 			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
@@ -362,7 +362,7 @@ func getGRPCClientConn(grpcURL string) (*grpc.ClientConn, error) {
 		host = fmt.Sprintf("%s:%s", parsedURL.Scheme, parsedURL.Opaque)
 	}
 	// http - insecure
-	grpcClient, err := grpc.Dial(
+	grpcClient, err := grpc.NewClient(
 		host,
 		grpc.WithDefaultCallOptions(grpc.ForceCodec(pc.GRPCCodec())),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))

@@ -1,12 +1,11 @@
 package messages
 
 import (
-	"github.com/moov-io/iso20022/pkg/pacs_v11"
-
+	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_002_001_11"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 )
 
-func extractPartyFromPacsV11BranchAndFinancialInstitutionIdentification6(agent *pacs_v11.BranchAndFinancialInstitutionIdentification6, res *addressbook.Party) {
+func extractPartyFromPacs00200111BranchAndFinancialInstitutionIdentification6(agent *pacs_002_001_11.BranchAndFinancialInstitutionIdentification6, res *addressbook.Party) {
 	if agent == nil {
 		return
 	}
@@ -22,7 +21,7 @@ func extractPartyFromPacsV11BranchAndFinancialInstitutionIdentification6(agent *
 		if agent.BrnchId.Nm != nil {
 			res.Branch.Name = string(*agent.BrnchId.Nm)
 		}
-		res.Branch.PostalAddress = postalAddressFromPacsV11PostalAddress24(agent.BrnchId.PstlAdr)
+		res.Branch.PostalAddress = postalAddressFromPacs00200111PostalAddress24(agent.BrnchId.PstlAdr)
 	}
 
 	if agent.FinInstnId.BICFI != nil {
@@ -37,14 +36,14 @@ func extractPartyFromPacsV11BranchAndFinancialInstitutionIdentification6(agent *
 		}
 		if res.Identification.ClearingSystemMemberIdentification.ClearingSystemId != nil {
 			res.Identification.ClearingSystemMemberIdentification.ClearingSystemId = &addressbook.ClearingSystemId{
-				Code:        string(agent.FinInstnId.ClrSysMmbId.ClrSysId.Cd),
-				Proprietary: string(agent.FinInstnId.ClrSysMmbId.ClrSysId.Prtry),
+				Code:        string(*agent.FinInstnId.ClrSysMmbId.ClrSysId.Cd),
+				Proprietary: string(*agent.FinInstnId.ClrSysMmbId.ClrSysId.Prtry),
 			}
 		}
 	}
 	if agent.FinInstnId.Nm != nil && agent.FinInstnId.PstlAdr != nil {
 		res.Identification.Name = string(*agent.FinInstnId.Nm)
-		res.Identification.PostalAddress = postalAddressFromPacsV11PostalAddress24(agent.FinInstnId.PstlAdr)
+		res.Identification.PostalAddress = postalAddressFromPacs00200111PostalAddress24(agent.FinInstnId.PstlAdr)
 	}
 	if agent.FinInstnId.Othr != nil {
 		res.Identification.Other = &addressbook.Other{
@@ -55,14 +54,14 @@ func extractPartyFromPacsV11BranchAndFinancialInstitutionIdentification6(agent *
 		}
 		if agent.FinInstnId.Othr.SchmeNm != nil {
 			res.Identification.Other.SchemeName = &addressbook.SchemeName{
-				Code:        string(agent.FinInstnId.Othr.SchmeNm.Cd),
-				Proprietary: string(agent.FinInstnId.Othr.SchmeNm.Prtry),
+				Code:        string(*agent.FinInstnId.Othr.SchmeNm.Cd),
+				Proprietary: string(*agent.FinInstnId.Othr.SchmeNm.Prtry),
 			}
 		}
 	}
 }
 
-func postalAddressFromPacsV11PostalAddress24(po24 *pacs_v11.PostalAddress24) (res *addressbook.PostalAddress) {
+func postalAddressFromPacs00200111PostalAddress24(po24 *pacs_002_001_11.PostalAddress24) (res *addressbook.PostalAddress) {
 	if po24 == nil {
 		return nil
 	}
@@ -70,7 +69,7 @@ func postalAddressFromPacsV11PostalAddress24(po24 *pacs_v11.PostalAddress24) (re
 	res = &addressbook.PostalAddress{}
 	if po24.AdrTp != nil {
 		res.AddressType = &addressbook.AddressType{
-			Code: addressbook.AddressTypeCode(po24.AdrTp.Cd),
+			Code: addressbook.AddressTypeCode(*po24.AdrTp.Cd),
 			Proprietary: &addressbook.Proprietary{
 				Id:         string(po24.AdrTp.Prtry.Id),
 				Issuer:     string(po24.AdrTp.Prtry.Issr),
@@ -128,7 +127,7 @@ func postalAddressFromPacsV11PostalAddress24(po24 *pacs_v11.PostalAddress24) (re
 		for _, line := range po24.AdrLine {
 			res.AddressLine = append(
 				res.AddressLine,
-				string(line),
+				string(*line),
 			)
 		}
 	}

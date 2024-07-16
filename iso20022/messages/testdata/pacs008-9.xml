@@ -96,7 +96,12 @@
                         </CdOrPrtry>
                     </Tp>
                     <Nb>4562</Nb>
-                    <RltdDt>2015-09-08</RltdDt>
+                    <RltdDt>
+                        <Tp>
+                            <Cd>INDA</Cd>
+                        </Tp>
+                        <Dt>2015-09-08</Dt>
+                    </RltdDt>
                 </RfrdDocInf>
             </Strd>
         </RmtInf>
