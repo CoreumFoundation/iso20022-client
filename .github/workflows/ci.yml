@@ -18,7 +18,7 @@ jobs:
         ]
         include:
           - ci_step: "lint"
-            command: "make lint"
+            command: "make lint-local"
             linter-cache: true
             docker-cache: false
             codecov: false
