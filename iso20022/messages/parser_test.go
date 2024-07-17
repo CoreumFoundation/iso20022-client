@@ -9,6 +9,7 @@ import (
 
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/messages/generated"
 )
 
 func TestParseIsoMessage(t *testing.T) {
@@ -16,7 +17,7 @@ func TestParseIsoMessage(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
-	parser := NewParser(logMock)
+	parser := NewParser(logMock, &generated.ConverterImpl{})
 
 	tests := []struct {
 		name            string

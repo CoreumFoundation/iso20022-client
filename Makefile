@@ -57,7 +57,7 @@ help:
 	@echo '    build                Build project for current platform.'
 	@echo '    build-all            Build project for all supported platforms.'
 	@echo '    version              Check the Go version.'
-	@echo '    generate             Generate mocks.'
+	@echo '    generate             Generate ISO20022 messages and mocks.'
 	@echo '    lint                 Lint the code.'
 	@echo ''
 	@echo 'Targets run by default are: imports, fmt, lint, vet, errors and build.'

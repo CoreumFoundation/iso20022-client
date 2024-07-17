@@ -29,6 +29,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/crypto"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/messages"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/messages/generated"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/server"
@@ -291,7 +292,7 @@ func NewComponents(
 
 	cryptography := &crypto.Cryptography{}
 
-	parser := messages.NewParser(log)
+	parser := messages.NewParser(log, &generated.ConverterImpl{})
 
 	messageQueue := queue.NewWithQueueSizeAndCacheDur(
 		log,
