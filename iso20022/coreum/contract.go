@@ -160,18 +160,12 @@ func (c *ContractClient) DeployAndInstantiate(
 		return nil, errors.Wrap(err, "failed to marshal instantiate payload")
 	}
 
-	issuerFee, err := c.queryAssetFTIssueFee(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	msg := &wasmtypes.MsgInstantiateContract{
 		Sender: sender.String(),
 		Admin:  sender.String(),
 		CodeID: codeID,
 		Label:  contractLabel,
 		Msg:    reqPayload,
-		Funds:  sdk.NewCoins(issuerFee),
 	}
 
 	c.log.Info(ctx, "Instantiating contract.", zap.Any("msg", msg))
@@ -421,15 +415,6 @@ func (c *ContractClient) QueryNFT(
 		return nil, err
 	}
 	return resp.Nft.Data, nil
-}
-
-func (c *ContractClient) queryAssetFTIssueFee(ctx context.Context) (sdk.Coin, error) {
-	assetFtParamsRes, err := c.assetftClient.Params(ctx, &assetfttypes.QueryParamsRequest{})
-	if err != nil {
-		return sdk.Coin{}, errors.Wrap(err, "failed to get asset ft issue fee")
-	}
-
-	return assetFtParamsRes.Params.IssueFee, nil
 }
 
 func (c *ContractClient) execute(
