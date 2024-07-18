@@ -110,4 +110,4 @@ lint:
 	@if test ! -e ./bin/golangci-lint; then \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./bin v1.59.1; \
 	fi
-	@cd iso20022 && ../bin/golangci-lint run
+	@cd iso20022 && ../bin/golangci-lint run --timeout 15m
