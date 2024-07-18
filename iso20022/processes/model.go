@@ -54,6 +54,7 @@ type ContractClient interface {
 
 type AddressBook interface {
 	Update(ctx context.Context) error
+	Validate() error
 	Lookup(expectedAddress addressbook.Party) (*addressbook.Address, bool)
 	LookupByAccountAddress(bech32EncodedAddress string) (*addressbook.Address, bool)
 }

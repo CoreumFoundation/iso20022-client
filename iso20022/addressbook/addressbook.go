@@ -13,9 +13,12 @@ import (
 	"sync"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
+
+	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
 type AddressBook struct {
+	log               logger.Logger
 	repoAddress       string
 	storedAddressBook StoredAddressBook
 	lastVersion       string
@@ -23,15 +26,16 @@ type AddressBook struct {
 }
 
 // New creates a new address book
-func New(chainId string) *AddressBook {
+func New(log logger.Logger, chainId string) *AddressBook {
 	// TODO: replace with main branch after release
 	repo := "https://raw.githubusercontent.com/CoreumFoundation/iso20022-addressbook/develop/%s/addressbook.json"
-	return NewWithRepoAddress(fmt.Sprintf(repo, chainId))
+	return NewWithRepoAddress(log, fmt.Sprintf(repo, chainId))
 }
 
 // NewWithRepoAddress creates a new address book from requested repo address
-func NewWithRepoAddress(repoAddress string) *AddressBook {
+func NewWithRepoAddress(log logger.Logger, repoAddress string) *AddressBook {
 	return &AddressBook{
+		log,
 		repoAddress,
 		StoredAddressBook{},
 		"",
@@ -58,6 +62,7 @@ func (a *AddressBook) Update(ctx context.Context) error {
 
 		newVersion := stat.ModTime().String()
 		if newVersion == a.lastVersion {
+			a.log.Debug(ctx, "addressbook is not changed, no need update")
 			return nil
 		}
 
@@ -67,11 +72,13 @@ func (a *AddressBook) Update(ctx context.Context) error {
 		}
 
 		a.lastVersion = stat.ModTime().String()
+		a.log.Debug(ctx, "addressbook updated")
 	} else {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.repoAddress, nil)
 		if err != nil {
 			return err
 		}
+		req.Header.Set("If-None-Match", a.lastVersion)
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -82,12 +89,13 @@ func (a *AddressBook) Update(ctx context.Context) error {
 			_ = Body.Close()
 		}(res.Body)
 
-		if res.StatusCode >= 400 {
+		if res.StatusCode >= http.StatusBadRequest {
 			return fmt.Errorf("status %d: %s", res.StatusCode, res.Status)
 		}
 
 		newVersion := res.Header.Get("ETag")
 		if newVersion == a.lastVersion {
+			a.log.Debug(ctx, "addressbook is not changed, no need update")
 			return nil
 		}
 
@@ -97,6 +105,7 @@ func (a *AddressBook) Update(ctx context.Context) error {
 		}
 
 		a.lastVersion = newVersion
+		a.log.Debug(ctx, "addressbook updated")
 	}
 
 	var response StoredAddressBook

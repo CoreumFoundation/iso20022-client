@@ -2,6 +2,8 @@ package processes_test
 
 import (
 	"context"
+	"crypto/md5"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -12,16 +14,13 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/parallel"
-	coreumapp "github.com/CoreumFoundation/coreum/v4/app"
-	coreumconfig "github.com/CoreumFoundation/coreum/v4/pkg/config"
 	coreumintegration "github.com/CoreumFoundation/coreum/v4/testutil/integration"
 	integrationtests "github.com/CoreumFoundation/iso20022-client/integration-tests"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
@@ -34,9 +33,7 @@ type RunnerEnvConfig struct {
 	AwaitTimeout          time.Duration
 	CustomContractAddress *sdk.AccAddress
 	CustomContractOwner   *sdk.AccAddress
-	// if custom error handler returns false, the runner env fails with the input error
-	CustomErrorHandler func(err error) bool
-	AccountMnemonics   string
+	AccountMnemonics      string
 }
 
 // DefaultRunnerEnvConfig returns default runner environment config.
@@ -45,7 +42,6 @@ func DefaultRunnerEnvConfig() RunnerEnvConfig {
 		AwaitTimeout:          5 * time.Minute,
 		CustomContractAddress: nil,
 		CustomContractOwner:   nil,
-		CustomErrorHandler:    nil,
 		AccountMnemonics:      "",
 	}
 }
@@ -64,9 +60,6 @@ type RunnerEnv struct {
 // NewRunnerEnv returns new instance of the RunnerEnv.
 func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain integrationtests.Chain) *RunnerEnv {
 	ctx, cancel := context.WithCancel(ctx)
-	address := genFundedAccount(ctx, t, chain.Coreum, cfg.AccountMnemonics)
-
-	chain.Log.Info(ctx, "Account imported", zap.String("address", address.String()))
 
 	var contractOwner sdk.AccAddress
 	if cfg.CustomContractOwner == nil {
@@ -77,7 +70,7 @@ func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain 
 
 	// fund to cover the fees
 	chain.Coreum.FundAccountWithOptions(ctx, t, contractOwner, coreumintegration.BalancesOptions{
-		Amount: chain.Coreum.QueryAssetFTParams(ctx, t).IssueFee.Amount.AddRaw(10_000_000),
+		Amount: sdkmath.NewIntFromUint64(100_000_000),
 	})
 
 	contractClient := coreum.NewContractClient(
@@ -95,10 +88,11 @@ func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain 
 	}
 
 	rnrComponents, rnr := createDevRunner(
+		ctx,
 		t,
 		chain,
 		contractClient.GetContractAddress(),
-		address,
+		cfg.AccountMnemonics,
 	)
 
 	runnerEnv := &RunnerEnv{
@@ -122,16 +116,6 @@ func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain 
 		if strings.Contains(err.Error(), "context canceled") {
 			return
 		}
-		if cfg.CustomErrorHandler != nil {
-			if !cfg.CustomErrorHandler(err) {
-				require.NoError(
-					t,
-					err,
-					"Found unexpected runner process errors after the execution from custom handler",
-				)
-			}
-			return
-		}
 
 		require.NoError(t, err, "Found unexpected runner process errors after the execution")
 	})
@@ -144,45 +128,55 @@ func (r *RunnerEnv) StartRunnerProcesses() {
 	r.RunnersParallelGroup.Spawn("runner", parallel.Exit, r.Runner.Start)
 }
 
-func genFundedAccount(
+func fundAccount(
 	ctx context.Context,
 	t *testing.T,
 	coreumChain integrationtests.CoreumChain,
-	mnemonic string,
+	keyName, mnemonic string,
 ) sdk.AccAddress {
 	t.Helper()
 
-	address := coreumChain.ImportMnemonic(mnemonic)
-	coreumChain.FundAccountWithOptions(ctx, t, address, coreumintegration.BalancesOptions{
-		Amount: sdkmath.NewIntFromUint64(1_000_000),
+	keyInfo, err := coreumChain.ClientContext.Keyring().NewAccount(
+		keyName,
+		mnemonic,
+		"",
+		hd.CreateHDPath(coreumChain.ChainSettings.CoinType, 0, 0).String(),
+		hd.Secp256k1,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	address, err := keyInfo.GetAddress()
+	if err != nil {
+		panic(err)
+	}
+
+	//address := coreumChain.ImportMnemonic(mnemonic)
+	coreumChain.Faucet.FundAccounts(ctx, t, coreumintegration.FundedAccount{
+		Address: address,
+		Amount:  coreumChain.NewCoin(sdkmath.NewIntFromUint64(1_000_000)),
 	})
 
 	return address
 }
 
 func createDevRunner(
+	ctx context.Context,
 	t *testing.T,
 	chain integrationtests.Chain,
 	contractAddress sdk.AccAddress,
-	accountAddress sdk.AccAddress,
+	accountMnemonics string,
 ) (runner.Components, *runner.Runner) {
 	t.Helper()
 
-	encodingConfig := coreumconfig.NewEncodingConfig(coreumapp.ModuleBasics)
-	coreumKeyring := keyring.NewInMemory(encodingConfig.Codec)
+	uniqueName := uniqueNameFromMnemonic(accountMnemonics)
+	accountAddress := fundAccount(ctx, t, chain.Coreum, uniqueName, accountMnemonics)
+	chain.Log.Info(ctx, "Account imported", zap.String("address", accountAddress.String()))
 
 	runnerCfg := runner.DefaultConfig()
 	runnerCfg.LoggingConfig.Level = "info"
-
-	// reimport coreum key
-	coreumKr := chain.Coreum.ClientContext.Keyring()
-	keyInfo, err := coreumKr.KeyByAddress(accountAddress)
-	require.NoError(t, err)
-	pass := uuid.NewString()
-	armor, err := coreumKr.ExportPrivKeyArmor(keyInfo.Name, pass)
-	require.NoError(t, err)
-	require.NoError(t, coreumKeyring.ImportPrivKey(runnerCfg.Coreum.ClientKeyName, armor, pass))
-
+	runnerCfg.Coreum.ClientKeyName = uniqueName
 	runnerCfg.Coreum.GRPC.URL = chain.Coreum.Config().GRPCAddress
 	runnerCfg.Coreum.Contract.ContractAddress = contractAddress.String()
 	runnerCfg.Coreum.Network.ChainID = chain.Coreum.ChainSettings.ChainID
@@ -200,7 +194,7 @@ func createDevRunner(
 	log, err := logger.NewZapLogger(logger.DefaultZapLoggerConfig())
 	require.NoError(t, err)
 
-	coreumSDKClientCtx := chain.Coreum.ClientContext.WithKeyring(coreumKeyring).SDKContext()
+	coreumSDKClientCtx := chain.Coreum.ClientContext.SDKContext()
 	components, err := runner.NewComponents(runnerCfg, coreumSDKClientCtx, log)
 	require.NoError(t, err)
 
@@ -209,6 +203,9 @@ func createDevRunner(
 	return components, rnr
 }
 
+func uniqueNameFromMnemonic(mnemonic string) string {
+	return fmt.Sprintf("iso20022-integration-test-%x", md5.Sum([]byte(mnemonic)))
+}
 func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 	file, err := os.OpenFile(messageFilePath, os.O_RDONLY, 0600)
 	if err != nil {
@@ -219,6 +216,10 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 		_ = file.Close()
 	}(file)
 
+	// listen address here is always in the form of ":port", so we can append it to 0.0.0.0
+	// to have full url of the listening service
+	// the reason it is not just called port is that the RunnerConfig is the same between
+	// integration-test and app
 	uri := "http://0.0.0.0" + r.RunnerComponent.RunnerConfig.Processes.Server.ListenAddress
 	res, err := http.Post(uri+"/v1/send", "application/xml", file)
 	if err != nil {
@@ -236,9 +237,13 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 	return nil
 }
 
-func (r *RunnerEnv) ReceiveMessage(wait time.Duration) ([]byte, error) {
+func (r *RunnerEnv) ReceiveMessage() ([]byte, error) {
+	// listen address here is always in the form of ":port", so we can append it to 0.0.0.0
+	// to have full url of the listening service
+	// the reason it is not just called port is that the RunnerConfig is the same between
+	// integration-test and app
 	uri := "http://0.0.0.0" + r.RunnerComponent.RunnerConfig.Processes.Server.ListenAddress
-	res, err := http.Get(uri + "/v1/receive?wait=" + wait.String())
+	res, err := http.Get(uri + "/v1/receive")
 	if err != nil {
 		return nil, err
 	}

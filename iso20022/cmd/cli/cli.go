@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,10 +11,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -262,7 +257,7 @@ func InitCmd() *cobra.Command {
 }
 
 func addCoreumChainIDFlag(cmd *cobra.Command) *string {
-	return cmd.PersistentFlags().String(FlagCoreumChainID, string(runner.DefaultCoreumChainID), "Default coreum chain ID")
+	return cmd.PersistentFlags().String(FlagCoreumChainID, string(runner.DefaultCoreumChainID), "Coreum chain ID")
 }
 
 // StartCmd returns the start cmd.
@@ -312,93 +307,6 @@ func AddKeyNameFlag(cmd *cobra.Command) {
 // AddServerAddressFlag adds the server-addr flag to the command.
 func AddServerAddressFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(FlagServerAddress, "", "Http server address")
-}
-
-// ClientKeysCmd prints the client keys info.
-func ClientKeysCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "client-keys",
-		Short: "Print the Coreum keys info",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-
-			log, err := GetCLILogger()
-			if err != nil {
-				return err
-			}
-
-			components, err := NewComponents(cmd, log)
-			if err != nil {
-				return err
-			}
-
-			// Coreum
-			coreumKeyRecord, err := components.CoreumClientCtx.Keyring().Key(components.RunnerConfig.Coreum.ClientKeyName)
-			if err != nil {
-				return errors.Wrapf(err, "failed to get coreum key, keyName:%s", components.RunnerConfig.Coreum.ClientKeyName)
-			}
-			coreumAddress, err := coreumKeyRecord.GetAddress()
-			if err != nil {
-				return errors.Wrapf(err, "failed to get coreum address from key, keyName:%s",
-					components.RunnerConfig.Coreum.ClientKeyName)
-			}
-
-			pubKey := "unknown"
-
-			if coreumKeyRecord.PubKey.TypeUrl == "/cosmos.crypto.secp256k1.PubKey" {
-				var key secp256k1.PubKey
-				err = proto.Unmarshal(coreumKeyRecord.PubKey.Value, &key)
-				if err != nil {
-					return err
-				}
-				pubKey = base64.StdEncoding.EncodeToString(key.Key)
-			}
-
-			components.Log.Info(
-				ctx,
-				"Keys info",
-				zap.String("coreumAddress", coreumAddress.String()),
-				zap.String("publicKey", pubKey),
-			)
-
-			return nil
-		},
-	}
-	AddKeyringFlags(cmd)
-	AddKeyNameFlag(cmd)
-	AddHomeFlag(cmd)
-
-	return cmd
-}
-
-// KeyringCmd returns cosmos keyring cmd init with the correct keys home.
-func KeyringCmd(coinType uint32) (*cobra.Command, error) {
-	// We need to set CoinType before initializing keys commands because keys.Commands() sets default
-	// flag value from sdk config. See github.com/cosmos/cosmos-sdk@v0.47.5/client/keys/add.go:78
-	sdk.GetConfig().SetCoinType(coinType)
-
-	// we set it for the keyring manually since it doesn't use the runner which does it for other CLI commands
-	cmd := keys.Commands(DefaultHomeDir)
-	for _, childCmd := range cmd.Commands() {
-		childCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
-			log, err := GetCLILogger()
-			if err != nil {
-				return err
-			}
-
-			components, err := NewComponents(cmd, log)
-			if err != nil {
-				return err
-			}
-
-			if err := client.SetCmdClientContext(cmd, components.CoreumSDKClientCtx); err != nil {
-				return errors.WithStack(err)
-			}
-			return nil
-		}
-	}
-
-	return cmd, nil
 }
 
 // VersionCmd returns a CLI command to interactively print the application binary version information.

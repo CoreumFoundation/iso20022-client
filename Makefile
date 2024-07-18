@@ -36,9 +36,7 @@ ENTRY_FILE=iso20022/cmd/main.go
 	build-all \
 	version \
 	generate \
-	lint-new \
-    lint \
-    lint-local
+    lint
 
 all: fmt lint vet build
 
@@ -60,9 +58,7 @@ help:
 	@echo '    build-all            Build project for all supported platforms.'
 	@echo '    version              Check the Go version.'
 	@echo '    generate             Generate mocks.'
-	@echo '    lint-new             Lint new changes.'
-	@echo '    lint                 Lint all the code.'
-	@echo '    lint-local           Lint all the code using local binary and fix problems.'
+	@echo '    lint                 Lint the code.'
 	@echo ''
 	@echo 'Targets run by default are: imports, fmt, lint, vet, errors and build.'
 	@echo ''
@@ -110,15 +106,7 @@ generate:
 	cd iso20022 && go generate ./...
 	make lint-local
 
-lint-new:
-	docker pull golangci/golangci-lint:v1.59.1
-	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --timeout 15m --new-from-rev master ./...
-
 lint:
-	docker pull golangci/golangci-lint:v1.59.1
-	docker run --rm -v $(CURDIR)/iso20022:/app -e GOPRIVATE=github.com/CoreumFoundation -w /app golangci/golangci-lint:v1.59.1 golangci-lint run --timeout 15m ./...
-
-lint-local:
 	@if test ! -e ./bin/golangci-lint; then \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./bin v1.59.1; \
 	fi

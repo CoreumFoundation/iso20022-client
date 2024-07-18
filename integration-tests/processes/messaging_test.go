@@ -4,11 +4,9 @@ import (
 	"testing"
 	"time"
 
-	sdkmath "cosmossdk.io/math"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	coreumintegration "github.com/CoreumFoundation/coreum/v4/testutil/integration"
 	integrationtests "github.com/CoreumFoundation/iso20022-client/integration-tests"
 )
 
@@ -30,14 +28,9 @@ func TestMessaging(t *testing.T) {
 	secondPartyRunnerEnv := NewRunnerEnv(ctx, t, secondPartyRunnerEnvCfg, chain)
 	secondPartyRunnerEnv.StartRunnerProcesses()
 
-	coreumSenderAddress := chain.Coreum.GenAccount()
-	issueFee := chain.Coreum.QueryAssetFTParams(ctx, t).IssueFee
-	chain.Coreum.FundAccountWithOptions(ctx, t, coreumSenderAddress, coreumintegration.BalancesOptions{
-		Amount: issueFee.Amount.Add(sdkmath.NewIntWithDecimal(1, 6)),
-	})
-
 	requireT.NoError(firstPartyRunnerEnv.SendMessage("../../iso20022/messages/testdata/pacs008-1.xml"))
-	msg, err := secondPartyRunnerEnv.ReceiveMessage(time.Minute)
+	time.Sleep(5 * time.Second) // Wait a bit till the message is received
+	msg, err := secondPartyRunnerEnv.ReceiveMessage()
 	requireT.NoError(err)
 
 	requireT.NotEmpty(msg)

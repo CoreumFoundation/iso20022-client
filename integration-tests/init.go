@@ -57,6 +57,7 @@ func init() {
 	}
 	chain.Coreum = coreumChain
 
+	// It just prevents some unwanted outputs while running the tests
 	gin.SetMode(gin.ReleaseMode)
 }
 

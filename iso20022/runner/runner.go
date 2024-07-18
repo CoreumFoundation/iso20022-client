@@ -275,9 +275,9 @@ func NewComponents(
 
 	var addressBook *addressbook.AddressBook
 	if cfg.Processes.AddressBook.CustomRepoAddress != "" {
-		addressBook = addressbook.New(cfg.Coreum.Network.ChainID)
+		addressBook = addressbook.New(log, cfg.Coreum.Network.ChainID)
 	} else {
-		addressBook = addressbook.NewWithRepoAddress(cfg.Processes.AddressBook.CustomRepoAddress)
+		addressBook = addressbook.NewWithRepoAddress(log, cfg.Processes.AddressBook.CustomRepoAddress)
 	}
 
 	compressor, err := compress.New()

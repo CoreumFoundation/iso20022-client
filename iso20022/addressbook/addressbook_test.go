@@ -7,12 +7,16 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/CoreumFoundation/iso20022-client/iso20022/crypto"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
 func TestEmptyAddressBook(t *testing.T) {
-	ab := NewWithRepoAddress("file://./testdata/coreum-devnet-1/addressbook.json")
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
+	ab := NewWithRepoAddress(logMock, "file://./testdata/coreum-devnet-1/addressbook.json")
 
 	addr, ok := ab.Lookup(Party{
 		Identification: Identification{
@@ -26,8 +30,10 @@ func TestEmptyAddressBook(t *testing.T) {
 func TestLookup(t *testing.T) {
 	ctx := context.Background()
 	c := &crypto.Cryptography{}
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
 
-	ab := NewWithRepoAddress("file://./testdata/coreum-devnet-1/addressbook.json")
+	ab := NewWithRepoAddress(logMock, "file://./testdata/coreum-devnet-1/addressbook.json")
 
 	require.NoError(t, ab.Update(ctx))
 
@@ -51,8 +57,10 @@ func TestLookup(t *testing.T) {
 
 func TestLookupByAccountAddress(t *testing.T) {
 	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
 
-	ab := NewWithRepoAddress("file://./testdata/coreum-devnet-1/addressbook.json")
+	ab := NewWithRepoAddress(logMock, "file://./testdata/coreum-devnet-1/addressbook.json")
 
 	require.NoError(t, ab.Update(ctx))
 
@@ -66,6 +74,8 @@ func TestLookupByAccountAddress(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
 
 	testData := []struct {
 		name string
@@ -74,12 +84,12 @@ func TestUpdate(t *testing.T) {
 	}{
 		{
 			name: "wrong path",
-			ab:   NewWithRepoAddress("file://./testdata/wrong-chain-id/addressbook.json"),
+			ab:   NewWithRepoAddress(logMock, "file://./testdata/wrong-chain-id/addressbook.json"),
 			err:  true,
 		},
 		{
 			name: "wrong url",
-			ab:   New("wrong-chain-id"),
+			ab:   New(logMock, "wrong-chain-id"),
 			err:  true,
 		},
 	}
@@ -101,27 +111,42 @@ func TestUpdate(t *testing.T) {
 
 func TestCache(t *testing.T) {
 	ctx := context.Background()
+	ctrl := gomock.NewController(t)
 
 	testData := []struct {
-		name string
-		ab   *AddressBook
+		name               string
+		addressBookBuilder func(ctrl *gomock.Controller) *AddressBook
 	}{
 		{
 			name: "actual repo",
-			ab:   New("coreum-devnet-1"),
+			addressBookBuilder: func(ctrl *gomock.Controller) *AddressBook {
+				logMock := logger.NewMockLogger(ctrl)
+				logMock.EXPECT().Debug(gomock.Any(), "addressbook updated")
+				logMock.EXPECT().Debug(gomock.Any(), "addressbook is not changed, no need update")
+				return New(logMock, "coreum-devnet-1")
+			},
 		},
 		{
 			name: "local file",
-			ab:   NewWithRepoAddress("file://./testdata/coreum-devnet-1/addressbook.json"),
+			addressBookBuilder: func(ctrl *gomock.Controller) *AddressBook {
+				logMock := logger.NewMockLogger(ctrl)
+				logMock.EXPECT().Debug(gomock.Any(), "addressbook updated")
+				logMock.EXPECT().Debug(gomock.Any(), "addressbook is not changed, no need update")
+				return NewWithRepoAddress(
+					logMock,
+					"file://./testdata/coreum-devnet-1/addressbook.json",
+				)
+			},
 		},
 	}
 
 	for _, tt := range testData {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			require.NoError(t, tt.ab.Update(ctx))
-			require.NoError(t, tt.ab.Update(ctx))
-			require.NoError(t, tt.ab.Validate())
+			ab := tt.addressBookBuilder(ctrl)
+			require.NoError(t, ab.Update(ctx))
+			require.NoError(t, ab.Update(ctx))
+			require.NoError(t, ab.Validate())
 		})
 	}
 }
