@@ -104,7 +104,7 @@ version:
 generate:
 	which mockgen || go install go.uber.org/mock/mockgen@v0.4.0
 	cd iso20022 && go generate ./...
-	make lint-local
+	make lint
 
 lint:
 	@if test ! -e ./bin/golangci-lint; then \
