@@ -33,7 +33,7 @@ func init() {
 	flag.StringVar(&coreumCfg.FundingMnemonic, "coreum-funding-mnemonic", "sad hobby filter tray ordinary gap half web cat hard call mystery describe member round trend friend beyond such clap frozen segment fan mistake", "Funding coreum account mnemonic required by tests")
 	flag.StringVar(&coreumCfg.ContractPath, "coreum-contract-path", "../contract/iso_messaging_poc.wasm", "Path to smart contract wasm file")
 	flag.StringVar(&coreumCfg.PreviousContractPath, "coreum-previous-contract-path", "../contract/iso_messaging_poc.wasm", "Path to previous smart contract wasm file")
-	flag.StringVar(&coreumCfg.AddressBookRepoAddress, "address-book-repo-address", "../addressbook/addressbook.json", "Path to addressbook json file")
+	flag.StringVar(&coreumCfg.AddressBookRepoAddress, "address-book-repo-address", "file://../addressbook/addressbook.json", "Path to addressbook json file")
 	flag.StringVar(&coreumCfg.Account1Mnemonic, "account1-mnemonic", "question minimum around dry mad beef vessel blouse submit lion woman twelve liquid enjoy replace river emerge process velvet stove hood tree minimum gun", "First account mnemonic")
 	flag.StringVar(&coreumCfg.Account2Mnemonic, "account2-mnemonic", "genre plate metal lazy state govern panel scare clever broom yellow insane run easy turkey wool liberty core fire liquid menu cram toss outdoor", "Second account mnemonic")
 
