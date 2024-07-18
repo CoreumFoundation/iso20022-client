@@ -472,18 +472,18 @@ func (mr *MockMessageQueueMockRecorder) Close() *gomock.Call {
 }
 
 // PopFromReceive mocks base method.
-func (m *MockMessageQueue) PopFromReceive(arg0 context.Context, arg1 time.Duration) ([]byte, bool) {
+func (m *MockMessageQueue) PopFromReceive() ([]byte, bool) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PopFromReceive", arg0, arg1)
+	ret := m.ctrl.Call(m, "PopFromReceive")
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
 
 // PopFromReceive indicates an expected call of PopFromReceive.
-func (mr *MockMessageQueueMockRecorder) PopFromReceive(arg0, arg1 any) *gomock.Call {
+func (mr *MockMessageQueueMockRecorder) PopFromReceive() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopFromReceive", reflect.TypeOf((*MockMessageQueue)(nil).PopFromReceive), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopFromReceive", reflect.TypeOf((*MockMessageQueue)(nil).PopFromReceive))
 }
 
 // PopFromSend mocks base method.
