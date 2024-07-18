@@ -29,7 +29,7 @@ func TestMessaging(t *testing.T) {
 	secondPartyRunnerEnv.StartRunnerProcesses()
 
 	requireT.NoError(firstPartyRunnerEnv.SendMessage("../../iso20022/messages/testdata/pacs008-1.xml"))
-	time.Sleep(10 * time.Second) // Wait a bit till the message is received
+	<-time.After(15 * time.Second) // Wait a bit till the message is received
 	msg, err := secondPartyRunnerEnv.ReceiveMessage()
 	requireT.NoError(err)
 

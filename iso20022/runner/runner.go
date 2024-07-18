@@ -274,7 +274,7 @@ func NewComponents(
 	contractClient := coreum.NewContractClient(contractClientCfg, log, coreumClientCtx)
 
 	var addressBook *addressbook.AddressBook
-	if cfg.Processes.AddressBook.CustomRepoAddress != "" {
+	if cfg.Processes.AddressBook.CustomRepoAddress == "" {
 		addressBook = addressbook.New(log, cfg.Coreum.Network.ChainID)
 	} else {
 		addressBook = addressbook.NewWithRepoAddress(log, cfg.Processes.AddressBook.CustomRepoAddress)
