@@ -1,4 +1,4 @@
-# iso20022-client
+# ISO20022 Client
 
 For testing, we need to open three command lines:
 
