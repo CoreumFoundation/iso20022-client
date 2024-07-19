@@ -20,13 +20,17 @@ func createHandlers(parser processes.Parser, messageQueue processes.MessageQueue
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
-	r.Use(InjectDependencies(parser, messageQueue))
 	r.Use(CORSMiddleware())
+
+	h := Handler{
+		Parser:       parser,
+		MessageQueue: messageQueue,
+	}
 
 	v1 := r.Group("/v1")
 
-	v1.POST("/send", Send)
-	v1.GET("/receive", Receive)
+	v1.POST("/send", h.Send)
+	v1.GET("/receive", h.Receive)
 	return r
 }
 

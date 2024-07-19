@@ -2,8 +2,6 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-
-	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 )
 
 // CORSMiddleware provides CORS ability for the router
@@ -18,16 +16,6 @@ func CORSMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
-
-		c.Next()
-	}
-}
-
-// InjectDependencies injects message parser and channels
-func InjectDependencies(parser processes.Parser, messageQueue processes.MessageQueue) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set("parser", parser)
-		c.Set("messageQueue", messageQueue)
 
 		c.Next()
 	}

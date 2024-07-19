@@ -10,14 +10,12 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 )
 
-func Send(c *gin.Context) {
-	mq, ok := c.Get("messageQueue")
-	if !ok {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	messageQueue := mq.(processes.MessageQueue)
+type Handler struct {
+	Parser       processes.Parser
+	MessageQueue processes.MessageQueue
+}
 
+func (h *Handler) Send(c *gin.Context) {
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(c.Request.Body)
@@ -46,18 +44,11 @@ func Send(c *gin.Context) {
 
 	c.Status(http.StatusCreated)
 
-	go messageQueue.PushToSend(messageId, message)
+	go h.MessageQueue.PushToSend(messageId, message)
 }
 
-func Receive(c *gin.Context) {
-	mq, ok := c.Get("messageQueue")
-	if !ok {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	messageQueue := mq.(processes.MessageQueue)
-
-	message, ok := messageQueue.PopFromReceive()
+func (h *Handler) Receive(c *gin.Context) {
+	message, ok := h.MessageQueue.PopFromReceive()
 	if ok {
 		c.Data(http.StatusOK, "application/xml", message)
 	} else {
