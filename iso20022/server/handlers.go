@@ -26,14 +26,7 @@ func (h *Handler) Send(c *gin.Context) {
 		return
 	}
 
-	p, ok := c.Get("parser")
-	if !ok {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	parser := p.(processes.Parser)
-
-	messageId, _, err := parser.ExtractMetadataFromIsoMessage(message)
+	messageId, _, err := h.Parser.ExtractMetadataFromIsoMessage(message)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
