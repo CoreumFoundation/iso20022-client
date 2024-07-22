@@ -47,6 +47,12 @@ type NFTInfo struct {
 	Id      string `json:"id"`
 }
 
+// MessageWithDestination is a message with destination.
+type MessageWithDestination struct {
+	Destination sdk.AccAddress
+	NFT         NFTInfo
+}
+
 // Messages is a list of messages.
 type Messages struct {
 	Messages []Message `json:"messages"`
@@ -273,6 +279,15 @@ func (c *ContractClient) IsInitialized() bool {
 	return !c.cfg.ContractAddress.Empty()
 }
 
+// BroadcastMessages broadcasts messages.
+func (c *ContractClient) BroadcastMessages(
+	ctx context.Context,
+	sender sdk.AccAddress,
+	messages ...sdk.Msg,
+) (*sdk.TxResponse, error) {
+	return client.BroadcastTx(ctx, c.clientCtx.WithFromAddress(sender), c.getTxFactory(), messages...)
+}
+
 // ******************** Execute ********************
 
 // SendMessage executes `send_message` method with transfer action.
@@ -286,6 +301,28 @@ func (c *ContractClient) SendMessage(
 	txRes, err := c.execute(ctx, sender, execRequest{
 		Body: req,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return txRes, nil
+}
+
+// SendMessages executes multiple `send_message` method with transfer action.
+func (c *ContractClient) SendMessages(
+	ctx context.Context, sender sdk.AccAddress, messages ...MessageWithDestination,
+) (*sdk.TxResponse, error) {
+	reqs := make([]execRequest, len(messages))
+	for i, msg := range messages {
+		req := sendMessageRequest{}
+		req.SendMessage.Destination = msg.Destination
+		req.SendMessage.Message = msg.NFT
+		reqs[i] = execRequest{
+			Body: req,
+		}
+	}
+
+	txRes, err := c.execute(ctx, sender, reqs...)
 	if err != nil {
 		return nil, err
 	}

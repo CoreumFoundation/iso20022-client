@@ -19,7 +19,6 @@ type CoreumChainConfig struct {
 	GRPCAddress            string
 	FundingMnemonic        string
 	ContractPath           string
-	PreviousContractPath   string
 	AddressBookRepoAddress string
 	Account1Mnemonic       string
 	Account2Mnemonic       string

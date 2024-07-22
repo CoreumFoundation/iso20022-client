@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Message xmlns="urn:issettled" xmlns:ispsr="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.11">
+    <FIToFIPmtStsRpt>
+        <ispsr:GrpHdr>
+            <ispsr:MsgId>20220717USDDSO9519156420ISSDINTL07X</ispsr:MsgId>
+            <ispsr:CreDtTm>2022-07-17T13:29:00</ispsr:CreDtTm>
+            <ispsr:InstgAgt>
+                <ispsr:FinInstnId>
+                    <ispsr:BICFI>ISSDINTL07X</ispsr:BICFI>
+                </ispsr:FinInstnId>
+            </ispsr:InstgAgt>
+            <ispsr:InstdAgt>
+                <ispsr:FinInstnId>
+                    <ispsr:BICFI>BLUEUSNY001</ispsr:BICFI>
+                </ispsr:FinInstnId>
+            </ispsr:InstdAgt>
+        </ispsr:GrpHdr>
+        <ispsr:TxInfAndSts>
+            <ispsr:OrgnlEndToEndId>db0a130d58c749e9a884a90b2b47e047</ispsr:OrgnlEndToEndId>
+            <ispsr:OrgnlTxId>73b8eda0fcea4a2f934d2c774639e0eb</ispsr:OrgnlTxId>
+            <ispsr:TxSts>ACTC</ispsr:TxSts>
+            <ispsr:StsRsnInf>
+                <ispsr:Rsn>
+                    <ispsr:Cd>0303</ispsr:Cd>
+                    <ispsr:Prtry>Transaction processed by IsSettled and successfully registered in the Distributed Ledger.</ispsr:Prtry>
+                </ispsr:Rsn>
+            </ispsr:StsRsnInf>
+        </ispsr:TxInfAndSts>
+    </FIToFIPmtStsRpt>
+</Message>

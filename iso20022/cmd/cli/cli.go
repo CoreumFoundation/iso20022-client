@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -45,14 +46,16 @@ const (
 	FlagHome = "home"
 	// FlagKeyName is the key name flag.
 	FlagKeyName = "key-name"
-	// FlagCoreumChainID is chain-id flag.
-	FlagCoreumChainID = "coreum-chain-id"
+	// FlagChainID is chain-id flag.
+	FlagChainID = "chain-id"
 	// FlagCoreumGRPCURL is Coreum GRPC URL flag.
 	FlagCoreumGRPCURL = "coreum-grpc-url"
 	// FlagCoreumContractAddress is the address of the bridge smart contract.
 	FlagCoreumContractAddress = "coreum-contract-address"
 	// FlagServerAddress is the address that http server listens to flag.
 	FlagServerAddress = "server-addr"
+	// FlagCachePath is the path to save caches
+	FlagCachePath = "cache-path"
 )
 
 // Runner is a runner interface.
@@ -179,6 +182,11 @@ func GetHomeRunnerConfig(cmd *cobra.Command) (runner.Config, error) {
 		cfg.Processes.Server.ListenAddress = listenAddr
 	}
 
+	cachePath, err := cmd.Flags().GetString(FlagCachePath)
+	if err == nil && cachePath != "" {
+		cfg.Processes.Queue.Path = cachePath
+	}
+
 	return cfg, nil
 }
 
@@ -216,9 +224,9 @@ func InitCmd() *cobra.Command {
 			}
 			log.Info(ctx, "Generating settings", zap.String("home", home))
 
-			chainID, err := cmd.Flags().GetString(FlagCoreumChainID)
+			chainID, err := cmd.Flags().GetString(FlagChainID)
 			if err != nil {
-				return errors.Wrapf(err, "failed to read %s", FlagCoreumChainID)
+				return errors.Wrapf(err, "failed to read %s", FlagChainID)
 			}
 			coreumGRPCURL, err := cmd.Flags().GetString(FlagCoreumGRPCURL)
 			if err != nil {
@@ -257,7 +265,7 @@ func InitCmd() *cobra.Command {
 }
 
 func addCoreumChainIDFlag(cmd *cobra.Command) *string {
-	return cmd.PersistentFlags().String(FlagCoreumChainID, string(runner.DefaultCoreumChainID), "Coreum chain ID")
+	return cmd.PersistentFlags().String(FlagChainID, string(runner.DefaultCoreumChainID), "Coreum chain ID")
 }
 
 // StartCmd returns the start cmd.
@@ -271,13 +279,18 @@ func StartCmd(pp RunnerProvider) *cobra.Command {
 				return err
 			}
 
-			return providedRunner.Start(cmd.Context())
+			err = providedRunner.Start(cmd.Context())
+			// Let the services finish
+			// FIXME
+			<-time.After(2 * time.Second)
+			return err
 		},
 	}
 	AddHomeFlag(cmd)
 	AddKeyringFlags(cmd)
 	AddKeyNameFlag(cmd)
 	AddServerAddressFlag(cmd)
+	AddCachePathFlag(cmd)
 
 	return cmd
 }
@@ -307,6 +320,11 @@ func AddKeyNameFlag(cmd *cobra.Command) {
 // AddServerAddressFlag adds the server-addr flag to the command.
 func AddServerAddressFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(FlagServerAddress, "", "Http server address")
+}
+
+// AddCachePathFlag adds the cache-path flag to the command.
+func AddCachePathFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().String(FlagCachePath, "", "Cache path")
 }
 
 // VersionCmd returns a CLI command to interactively print the application binary version information.

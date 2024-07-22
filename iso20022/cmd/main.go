@@ -23,7 +23,9 @@ func main() {
 		if err != nil {
 			return err
 		}
-		if err := rootCmd.Execute(); err != nil && !errors.Is(err, context.Canceled) {
+
+		err = rootCmd.Execute()
+		if err != nil && !errors.Is(err, context.Canceled) {
 			return err
 		}
 

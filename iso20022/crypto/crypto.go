@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/crypto/xsalsa20symmetric"
 	secp256k1v4 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/pkg/errors"
 
@@ -51,6 +52,14 @@ func (c Cryptography) GenerateSharedKey(privateKey cryptotypes.PrivKey, publicKe
 	// TODO: It is recommended to securely hash the result before using as a cryptographic key.
 	h := sha256.Sum256(sharedKey)
 	return h[:], nil
+}
+
+func (c Cryptography) EncryptSymmetric(plaintext []byte, secret []byte) (ciphertext []byte) {
+	return xsalsa20symmetric.EncryptSymmetric(plaintext, secret)
+}
+
+func (c Cryptography) DecryptSymmetric(ciphertext []byte, secret []byte) (plaintext []byte, err error) {
+	return xsalsa20symmetric.DecryptSymmetric(ciphertext, secret)
 }
 
 func extractPrivateKeyFromLocal(rl *keyring.Record_Local) (cryptotypes.PrivKey, error) {

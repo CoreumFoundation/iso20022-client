@@ -3,17 +3,18 @@ package messages
 import (
 	"encoding/xml"
 
-	"github.com/moov-io/iso20022/pkg/utils"
+	"github.com/pkg/errors"
 )
 
 type elementDummy struct {
 	XMLName xml.Name
 	Attrs   []xml.Attr `xml:",any,attr,omitempty" json:",omitempty"`
+	Rest    []byte     `xml:",innerxml"`
 }
 
 func (dummy elementDummy) NameSpace() string {
 	for _, attr := range dummy.Attrs {
-		if attr.Name.Local == utils.XmlDefaultNamespace {
+		if attr.Name.Local == XmlDefaultNamespace {
 			return attr.Value
 		}
 	}
@@ -22,28 +23,28 @@ func (dummy elementDummy) NameSpace() string {
 
 func (dummy elementDummy) Validate() error {
 	if len(dummy.NameSpace()) == 0 {
-		return utils.Validate(&dummy)
+		return Validate(&dummy)
 	}
 
 	for _, attr := range dummy.Attrs {
-		if attr.Name.Local == utils.XmlDefaultNamespace && dummy.NameSpace() == attr.Value {
-			return utils.Validate(&dummy)
+		if attr.Name.Local == XmlDefaultNamespace && dummy.NameSpace() == attr.Value {
+			return Validate(&dummy)
 		}
 	}
 
-	return utils.NewErrInvalidNameSpace()
+	return errors.New("The namespace of document is invalid")
 }
 
 type documentDummy struct {
 	XMLName  xml.Name
 	Attrs    []xml.Attr `xml:",any,attr,omitempty" json:",omitempty"`
 	AppHdr   *elementDummy
-	Document *elementDummy
+	Document *elementDummy `xml:",any"`
 }
 
 func (dummy documentDummy) NameSpace() string {
 	for _, attr := range dummy.Attrs {
-		if attr.Name.Local == utils.XmlDefaultNamespace {
+		if attr.Name.Local == XmlDefaultNamespace {
 			return attr.Value
 		}
 	}
@@ -52,14 +53,14 @@ func (dummy documentDummy) NameSpace() string {
 
 func (dummy documentDummy) Validate() error {
 	if len(dummy.NameSpace()) == 0 {
-		return utils.Validate(&dummy)
+		return Validate(&dummy)
 	}
 
 	for _, attr := range dummy.Attrs {
-		if attr.Name.Local == utils.XmlDefaultNamespace && dummy.NameSpace() == attr.Value {
-			return utils.Validate(&dummy)
+		if attr.Name.Local == XmlDefaultNamespace && dummy.NameSpace() == attr.Value {
+			return Validate(&dummy)
 		}
 	}
 
-	return utils.NewErrInvalidNameSpace()
+	return errors.New("The namespace of document is invalid")
 }

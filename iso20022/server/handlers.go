@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -9,56 +10,41 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 )
 
-func Send(c *gin.Context) {
-	sendCh, ok := c.Get("sendChannel")
-	if !ok {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	sendChannel := sendCh.(chan<- []byte)
+type Handler struct {
+	Parser       processes.Parser
+	MessageQueue processes.MessageQueue
+}
 
+func (h *Handler) Send(c *gin.Context) {
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(c.Request.Body)
 
-	body, err := io.ReadAll(c.Request.Body)
+	message, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	p, ok := c.Get("parser")
-	if !ok {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	parser := p.(processes.Parser)
-
-	_, err = parser.ExtractIdentificationFromIsoMessage(body)
+	messageId, _, err := h.Parser.ExtractMetadataFromIsoMessage(message)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
+	// TODO: Check for duplicate messages by ID
+	fmt.Printf("Sending message with ID : %s\n", messageId)
+
 	c.Status(http.StatusCreated)
 
-	go func() {
-		sendChannel <- body
-	}()
+	go h.MessageQueue.PushToSend(messageId, message)
 }
 
-func Receive(c *gin.Context) {
-	recvCh, ok := c.Get("receiveChannel")
-	if !ok {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	receiveChannel := recvCh.(<-chan []byte)
-
-	select {
-	case message := <-receiveChannel:
+func (h *Handler) Receive(c *gin.Context) {
+	message, ok := h.MessageQueue.PopFromReceive()
+	if ok {
 		c.Data(http.StatusOK, "application/xml", message)
-	default:
+	} else {
 		c.Status(http.StatusNoContent)
 	}
 }

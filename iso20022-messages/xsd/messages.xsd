@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns="urn:iso"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.01"
+    xmlns:head1_2="urn:iso:std:iso:20022:tech:xsd:head.001.001.02"
+    xmlns:head1_4="urn:iso:std:iso:20022:tech:xsd:head.001.001.04"
+    xmlns:head2_1="urn:iso:std:iso:20022:tech:xsd:head.002.001.01"
+    xmlns:ps7="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.07"
+    xmlns:ps8="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.08"
+    xmlns:ps10="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10"
+    xmlns:ps11="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.11"
+    xmlns:ps12="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.12"
+    xmlns:ps14="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.14"
+    xmlns:cd8="urn:iso:std:iso:20022:tech:xsd:pacs.003.001.08"
+    xmlns:cd11="urn:iso:std:iso:20022:tech:xsd:pacs.003.001.11"
+    xmlns:pr10="urn:iso:std:iso:20022:tech:xsd:pacs.004.001.10"
+    xmlns:pr13="urn:iso:std:iso:20022:tech:xsd:pacs.004.001.13"
+    xmlns:prv10="urn:iso:std:iso:20022:tech:xsd:pacs.007.001.10"
+    xmlns:prv13="urn:iso:std:iso:20022:tech:xsd:pacs.007.001.13"
+    xmlns:ct6="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.06"
+    xmlns:ct8="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08"
+    xmlns:ct9="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09"
+    xmlns:ct12="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.12"
+    xmlns:c9_8="urn:iso:std:iso:20022:tech:xsd:pacs.009.001.08"
+    xmlns:c9_9="urn:iso:std:iso:20022:tech:xsd:pacs.009.001.09"
+    xmlns:c9_11="urn:iso:std:iso:20022:tech:xsd:pacs.009.001.11"
+    xmlns:dd4="urn:iso:std:iso:20022:tech:xsd:pacs.010.001.04"
+    xmlns:dd6="urn:iso:std:iso:20022:tech:xsd:pacs.010.001.06"
+    xmlns:s8_3="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.03"
+    xmlns:s8_4="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.04"
+    xmlns:s8_6="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.06"
+    xmlns:ms="urn:iso:std:iso:20022:tech:xsd:pacs.029.001.02"
+    xmlns:gefeg="http://www.gefeg.com/public"
+    targetNamespace="urn:iso"
+    elementFormDefault="qualified"
+    attributeFormDefault="qualified">
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:head.001.001.01" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_head_001_001_01.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:head.001.001.02" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_head_001_001_02.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:head.001.001.04" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_head_001_001_04.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:head.002.001.01" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_head_002_001_01.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.07" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_002_001_07.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.08" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_002_001_08.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_002_001_10.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.11" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_002_001_11.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.12" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_002_001_12.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.14" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_002_001_14.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.003.001.08" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_003_001_08.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.003.001.11" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_003_001_11.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.004.001.10" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_004_001_10.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.004.001.13" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_004_001_13.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.007.001.10" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_007_001_10.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.007.001.13" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_007_001_13.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.06" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_008_001_06.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_008_001_08.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_008_001_09.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.12" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_008_001_12.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.009.001.08" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_009_001_08.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.009.001.09" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_009_001_09.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.009.001.11" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_009_001_11.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.010.001.04" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_010_001_04.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.010.001.06" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_010_001_06.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.03" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_028_001_03.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.04" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_028_001_04.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.06" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_028_001_06.xsd"/>
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:pacs.029.001.02" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_pacs_029_001_02.xsd"/>
+  <xs:element name="Message" type="HdrAndData"/>
+  <xs:complexType name="HdrAndData">
+    <xs:annotation>
+      <xs:documentation gefeg:label="ChangeId">XSD Changes</xs:documentation>
+      <xs:documentation gefeg:label="ChangeUser">VocaLink</xs:documentation>
+      <xs:documentation gefeg:label="ChangeDate">05/05/2020</xs:documentation>
+      <xs:documentation gefeg:label="ChangeNote">change of namespace and schemaLocation for admn.007 and admn.008</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:choice>
+        <xs:element name="AppHdr1_1" type="head:BusinessApplicationHeaderV01"/>
+        <xs:element name="AppHdr1_2" type="head1_2:BusinessApplicationHeaderV02"/>
+        <xs:element name="AppHdr1_4" type="head1_4:BusinessApplicationHeaderV04"/>
+        <xs:element name="AppHdr2_1" type="head2_1:BusinessFileHeaderV01"/>
+      </xs:choice>
+      <xs:choice>
+        <xs:element name="FIToFICustomerCreditTransferV06" type="ct6:Document"/>
+        <xs:element name="FIToFICustomerCreditTransferV08" type="ct8:Document"/>
+        <xs:element name="FIToFICustomerCreditTransferV09" type="ct9:Document"/>
+        <xs:element name="FIToFICustomerCreditTransferV12" type="ct12:Document"/>
+        <xs:element name="FIToFIPaymentStatusReportV07" type="ps7:Document"/>
+        <xs:element name="FIToFIPaymentStatusReportV08" type="ps8:Document"/>
+        <xs:element name="FIToFIPaymentStatusReportV10" type="ps10:Document"/>
+        <xs:element name="FIToFIPaymentStatusReportV11" type="ps11:Document"/>
+        <xs:element name="FIToFIPaymentStatusReportV12" type="ps12:Document"/>
+        <xs:element name="FIToFIPaymentStatusReportV14" type="ps14:Document"/>
+        <xs:element name="FIToFICustomerDirectDebitV08" type="cd8:Document"/>
+        <xs:element name="FIToFICustomerDirectDebitV11" type="cd11:Document"/>
+        <xs:element name="FinancialInstitutionCreditTransferV08" type="c9_8:Document"/>
+        <xs:element name="FinancialInstitutionCreditTransferV09" type="c9_9:Document"/>
+        <xs:element name="FinancialInstitutionCreditTransferV11" type="c9_11:Document"/>
+        <xs:element name="FinancialInstitutionDirectDebitV04" type="dd4:Document"/>
+        <xs:element name="FinancialInstitutionDirectDebitV06" type="dd6:Document"/>
+        <xs:element name="PaymentReturnV10" type="pr10:Document"/>
+        <xs:element name="PaymentReturnV13" type="pr13:Document"/>
+        <xs:element name="FIToFIPaymentReversalV10" type="prv10:Document"/>
+        <xs:element name="FIToFIPaymentReversalV13" type="prv13:Document"/>
+        <xs:element name="FIToFIPaymentStatusRequestV03" type="s8_3:Document"/>
+        <xs:element name="FIToFIPaymentStatusRequestV04" type="s8_4:Document"/>
+        <xs:element name="FIToFIPaymentStatusRequestV06" type="s8_6:Document"/>
+        <xs:element name="MultilateralSettlementRequestV02" type="ms:Document"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
