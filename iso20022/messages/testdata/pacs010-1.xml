@@ -1,0 +1,79 @@
+<FIDrctDbt>
+    <GrpHdr>
+        <MsgId>MMMM/151121 PPPP_OOOO_EUR</MsgId>
+        <CreDtTm>2015-11-20T16:00:00</CreDtTm>
+        <NbOfTxs>2</NbOfTxs>
+        <InstgAgt>
+            <FinInstnId>
+                <BICFI>MMMMBEBB</BICFI>
+            </FinInstnId>
+        </InstgAgt>
+        <InstdAgt>
+            <FinInstnId>
+                <BICFI>NNNNDEFF</BICFI>
+            </FinInstnId>
+        </InstdAgt>
+    </GrpHdr>
+    <CdtInstr>
+        <CdtId>MMMM/151121 PPPP_OOOO_EUR_7500</CdtId>
+        <BtchBookg>true</BtchBookg>
+        <CdtrAgt>
+            <FinInstnId>
+                <BICFI>QQQQFRPP</BICFI>
+            </FinInstnId>
+        </CdtrAgt>
+        <CdtrAgtAcct>
+            <Id>
+                <IBAN>DE89370400440532013000</IBAN>
+            </Id>
+        </CdtrAgtAcct>
+        <Cdtr>
+            <FinInstnId>
+                <BICFI>MMMMBEBB</BICFI>
+            </FinInstnId>
+        </Cdtr>
+        <CdtrAcct>
+            <Id>
+                <IBAN>FR1420041010050500013M02606</IBAN>
+            </Id>
+        </CdtrAcct>
+        <DrctDbtTxInf>
+            <PmtId>
+                <InstrId>MMMM/151121 PPPP_OOOO_EUR_2500</InstrId>
+                <EndToEndId>REFERENCE0001</EndToEndId>
+                <TxId>PPPP _2500</TxId>
+            </PmtId>
+            <IntrBkSttlmAmt Ccy="EUR">2500</IntrBkSttlmAmt>
+            <IntrBkSttlmDt>2015-11-21</IntrBkSttlmDt>
+            <Dbtr>
+                <FinInstnId>
+                    <BICFI>PPPPDKKK</BICFI>
+                </FinInstnId>
+            </Dbtr>
+            <DbtrAgt>
+                <FinInstnId>
+                    <BICFI>NNNNDEFF</BICFI>
+                </FinInstnId>
+            </DbtrAgt>
+        </DrctDbtTxInf>
+        <DrctDbtTxInf>
+            <PmtId>
+                <InstrId>MMMM/151121 PPPP_OOOO_EUR_5000</InstrId>
+                <EndToEndId>REFERENCE0002</EndToEndId>
+                <TxId>OOOO_5000</TxId>
+            </PmtId>
+            <IntrBkSttlmAmt Ccy="EUR">5000</IntrBkSttlmAmt>
+            <IntrBkSttlmDt>2015-11-21</IntrBkSttlmDt>
+            <Dbtr>
+                <FinInstnId>
+                    <BICFI>OOOOATWW</BICFI>
+                </FinInstnId>
+            </Dbtr>
+            <DbtrAgt>
+                <FinInstnId>
+                    <BICFI>NNNNDEFF</BICFI>
+                </FinInstnId>
+            </DbtrAgt>
+        </DrctDbtTxInf>
+    </CdtInstr>
+</FIDrctDbt>

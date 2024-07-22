@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -55,6 +56,7 @@ type RunnerEnv struct {
 	RunnersParallelGroup *parallel.Group
 	Runner               *runner.Runner
 	RunnerComponent      runner.Components
+	AccountAddress       sdk.AccAddress
 }
 
 // NewRunnerEnv returns new instance of the RunnerEnv.
@@ -87,7 +89,7 @@ func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain 
 		require.NoError(t, contractClient.SetContractAddress(*cfg.CustomContractAddress))
 	}
 
-	rnrComponents, rnr := createDevRunner(
+	rnrComponents, rnr, accountAddress := createDevRunner(
 		ctx,
 		t,
 		chain,
@@ -103,6 +105,7 @@ func NewRunnerEnv(ctx context.Context, t *testing.T, cfg RunnerEnvConfig, chain 
 		RunnersParallelGroup: parallel.NewGroup(ctx),
 		Runner:               rnr,
 		RunnerComponent:      rnrComponents,
+		AccountAddress:       accountAddress,
 	}
 	t.Cleanup(func() {
 		// we can cancel the context now and wait for the runner to stop gracefully
@@ -167,7 +170,7 @@ func createDevRunner(
 	chain integrationtests.Chain,
 	contractAddress sdk.AccAddress,
 	accountMnemonics string,
-) (runner.Components, *runner.Runner) {
+) (runner.Components, *runner.Runner, sdk.AccAddress) {
 	t.Helper()
 
 	uniqueName := uniqueNameFromMnemonic(accountMnemonics)
@@ -180,11 +183,11 @@ func createDevRunner(
 	runnerCfg.Coreum.GRPC.URL = chain.Coreum.Config().GRPCAddress
 	runnerCfg.Coreum.Contract.ContractAddress = contractAddress.String()
 	runnerCfg.Coreum.Network.ChainID = chain.Coreum.ChainSettings.ChainID
-	// make operation fetcher fast
 	runnerCfg.Processes.RepeatDelay = 500 * time.Millisecond
 	runnerCfg.Processes.AddressBook.CustomRepoAddress = chain.Coreum.Config().AddressBookRepoAddress
 	port, err := getFreePort()
 	require.NoError(t, err)
+	runnerCfg.Processes.Queue.Path = path.Join(os.TempDir(), uniqueName)
 	runnerCfg.Processes.Server.ListenAddress = ":" + strconv.Itoa(port)
 
 	// exit on errors
@@ -200,12 +203,17 @@ func createDevRunner(
 
 	rnr, err := runner.NewRunner(components, runnerCfg)
 	require.NoError(t, err)
-	return components, rnr
+	return components, rnr, accountAddress
 }
 
 func uniqueNameFromMnemonic(mnemonic string) string {
 	return fmt.Sprintf("iso20022-integration-test-%x", md5.Sum([]byte(mnemonic)))
 }
+
+func mnemonicToTempPath(mnemonic string) string {
+	return path.Join(os.TempDir(), uniqueNameFromMnemonic(mnemonic))
+}
+
 func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 	file, err := os.OpenFile(messageFilePath, os.O_RDONLY, 0600)
 	if err != nil {

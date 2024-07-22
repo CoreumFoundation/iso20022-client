@@ -1,6 +1,8 @@
 package messages
 
 import (
+	"reflect"
+
 	"github.com/moov-io/iso20022/pkg/acmt_v01"
 	"github.com/moov-io/iso20022/pkg/acmt_v02"
 	"github.com/moov-io/iso20022/pkg/acmt_v03"
@@ -208,4 +210,22 @@ var (
 		utils.DocumentRemt00200102NameSpace: func() Iso20022Message { return &remt_v02.RemittanceLocationAdviceV02{} },
 		utils.DocumentRemt00100104NameSpace: func() Iso20022Message { return &remt_v04.RemittanceAdviceV04{} },
 	}
+	extendedMessageConstructor = make(map[string][]constructorFunc)
 )
+
+func init() {
+	for _, fn := range messageConstructor {
+		message := fn()
+		field, ok := reflect.TypeOf(message).Elem().FieldByName("XMLName")
+		if !ok {
+			continue
+		}
+		tag := field.Tag.Get("xml")
+		fnList, exists := extendedMessageConstructor[tag]
+		if !exists {
+			fnList = make([]constructorFunc, 0)
+		}
+		fnList = append(fnList, fn)
+		extendedMessageConstructor[tag] = fnList
+	}
+}

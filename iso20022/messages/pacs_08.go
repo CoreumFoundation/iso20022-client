@@ -25,10 +25,6 @@ func extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification5(agent *
 	if agent.FinInstnId.BICFI != nil {
 		res.Identification.BusinessIdentifiersCode = string(*agent.FinInstnId.BICFI)
 	}
-
-	if agent.FinInstnId.BICFI != nil {
-		res.Identification.BusinessIdentifiersCode = string(*agent.FinInstnId.BICFI)
-	}
 	if agent.FinInstnId.ClrSysMmbId != nil {
 		res.Identification.ClearingSystemMemberIdentification = &addressbook.ClearingSystemMemberIdentification{
 			MemberId: string(agent.FinInstnId.ClrSysMmbId.MmbId),
@@ -79,10 +75,6 @@ func extractPartyFromPacsV08BranchAndFinancialInstitutionIdentification6(agent *
 			res.Branch.Name = string(*agent.BrnchId.Nm)
 		}
 		res.Branch.PostalAddress = postalAddressFromPacsV08PostalAddress24(agent.BrnchId.PstlAdr)
-	}
-
-	if agent.FinInstnId.BICFI != nil {
-		res.Identification.BusinessIdentifiersCode = string(*agent.FinInstnId.BICFI)
 	}
 
 	if agent.FinInstnId.BICFI != nil {

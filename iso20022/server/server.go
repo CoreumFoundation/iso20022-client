@@ -12,26 +12,34 @@ import (
 )
 
 type Server struct {
-	httpServer http.Server
+	messageQueue processes.MessageQueue
+	httpServer   http.Server
 }
 
-func CreateHandlers(parser processes.Parser, sendChannel chan<- []byte, receiveChannel <-chan []byte) http.Handler {
-	r := gin.Default()
-	r.Use(InjectDependencies(parser, sendChannel, receiveChannel))
+func createHandlers(parser processes.Parser, messageQueue processes.MessageQueue) http.Handler {
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(gin.Logger(), gin.Recovery())
 	r.Use(CORSMiddleware())
+
+	h := Handler{
+		Parser:       parser,
+		MessageQueue: messageQueue,
+	}
 
 	v1 := r.Group("/v1")
 
-	v1.POST("/send", Send)
-	v1.GET("/receive", Receive)
+	v1.POST("/send", h.Send)
+	v1.GET("/receive", h.Receive)
 	return r
 }
 
-func New(addr string, handler http.Handler) *Server {
+func New(parser processes.Parser, messageQueue processes.MessageQueue, addr string) *Server {
 	return &Server{
+		messageQueue: messageQueue,
 		httpServer: http.Server{
 			Addr:    addr,
-			Handler: handler,
+			Handler: createHandlers(parser, messageQueue),
 			// Good practice to set timeouts to avoid Slowloris attacks.
 			WriteTimeout: time.Second * 15,
 			ReadTimeout:  time.Second * 15,
@@ -50,6 +58,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 		s.httpServer.SetKeepAlivesEnabled(false)
 		_ = s.httpServer.Shutdown(ctxTimeout)
+		s.messageQueue.Close()
 	}()
 
 	err := s.httpServer.ListenAndServe()

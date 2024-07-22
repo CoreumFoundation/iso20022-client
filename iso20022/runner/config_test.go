@@ -1,6 +1,10 @@
 package runner_test
 
 import (
+	_ "embed"
+	"os"
+	"path"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -58,37 +62,10 @@ func TestInitAndReadConfig(t *testing.T) {
 	}
 }
 
+//go:embed default_config.yaml
+var defaultConfig string
+
 // the func returns the default config snapshot as string.
 func getDefaultConfigString() string {
-	return `version: v1
-logging:
-    level: info
-    format: console
-coreum:
-    client_key_name: iso20022-client
-    grpc:
-        url: https://full-node.devnet-1.coreum.dev:9090
-    network:
-        chain_id: coreum-devnet-1
-    contract:
-        contract_address: devcore18cszlvm6pze0x9sz32qnjq4vtd45xehqs8dq7cwy8yhq35wfnn3qx8xp93
-        gas_adjustment: 1.4
-        gas_price_adjustment: 1.2
-        page_limit: 50
-        out_of_gas_retry_delay: 500ms
-        out_of_gas_retry_attempts: 5
-        request_timeout: 10s
-        tx_timeout: 1m0s
-        tx_status_poll_interval: 500ms
-processes:
-    server:
-        listen_address: :2843
-    address_book:
-        update_interval: 1m0s
-        custom_repo_address: ""
-    queue_size: 10
-    repeat_delay: 10s
-    retry_delay: 10s
-    poll_interval: 1s
-`
+	return strings.ReplaceAll(defaultConfig, "{{QUEUE_PATH}}", path.Join(os.TempDir(), "iso20022-client"))
 }

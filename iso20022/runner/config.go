@@ -4,6 +4,7 @@ package runner
 import (
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -72,11 +73,18 @@ type AddressBookConfig struct {
 	CustomRepoAddress string        `yaml:"custom_repo_address"`
 }
 
+// Queue is the message queue config.
+type Queue struct {
+	Size                int           `yaml:"size"`
+	Path                string        `yaml:"path"`
+	StatusCacheDuration time.Duration `yaml:"status_cache_duration"`
+}
+
 // ProcessesConfig is processes config.
 type ProcessesConfig struct {
 	Server       ServerConfig      `yaml:"server"`
 	AddressBook  AddressBookConfig `yaml:"address_book"`
-	QueueSize    int               `yaml:"queue_size"`
+	Queue        Queue             `yaml:"queue"`
 	RepeatDelay  time.Duration     `yaml:"repeat_delay"`
 	RetryDelay   time.Duration     `yaml:"retry_delay"`
 	PollInterval time.Duration     `yaml:"poll_interval"`
@@ -103,7 +111,7 @@ func DefaultConfig() Config {
 
 	defaultLoggerConfig := logger.DefaultZapLoggerConfig()
 
-	return Config{
+	config := Config{
 		Version: configVersion,
 		LoggingConfig: LoggingConfig{
 			Level:  defaultLoggerConfig.Level,
@@ -121,7 +129,7 @@ func DefaultConfig() Config {
 			},
 			Contract: CoreumContractConfig{
 				// TODO: Change to the contract address on mainnet before release
-				ContractAddress:       "devcore18cszlvm6pze0x9sz32qnjq4vtd45xehqs8dq7cwy8yhq35wfnn3qx8xp93",
+				ContractAddress:       "devcore1hz83rpzpduazzaaj0vg9gyehe2cjymsfy4thdlvhlmvvlulvn59swq29nh",
 				GasAdjustment:         defaultCoreumContactConfig.GasAdjustment,
 				GasPriceAdjustment:    defaultCoreumContactConfig.GasPriceAdjustment.MustFloat64(),
 				PageLimit:             defaultCoreumContactConfig.PageLimit,
@@ -141,13 +149,19 @@ func DefaultConfig() Config {
 			AddressBook: AddressBookConfig{
 				UpdateInterval: 60 * time.Second,
 			},
-			QueueSize:    10,
+			Queue: Queue{
+				Size:                50,
+				Path:                path.Join(os.TempDir(), "iso20022"),
+				StatusCacheDuration: time.Hour,
+			},
 			RepeatDelay:  10 * time.Second,
 			RetryDelay:   10 * time.Second,
 			PollInterval: time.Second,
 			ExitOnError:  false,
 		},
 	}
+	config.Processes.Queue.Path = path.Join(os.TempDir(), config.Coreum.ClientKeyName)
+	return config
 }
 
 // InitConfig creates config yaml file.

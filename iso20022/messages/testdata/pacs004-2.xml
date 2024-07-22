@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Message xmlns="urn:issettled" xmlns:ispr="urn:iso:std:iso:20022:tech:xsd:pacs.004.001.10">
+    <PmtRtr>
+        <ispr:GrpHdr>
+            <ispr:MsgId>20220719USDDSO0388509871GRENCHZZ002</ispr:MsgId>
+            <ispr:CreDtTm>2022-07-19T10:19:34</ispr:CreDtTm>
+            <ispr:NbOfTxs>1</ispr:NbOfTxs>
+            <ispr:SttlmInf>
+                <ispr:SttlmMtd>TDSO</ispr:SttlmMtd>
+                <ispr:SttlmAcct>
+                    <ispr:Id>
+                        <ispr:Othr>
+                            <ispr:Id>greenbank</ispr:Id>
+                        </ispr:Othr>
+                    </ispr:Id>
+                    <ispr:Nm>emission</ispr:Nm>
+                </ispr:SttlmAcct>
+            </ispr:SttlmInf>
+            <ispr:InstgAgt>
+                <ispr:FinInstnId>
+                    <ispr:BICFI>GRENCHZZ002</ispr:BICFI>
+                    <ispr:Othr>
+                        <ispr:Id>greenbank</ispr:Id>
+                    </ispr:Othr>
+                </ispr:FinInstnId>
+            </ispr:InstgAgt>
+            <ispr:InstdAgt>
+                <ispr:FinInstnId>
+                    <ispr:BICFI>BLUEUSNY001</ispr:BICFI>
+                    <ispr:Othr>
+                        <ispr:Id>bluebank</ispr:Id>
+                    </ispr:Othr>
+                </ispr:FinInstnId>
+            </ispr:InstdAgt>
+        </ispr:GrpHdr>
+        <ispr:OrgnlGrpInf>
+            <ispr:OrgnlMsgId>20220717USDDSO0123456789BLUEUSNY001</ispr:OrgnlMsgId>
+            <ispr:OrgnlMsgNmId>pacs.008.001.09</ispr:OrgnlMsgNmId>
+            <ispr:OrgnlCreDtTm>2022-07-17T13:22:01</ispr:OrgnlCreDtTm>
+            <ispr:RtrRsnInf>
+                <ispr:Rsn>
+                    <ispr:Cd>0001</ispr:Cd>
+                </ispr:Rsn>
+                <ispr:AddtlInf>Payment final settlement has been completed</ispr:AddtlInf>
+            </ispr:RtrRsnInf>
+        </ispr:OrgnlGrpInf>
+        <ispr:TxInf>
+            <ispr:RtrId>20220719USDDSO0388509871GRENCHZZ002</ispr:RtrId>
+            <ispr:OrgnlInstrId>USDDSO20220717BLUEUSNY001B123456789</ispr:OrgnlInstrId>
+            <ispr:OrgnlEndToEndId>db0a130d58c749e9a884a90b2b47e047</ispr:OrgnlEndToEndId>
+            <ispr:OrgnlTxId>73b8eda0fcea4a2f934d2c774639e0eb</ispr:OrgnlTxId>
+            <ispr:OrgnlIntrBkSttlmAmt Ccy="USDDSO">50000</ispr:OrgnlIntrBkSttlmAmt>
+            <ispr:RtrdIntrBkSttlmAmt Ccy="USDDSO">50000</ispr:RtrdIntrBkSttlmAmt>
+            <ispr:IntrBkSttlmDt>2022-07-17</ispr:IntrBkSttlmDt>
+            <ispr:RtrdInstdAmt Ccy="CHF">48460</ispr:RtrdInstdAmt>
+            <ispr:ChrgBr>CRED</ispr:ChrgBr>
+            <ispr:ChrgsInf>
+                <ispr:Amt Ccy="USDDSO">0</ispr:Amt>
+                <ispr:Agt>
+                    <ispr:FinInstnId>
+                        <ispr:BICFI>GRENCHZZ002</ispr:BICFI>
+                        <ispr:Othr>
+                            <ispr:Id>greenbank</ispr:Id>
+                        </ispr:Othr>
+                    </ispr:FinInstnId>
+                </ispr:Agt>
+            </ispr:ChrgsInf>
+            <ispr:RtrRsnInf>
+                <ispr:Orgtr>
+                    <ispr:Nm>COMPANY AAA INC</ispr:Nm>
+                </ispr:Orgtr>
+                <ispr:Rsn>
+                    <ispr:Cd>NARR</ispr:Cd>
+                    <ispr:Prtry>2022-07-17T12:56:00</ispr:Prtry>
+                </ispr:Rsn>
+                <ispr:AddtlInf>RETURN AFTER ACCEPTED TRANSACTION SETTLEMENT NOTIFICATION</ispr:AddtlInf>
+            </ispr:RtrRsnInf>
+            <ispr:OrgnlTxRef>
+                <ispr:SttlmInf>
+                    <ispr:SttlmMtd>TDSO</ispr:SttlmMtd>
+                    <ispr:SttlmAcct>
+                        <ispr:Id>
+                            <ispr:Othr>
+                                <ispr:Id>bluebank</ispr:Id>
+                            </ispr:Othr>
+                        </ispr:Id>
+                        <ispr:Nm>emission</ispr:Nm>
+                    </ispr:SttlmAcct>
+                </ispr:SttlmInf>
+                <ispr:PmtTpInf>
+                    <ispr:SvcLvl>
+                        <ispr:Prtry>bluebank</ispr:Prtry>
+                    </ispr:SvcLvl>
+                </ispr:PmtTpInf>
+            </ispr:OrgnlTxRef>
+        </ispr:TxInf>
+    </PmtRtr>
+</Message>

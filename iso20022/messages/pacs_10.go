@@ -28,10 +28,6 @@ func extractPartyFromPacsV10BranchAndFinancialInstitutionIdentification6(agent *
 	if agent.FinInstnId.BICFI != nil {
 		res.Identification.BusinessIdentifiersCode = string(*agent.FinInstnId.BICFI)
 	}
-
-	if agent.FinInstnId.BICFI != nil {
-		res.Identification.BusinessIdentifiersCode = string(*agent.FinInstnId.BICFI)
-	}
 	if agent.FinInstnId.LEI != nil {
 		res.Identification.BusinessIdentifiersCode = string(*agent.FinInstnId.LEI)
 	}

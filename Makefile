@@ -17,7 +17,7 @@ BUILD_TIME:= $(shell date +"%Y-%m-%d %H:%M:%S")
 
 # List of Target OS to build the binaries
 PLATFORMS=darwin linux windows
-ARCHITECTURES=386 amd64
+ARCHITECTURES=amd64 arm64
 # LDFLAGS
 LDFLAGS := -X 'github.com/CoreumFoundation/iso20022-client/iso20022/buildinfo.VersionTag=$(VERSION_TAG)' -X 'github.com/CoreumFoundation/iso20022-client/iso20022/buildinfo.GitCommit=$(REV)' -X 'github.com/CoreumFoundation/iso20022-client/iso20022/buildinfo.BuildTime=$(BUILD_TIME)'
 

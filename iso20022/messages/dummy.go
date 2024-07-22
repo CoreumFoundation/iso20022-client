@@ -9,6 +9,7 @@ import (
 type elementDummy struct {
 	XMLName xml.Name
 	Attrs   []xml.Attr `xml:",any,attr,omitempty" json:",omitempty"`
+	Rest    []byte     `xml:",innerxml"`
 }
 
 func (dummy elementDummy) NameSpace() string {
@@ -38,7 +39,7 @@ type documentDummy struct {
 	XMLName  xml.Name
 	Attrs    []xml.Attr `xml:",any,attr,omitempty" json:",omitempty"`
 	AppHdr   *elementDummy
-	Document *elementDummy
+	Document *elementDummy `xml:",any"`
 }
 
 func (dummy documentDummy) NameSpace() string {
