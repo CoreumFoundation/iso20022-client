@@ -30,8 +30,6 @@ jobs:
           fi
       - name: Link released binaries under right names
         run: |
-          ls $(pwd)
-          ls $(pwd)/iso20022-client
           ln $(pwd)/iso20022-client/bin/artifacts/${{ github.sha }}/darwin_amd64/iso20022-client iso20022-client-darwin-amd64
           ln $(pwd)/iso20022-client/bin/artifacts/${{ github.sha }}/darwin_arm64/iso20022-client iso20022-client-darwin-arm64
           ln $(pwd)/iso20022-client/bin/artifacts/${{ github.sha }}/linux_amd64/iso20022-client iso20022-client-linux-amd64
