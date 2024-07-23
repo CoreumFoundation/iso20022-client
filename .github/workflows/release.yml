@@ -30,12 +30,12 @@ jobs:
           fi
       - name: Link released binaries under right names
         run: |
-          ln bin/artifacts/${{ github.sha }}/darwin_amd64/iso20022-client iso20022-client-darwin-amd64
-          ln bin/artifacts/${{ github.sha }}/darwin_arm64/iso20022-client iso20022-client-darwin-arm64
-          ln bin/artifacts/${{ github.sha }}/linux_amd64/iso20022-client iso20022-client-linux-amd64
-          ln bin/artifacts/${{ github.sha }}/linux_arm64/iso20022-client iso20022-client-linux-arm64
-          ln bin/artifacts/${{ github.sha }}/windows_amd64/iso20022-client iso20022-client-windows-amd64
-          ln bin/artifacts/${{ github.sha }}/windows_arm64/iso20022-client iso20022-client-windows-arm64
+          ln $(pwd)/bin/artifacts/${{ github.sha }}/darwin_amd64/iso20022-client iso20022-client-darwin-amd64
+          ln $(pwd)/bin/artifacts/${{ github.sha }}/darwin_arm64/iso20022-client iso20022-client-darwin-arm64
+          ln $(pwd)/bin/artifacts/${{ github.sha }}/linux_amd64/iso20022-client iso20022-client-linux-amd64
+          ln $(pwd)/bin/artifacts/${{ github.sha }}/linux_arm64/iso20022-client iso20022-client-linux-arm64
+          ln $(pwd)/bin/artifacts/${{ github.sha }}/windows_amd64/iso20022-client iso20022-client-windows-amd64
+          ln $(pwd)/bin/artifacts/${{ github.sha }}/windows_arm64/iso20022-client iso20022-client-windows-arm64
       - name: Create release
         if: steps.check-tag.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
