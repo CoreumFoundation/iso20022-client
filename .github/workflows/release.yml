@@ -16,7 +16,9 @@ jobs:
           path: iso20022-client
           fetch-depth: 0
       - name: Build binaries
-        run: make build-all
+        run: |
+            cd $(pwd)/iso20022-client
+            make build-all
       - name: Check Tag
         id: check-tag
         run: |
