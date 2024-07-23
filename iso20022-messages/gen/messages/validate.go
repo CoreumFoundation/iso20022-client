@@ -75,18 +75,6 @@ func (v Message) Validate() error {
 	if v.FinancialInstitutionDirectDebitV06 != nil {
 		iso.AddError(&errs, baseName+".FinancialInstitutionDirectDebitV06", v.FinancialInstitutionDirectDebitV06.Validate())
 	}
-	if v.ProprietaryFormatInvestigationV05 != nil {
-		iso.AddError(&errs, baseName+".ProprietaryFormatInvestigationV05", v.ProprietaryFormatInvestigationV05.Validate())
-	}
-	if v.AdditionalPaymentInformationV09 != nil {
-		iso.AddError(&errs, baseName+".AdditionalPaymentInformationV09", v.AdditionalPaymentInformationV09.Validate())
-	}
-	if v.UnableToApplyV07 != nil {
-		iso.AddError(&errs, baseName+".UnableToApplyV07", v.UnableToApplyV07.Validate())
-	}
-	if v.FIToFIPaymentCancellationRequestV08 != nil {
-		iso.AddError(&errs, baseName+".FIToFIPaymentCancellationRequestV08", v.FIToFIPaymentCancellationRequestV08.Validate())
-	}
 	if v.PaymentReturnV10 != nil {
 		iso.AddError(&errs, baseName+".PaymentReturnV10", v.PaymentReturnV10.Validate())
 	}
@@ -98,51 +86,6 @@ func (v Message) Validate() error {
 	}
 	if v.FIToFIPaymentReversalV13 != nil {
 		iso.AddError(&errs, baseName+".FIToFIPaymentReversalV13", v.FIToFIPaymentReversalV13.Validate())
-	}
-	if v.CreditorPaymentActivationRequestV07 != nil {
-		iso.AddError(&errs, baseName+".CreditorPaymentActivationRequestV07", v.CreditorPaymentActivationRequestV07.Validate())
-	}
-	if v.CreditorPaymentActivationRequestStatusReportV07 != nil {
-		iso.AddError(&errs, baseName+".CreditorPaymentActivationRequestStatusReportV07", v.CreditorPaymentActivationRequestStatusReportV07.Validate())
-	}
-	if v.ResolutionOfInvestigationV09 != nil {
-		iso.AddError(&errs, baseName+".ResolutionOfInvestigationV09", v.ResolutionOfInvestigationV09.Validate())
-	}
-	if v.EchoRequest != nil {
-		iso.AddError(&errs, baseName+".EchoRequest", v.EchoRequest.Validate())
-	}
-	if v.EchoResponse != nil {
-		iso.AddError(&errs, baseName+".EchoResponse", v.EchoResponse.Validate())
-	}
-	if v.SignOffRequest != nil {
-		iso.AddError(&errs, baseName+".SignOffRequest", v.SignOffRequest.Validate())
-	}
-	if v.SignOffResponse != nil {
-		iso.AddError(&errs, baseName+".SignOffResponse", v.SignOffResponse.Validate())
-	}
-	if v.SignOnRequest != nil {
-		iso.AddError(&errs, baseName+".SignOnRequest", v.SignOnRequest.Validate())
-	}
-	if v.SignOnResponse != nil {
-		iso.AddError(&errs, baseName+".SignOnResponse", v.SignOnResponse.Validate())
-	}
-	if v.RemittanceAdviceV04 != nil {
-		iso.AddError(&errs, baseName+".RemittanceAdviceV04", v.RemittanceAdviceV04.Validate())
-	}
-	if v.SystemEventNotificationV02 != nil {
-		iso.AddError(&errs, baseName+".SystemEventNotificationV02", v.SystemEventNotificationV02.Validate())
-	}
-	if v.MessageRejectV01 != nil {
-		iso.AddError(&errs, baseName+".MessageRejectV01", v.MessageRejectV01.Validate())
-	}
-	if v.IdentificationModificationAdviceV02 != nil {
-		iso.AddError(&errs, baseName+".IdentificationModificationAdviceV02", v.IdentificationModificationAdviceV02.Validate())
-	}
-	if v.DatabaseReportRequest != nil {
-		iso.AddError(&errs, baseName+".DatabaseReportRequest", v.DatabaseReportRequest.Validate())
-	}
-	if v.DatabaseAvailabilityReport != nil {
-		iso.AddError(&errs, baseName+".DatabaseAvailabilityReport", v.DatabaseAvailabilityReport.Validate())
 	}
 	if v.FIToFIPaymentStatusRequestV03 != nil {
 		iso.AddError(&errs, baseName+".FIToFIPaymentStatusRequestV03", v.FIToFIPaymentStatusRequestV03.Validate())

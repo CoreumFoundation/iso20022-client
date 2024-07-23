@@ -3,22 +3,6 @@
 package messages
 
 import (
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/acmt_022_001_02"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admi_002_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admi_004_001_02"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_001_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_002_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_003_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_004_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_005_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_006_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_007_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_008_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_026_001_07"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_028_001_09"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_029_001_09"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_035_001_05"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_056_001_08"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_01"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_02"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_04"
@@ -48,9 +32,6 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_04"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_06"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_029_001_02"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pain_013_001_07"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pain_014_001_07"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/remt_001_001_04"
 )
 
 // Element interface for ISO 20022
@@ -323,54 +304,6 @@ func GetMessageConstructors() (map[string]ConstructorFunc, map[string][]Construc
 	})
 	messagesMap["FIDrctDbt"] = list
 
-	urn = "urn:iso:std:iso:20022:tech:xsd:camt.035.001.05"
-	urnMap[urn] = func() Iso20022Message { return &camt_035_001_05.ProprietaryFormatInvestigationV05{} }
-	list, exists = messagesMap["PrtryFrmtInvstgtn"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &camt_035_001_05.ProprietaryFormatInvestigationV05{} },
-		Urn:         urn,
-	})
-	messagesMap["PrtryFrmtInvstgtn"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:camt.028.001.09"
-	urnMap[urn] = func() Iso20022Message { return &camt_028_001_09.AdditionalPaymentInformationV09{} }
-	list, exists = messagesMap["AddtlPmtInf"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &camt_028_001_09.AdditionalPaymentInformationV09{} },
-		Urn:         urn,
-	})
-	messagesMap["AddtlPmtInf"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:camt.026.001.07"
-	urnMap[urn] = func() Iso20022Message { return &camt_026_001_07.UnableToApplyV07{} }
-	list, exists = messagesMap["UblToApply"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &camt_026_001_07.UnableToApplyV07{} },
-		Urn:         urn,
-	})
-	messagesMap["UblToApply"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:camt.056.001.08"
-	urnMap[urn] = func() Iso20022Message { return &camt_056_001_08.FIToFIPaymentCancellationRequestV08{} }
-	list, exists = messagesMap["FIToFIPmtCxlReq"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &camt_056_001_08.FIToFIPaymentCancellationRequestV08{} },
-		Urn:         urn,
-	})
-	messagesMap["FIToFIPmtCxlReq"] = list
-
 	urn = "urn:iso:std:iso:20022:tech:xsd:pacs.004.001.10"
 	urnMap[urn] = func() Iso20022Message { return &pacs_004_001_10.PaymentReturnV10{} }
 	list, exists = messagesMap["PmtRtr"]
@@ -418,186 +351,6 @@ func GetMessageConstructors() (map[string]ConstructorFunc, map[string][]Construc
 		Urn:         urn,
 	})
 	messagesMap["FIToFIPmtRvsl"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:pain.013.001.07"
-	urnMap[urn] = func() Iso20022Message { return &pain_013_001_07.CreditorPaymentActivationRequestV07{} }
-	list, exists = messagesMap["CdtrPmtActvtnReq"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &pain_013_001_07.CreditorPaymentActivationRequestV07{} },
-		Urn:         urn,
-	})
-	messagesMap["CdtrPmtActvtnReq"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:pain.014.001.07"
-	urnMap[urn] = func() Iso20022Message { return &pain_014_001_07.CreditorPaymentActivationRequestStatusReportV07{} }
-	list, exists = messagesMap["CdtrPmtActvtnReqStsRpt"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &pain_014_001_07.CreditorPaymentActivationRequestStatusReportV07{} },
-		Urn:         urn,
-	})
-	messagesMap["CdtrPmtActvtnReqStsRpt"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:camt.029.001.09"
-	urnMap[urn] = func() Iso20022Message { return &camt_029_001_09.ResolutionOfInvestigationV09{} }
-	list, exists = messagesMap["RsltnOfInvstgtn"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &camt_029_001_09.ResolutionOfInvestigationV09{} },
-		Urn:         urn,
-	})
-	messagesMap["RsltnOfInvstgtn"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.005.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_005_001_01.EchoRequest{} }
-	list, exists = messagesMap["AdmnEchoReq"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_005_001_01.EchoRequest{} },
-		Urn:         urn,
-	})
-	messagesMap["AdmnEchoReq"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.006.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_006_001_01.EchoResponse{} }
-	list, exists = messagesMap["AdmnEchoResp"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_006_001_01.EchoResponse{} },
-		Urn:         urn,
-	})
-	messagesMap["AdmnEchoResp"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.003.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_003_001_01.SignOffRequest{} }
-	list, exists = messagesMap["AdmnSignOffReq"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_003_001_01.SignOffRequest{} },
-		Urn:         urn,
-	})
-	messagesMap["AdmnSignOffReq"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.004.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_004_001_01.SignOffResponse{} }
-	list, exists = messagesMap["AdmnSignOffResp"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_004_001_01.SignOffResponse{} },
-		Urn:         urn,
-	})
-	messagesMap["AdmnSignOffResp"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.001.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_001_001_01.SignOnRequest{} }
-	list, exists = messagesMap["AdmnSignOnReq"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_001_001_01.SignOnRequest{} },
-		Urn:         urn,
-	})
-	messagesMap["AdmnSignOnReq"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.002.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_002_001_01.SignOnResponse{} }
-	list, exists = messagesMap["AdmnSignOnResp"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_002_001_01.SignOnResponse{} },
-		Urn:         urn,
-	})
-	messagesMap["AdmnSignOnResp"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:remt.001.001.04"
-	urnMap[urn] = func() Iso20022Message { return &remt_001_001_04.RemittanceAdviceV04{} }
-	list, exists = messagesMap["RmtAdvc"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &remt_001_001_04.RemittanceAdviceV04{} },
-		Urn:         urn,
-	})
-	messagesMap["RmtAdvc"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admi.004.001.02"
-	urnMap[urn] = func() Iso20022Message { return &admi_004_001_02.SystemEventNotificationV02{} }
-	list, exists = messagesMap["SysEvtNtfctn"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admi_004_001_02.SystemEventNotificationV02{} },
-		Urn:         urn,
-	})
-	messagesMap["SysEvtNtfctn"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admi.002.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admi_002_001_01.MessageRejectV01{} }
-	list, exists = messagesMap["Admi00200101"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admi_002_001_01.MessageRejectV01{} },
-		Urn:         urn,
-	})
-	messagesMap["Admi00200101"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:acmt.022.001.02"
-	urnMap[urn] = func() Iso20022Message { return &acmt_022_001_02.IdentificationModificationAdviceV02{} }
-	list, exists = messagesMap["IdModAdvc"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &acmt_022_001_02.IdentificationModificationAdviceV02{} },
-		Urn:         urn,
-	})
-	messagesMap["IdModAdvc"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.007.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_007_001_01.DatabaseReportRequest{} }
-	list, exists = messagesMap["DBRptReq"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_007_001_01.DatabaseReportRequest{} },
-		Urn:         urn,
-	})
-	messagesMap["DBRptReq"] = list
-
-	urn = "urn:iso:std:iso:20022:tech:xsd:admn.008.001.01"
-	urnMap[urn] = func() Iso20022Message { return &admn_008_001_01.DatabaseAvailabilityReport{} }
-	list, exists = messagesMap["DBAvlbtyRpt"]
-	if !exists {
-		list = make([]ConstructorWithUrn, 0)
-	}
-	list = append(list, ConstructorWithUrn{
-		Constructor: func() Iso20022Message { return &admn_008_001_01.DatabaseAvailabilityReport{} },
-		Urn:         urn,
-	})
-	messagesMap["DBAvlbtyRpt"] = list
 
 	urn = "urn:iso:std:iso:20022:tech:xsd:pacs.028.001.03"
 	urnMap[urn] = func() Iso20022Message { return &pacs_028_001_03.FIToFIPaymentStatusRequestV03{} }

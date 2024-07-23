@@ -5,22 +5,6 @@ package messages
 import (
 	"encoding/xml"
 
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/acmt_022_001_02"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admi_002_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admi_004_001_02"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_001_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_002_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_003_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_004_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_005_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_006_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_007_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/admn_008_001_01"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_026_001_07"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_028_001_09"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_029_001_09"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_035_001_05"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/camt_056_001_08"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_01"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_02"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_04"
@@ -50,83 +34,45 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_04"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_06"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_029_001_02"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pain_013_001_07"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pain_014_001_07"
-	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/remt_001_001_04"
 )
 
 // XSD Elements
 
 type Message struct {
-	XMLName                                         xml.Name                                      `xml:"Message"`
-	Xmlns                                           []xml.Attr                                    `xml:",attr"`
-	AppHdr11                                        *head_001_001_01.BusinessApplicationHeaderV01 `xml:"urn:iso AppHdr1_1,omitempty"`
-	AppHdr12                                        *head_001_001_02.BusinessApplicationHeaderV02 `xml:"urn:iso AppHdr1_2,omitempty"`
-	AppHdr14                                        *head_001_001_04.BusinessApplicationHeaderV04 `xml:"urn:iso AppHdr1_4,omitempty"`
-	AppHdr21                                        *head_002_001_01.BusinessFileHeaderV01        `xml:"urn:iso AppHdr2_1,omitempty"`
-	FIToFICustomerCreditTransferV06                 *pacs_008_001_06.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV06,omitempty"`
-	FIToFICustomerCreditTransferV08                 *pacs_008_001_08.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV08,omitempty"`
-	FIToFICustomerCreditTransferV09                 *pacs_008_001_09.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV09,omitempty"`
-	FIToFICustomerCreditTransferV12                 *pacs_008_001_12.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV12,omitempty"`
-	FIToFIPaymentStatusReportV07                    *pacs_002_001_07.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV07,omitempty"`
-	FIToFIPaymentStatusReportV08                    *pacs_002_001_08.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV08,omitempty"`
-	FIToFIPaymentStatusReportV10                    *pacs_002_001_10.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV10,omitempty"`
-	FIToFIPaymentStatusReportV11                    *pacs_002_001_11.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV11,omitempty"`
-	FIToFIPaymentStatusReportV12                    *pacs_002_001_12.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV12,omitempty"`
-	FIToFIPaymentStatusReportV14                    *pacs_002_001_14.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV14,omitempty"`
-	FIToFICustomerDirectDebitV08                    *pacs_003_001_08.Document                     `xml:"urn:iso FIToFICustomerDirectDebitV08,omitempty"`
-	FIToFICustomerDirectDebitV11                    *pacs_003_001_11.Document                     `xml:"urn:iso FIToFICustomerDirectDebitV11,omitempty"`
-	FinancialInstitutionCreditTransferV08           *pacs_009_001_08.Document                     `xml:"urn:iso FinancialInstitutionCreditTransferV08,omitempty"`
-	FinancialInstitutionCreditTransferV09           *pacs_009_001_09.Document                     `xml:"urn:iso FinancialInstitutionCreditTransferV09,omitempty"`
-	FinancialInstitutionCreditTransferV11           *pacs_009_001_11.Document                     `xml:"urn:iso FinancialInstitutionCreditTransferV11,omitempty"`
-	FinancialInstitutionDirectDebitV04              *pacs_010_001_04.Document                     `xml:"urn:iso FinancialInstitutionDirectDebitV04,omitempty"`
-	FinancialInstitutionDirectDebitV06              *pacs_010_001_06.Document                     `xml:"urn:iso FinancialInstitutionDirectDebitV06,omitempty"`
-	ProprietaryFormatInvestigationV05               *camt_035_001_05.Document                     `xml:"urn:iso ProprietaryFormatInvestigationV05,omitempty"`
-	AdditionalPaymentInformationV09                 *camt_028_001_09.Document                     `xml:"urn:iso AdditionalPaymentInformationV09,omitempty"`
-	UnableToApplyV07                                *camt_026_001_07.Document                     `xml:"urn:iso UnableToApplyV07,omitempty"`
-	FIToFIPaymentCancellationRequestV08             *camt_056_001_08.Document                     `xml:"urn:iso FIToFIPaymentCancellationRequestV08,omitempty"`
-	PaymentReturnV10                                *pacs_004_001_10.Document                     `xml:"urn:iso PaymentReturnV10,omitempty"`
-	PaymentReturnV13                                *pacs_004_001_13.Document                     `xml:"urn:iso PaymentReturnV13,omitempty"`
-	FIToFIPaymentReversalV10                        *pacs_007_001_10.Document                     `xml:"urn:iso FIToFIPaymentReversalV10,omitempty"`
-	FIToFIPaymentReversalV13                        *pacs_007_001_13.Document                     `xml:"urn:iso FIToFIPaymentReversalV13,omitempty"`
-	CreditorPaymentActivationRequestV07             *pain_013_001_07.Document                     `xml:"urn:iso CreditorPaymentActivationRequestV07,omitempty"`
-	CreditorPaymentActivationRequestStatusReportV07 *pain_014_001_07.Document                     `xml:"urn:iso CreditorPaymentActivationRequestStatusReportV07,omitempty"`
-	ResolutionOfInvestigationV09                    *camt_029_001_09.Document                     `xml:"urn:iso ResolutionOfInvestigationV09,omitempty"`
-	EchoRequest                                     *admn_005_001_01.Document                     `xml:"urn:iso EchoRequest,omitempty"`
-	EchoResponse                                    *admn_006_001_01.Document                     `xml:"urn:iso EchoResponse,omitempty"`
-	SignOffRequest                                  *admn_003_001_01.Document                     `xml:"urn:iso SignOffRequest,omitempty"`
-	SignOffResponse                                 *admn_004_001_01.Document                     `xml:"urn:iso SignOffResponse,omitempty"`
-	SignOnRequest                                   *admn_001_001_01.Document                     `xml:"urn:iso SignOnRequest,omitempty"`
-	SignOnResponse                                  *admn_002_001_01.Document                     `xml:"urn:iso SignOnResponse,omitempty"`
-	RemittanceAdviceV04                             *remt_001_001_04.Document                     `xml:"urn:iso RemittanceAdviceV04,omitempty"`
-	SystemEventNotificationV02                      *admi_004_001_02.Document                     `xml:"urn:iso SystemEventNotificationV02,omitempty"`
-	MessageRejectV01                                *admi_002_001_01.Document                     `xml:"urn:iso MessageRejectV01,omitempty"`
-	IdentificationModificationAdviceV02             *acmt_022_001_02.Document                     `xml:"urn:iso IdentificationModificationAdviceV02,omitempty"`
-	DatabaseReportRequest                           *admn_007_001_01.Document                     `xml:"urn:iso DatabaseReportRequest,omitempty"`
-	DatabaseAvailabilityReport                      *admn_008_001_01.Document                     `xml:"urn:iso DatabaseAvailabilityReport,omitempty"`
-	FIToFIPaymentStatusRequestV03                   *pacs_028_001_03.Document                     `xml:"urn:iso FIToFIPaymentStatusRequestV03,omitempty"`
-	FIToFIPaymentStatusRequestV04                   *pacs_028_001_04.Document                     `xml:"urn:iso FIToFIPaymentStatusRequestV04,omitempty"`
-	FIToFIPaymentStatusRequestV06                   *pacs_028_001_06.Document                     `xml:"urn:iso FIToFIPaymentStatusRequestV06,omitempty"`
-	MultilateralSettlementRequestV02                *pacs_029_001_02.Document                     `xml:"urn:iso MultilateralSettlementRequestV02,omitempty"`
+	XMLName                               xml.Name                                      `xml:"Message"`
+	Xmlns                                 []xml.Attr                                    `xml:",attr"`
+	AppHdr11                              *head_001_001_01.BusinessApplicationHeaderV01 `xml:"urn:iso AppHdr1_1,omitempty"`
+	AppHdr12                              *head_001_001_02.BusinessApplicationHeaderV02 `xml:"urn:iso AppHdr1_2,omitempty"`
+	AppHdr14                              *head_001_001_04.BusinessApplicationHeaderV04 `xml:"urn:iso AppHdr1_4,omitempty"`
+	AppHdr21                              *head_002_001_01.BusinessFileHeaderV01        `xml:"urn:iso AppHdr2_1,omitempty"`
+	FIToFICustomerCreditTransferV06       *pacs_008_001_06.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV06,omitempty"`
+	FIToFICustomerCreditTransferV08       *pacs_008_001_08.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV08,omitempty"`
+	FIToFICustomerCreditTransferV09       *pacs_008_001_09.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV09,omitempty"`
+	FIToFICustomerCreditTransferV12       *pacs_008_001_12.Document                     `xml:"urn:iso FIToFICustomerCreditTransferV12,omitempty"`
+	FIToFIPaymentStatusReportV07          *pacs_002_001_07.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV07,omitempty"`
+	FIToFIPaymentStatusReportV08          *pacs_002_001_08.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV08,omitempty"`
+	FIToFIPaymentStatusReportV10          *pacs_002_001_10.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV10,omitempty"`
+	FIToFIPaymentStatusReportV11          *pacs_002_001_11.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV11,omitempty"`
+	FIToFIPaymentStatusReportV12          *pacs_002_001_12.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV12,omitempty"`
+	FIToFIPaymentStatusReportV14          *pacs_002_001_14.Document                     `xml:"urn:iso FIToFIPaymentStatusReportV14,omitempty"`
+	FIToFICustomerDirectDebitV08          *pacs_003_001_08.Document                     `xml:"urn:iso FIToFICustomerDirectDebitV08,omitempty"`
+	FIToFICustomerDirectDebitV11          *pacs_003_001_11.Document                     `xml:"urn:iso FIToFICustomerDirectDebitV11,omitempty"`
+	FinancialInstitutionCreditTransferV08 *pacs_009_001_08.Document                     `xml:"urn:iso FinancialInstitutionCreditTransferV08,omitempty"`
+	FinancialInstitutionCreditTransferV09 *pacs_009_001_09.Document                     `xml:"urn:iso FinancialInstitutionCreditTransferV09,omitempty"`
+	FinancialInstitutionCreditTransferV11 *pacs_009_001_11.Document                     `xml:"urn:iso FinancialInstitutionCreditTransferV11,omitempty"`
+	FinancialInstitutionDirectDebitV04    *pacs_010_001_04.Document                     `xml:"urn:iso FinancialInstitutionDirectDebitV04,omitempty"`
+	FinancialInstitutionDirectDebitV06    *pacs_010_001_06.Document                     `xml:"urn:iso FinancialInstitutionDirectDebitV06,omitempty"`
+	PaymentReturnV10                      *pacs_004_001_10.Document                     `xml:"urn:iso PaymentReturnV10,omitempty"`
+	PaymentReturnV13                      *pacs_004_001_13.Document                     `xml:"urn:iso PaymentReturnV13,omitempty"`
+	FIToFIPaymentReversalV10              *pacs_007_001_10.Document                     `xml:"urn:iso FIToFIPaymentReversalV10,omitempty"`
+	FIToFIPaymentReversalV13              *pacs_007_001_13.Document                     `xml:"urn:iso FIToFIPaymentReversalV13,omitempty"`
+	FIToFIPaymentStatusRequestV03         *pacs_028_001_03.Document                     `xml:"urn:iso FIToFIPaymentStatusRequestV03,omitempty"`
+	FIToFIPaymentStatusRequestV04         *pacs_028_001_04.Document                     `xml:"urn:iso FIToFIPaymentStatusRequestV04,omitempty"`
+	FIToFIPaymentStatusRequestV06         *pacs_028_001_06.Document                     `xml:"urn:iso FIToFIPaymentStatusRequestV06,omitempty"`
+	MultilateralSettlementRequestV02      *pacs_029_001_02.Document                     `xml:"urn:iso MultilateralSettlementRequestV02,omitempty"`
 }
 
 var NamespacePrefixMap = map[string]string{
-	"urn:iso:std:ma:20022:tech:xsd:admn.007.001.01":  "ut",
-	"urn:iso:std:ma:20022:tech:xsd:admn.008.001.01":  "tu",
-	"urn:iso:std:iso:20022:tech:xsd:acmt.022.001.02": "a2",
-	"urn:iso:std:iso:20022:tech:xsd:admi.002.001.01": "mr",
-	"urn:iso:std:iso:20022:tech:xsd:admi.004.001.02": "ne",
-	"urn:iso:std:iso:20022:tech:xsd:admn.001.001.01": "sr",
-	"urn:iso:std:iso:20022:tech:xsd:admn.002.001.01": "rs",
-	"urn:iso:std:iso:20022:tech:xsd:admn.003.001.01": "fr",
-	"urn:iso:std:iso:20022:tech:xsd:admn.004.001.01": "rf",
-	"urn:iso:std:iso:20022:tech:xsd:admn.005.001.01": "er",
-	"urn:iso:std:iso:20022:tech:xsd:admn.006.001.01": "re",
-	"urn:iso:std:iso:20022:tech:xsd:camt.026.001.07": "fi",
-	"urn:iso:std:iso:20022:tech:xsd:camt.028.001.09": "if",
-	"urn:iso:std:iso:20022:tech:xsd:camt.029.001.09": "tr",
-	"urn:iso:std:iso:20022:tech:xsd:camt.035.001.05": "ac",
-	"urn:iso:std:iso:20022:tech:xsd:camt.056.001.08": "rt",
 	"urn:iso:std:iso:20022:tech:xsd:head.001.001.01": "head",
 	"urn:iso:std:iso:20022:tech:xsd:head.001.001.02": "head1_2",
 	"urn:iso:std:iso:20022:tech:xsd:head.001.001.04": "head1_4",
@@ -156,9 +102,6 @@ var NamespacePrefixMap = map[string]string{
 	"urn:iso:std:iso:20022:tech:xsd:pacs.028.001.04": "s8_4",
 	"urn:iso:std:iso:20022:tech:xsd:pacs.028.001.06": "s8_6",
 	"urn:iso:std:iso:20022:tech:xsd:pacs.029.001.02": "ms",
-	"urn:iso:std:iso:20022:tech:xsd:pain.013.001.07": "par",
-	"urn:iso:std:iso:20022:tech:xsd:pain.014.001.07": "rp",
-	"urn:iso:std:iso:20022:tech:xsd:remt.001.001.04": "ar",
 }
 
 func (v *Message) Body() interface{} {
@@ -225,18 +168,6 @@ func (v *Message) Body() interface{} {
 	if v.FinancialInstitutionDirectDebitV06 != nil {
 		return v.FinancialInstitutionDirectDebitV06
 	}
-	if v.ProprietaryFormatInvestigationV05 != nil {
-		return v.ProprietaryFormatInvestigationV05
-	}
-	if v.AdditionalPaymentInformationV09 != nil {
-		return v.AdditionalPaymentInformationV09
-	}
-	if v.UnableToApplyV07 != nil {
-		return v.UnableToApplyV07
-	}
-	if v.FIToFIPaymentCancellationRequestV08 != nil {
-		return v.FIToFIPaymentCancellationRequestV08
-	}
 	if v.PaymentReturnV10 != nil {
 		return v.PaymentReturnV10
 	}
@@ -248,51 +179,6 @@ func (v *Message) Body() interface{} {
 	}
 	if v.FIToFIPaymentReversalV13 != nil {
 		return v.FIToFIPaymentReversalV13
-	}
-	if v.CreditorPaymentActivationRequestV07 != nil {
-		return v.CreditorPaymentActivationRequestV07
-	}
-	if v.CreditorPaymentActivationRequestStatusReportV07 != nil {
-		return v.CreditorPaymentActivationRequestStatusReportV07
-	}
-	if v.ResolutionOfInvestigationV09 != nil {
-		return v.ResolutionOfInvestigationV09
-	}
-	if v.EchoRequest != nil {
-		return v.EchoRequest
-	}
-	if v.EchoResponse != nil {
-		return v.EchoResponse
-	}
-	if v.SignOffRequest != nil {
-		return v.SignOffRequest
-	}
-	if v.SignOffResponse != nil {
-		return v.SignOffResponse
-	}
-	if v.SignOnRequest != nil {
-		return v.SignOnRequest
-	}
-	if v.SignOnResponse != nil {
-		return v.SignOnResponse
-	}
-	if v.RemittanceAdviceV04 != nil {
-		return v.RemittanceAdviceV04
-	}
-	if v.SystemEventNotificationV02 != nil {
-		return v.SystemEventNotificationV02
-	}
-	if v.MessageRejectV01 != nil {
-		return v.MessageRejectV01
-	}
-	if v.IdentificationModificationAdviceV02 != nil {
-		return v.IdentificationModificationAdviceV02
-	}
-	if v.DatabaseReportRequest != nil {
-		return v.DatabaseReportRequest
-	}
-	if v.DatabaseAvailabilityReport != nil {
-		return v.DatabaseAvailabilityReport
 	}
 	if v.FIToFIPaymentStatusRequestV03 != nil {
 		return v.FIToFIPaymentStatusRequestV03
