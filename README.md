@@ -1,5 +1,6 @@
 # ISO20022 Client
 
+## Testing
 For testing, we need to open three command lines:
 
 1. To run the sending party:
