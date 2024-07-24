@@ -20,7 +20,6 @@ func createHandlers(parser processes.Parser, messageQueue processes.MessageQueue
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
-	r.Use(CORSMiddleware())
 
 	h := Handler{
 		Parser:       parser,

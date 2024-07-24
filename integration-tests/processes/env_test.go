@@ -183,15 +183,11 @@ func createDevRunner(
 	runnerCfg.Coreum.GRPC.URL = chain.Coreum.Config().GRPCAddress
 	runnerCfg.Coreum.Contract.ContractAddress = contractAddress.String()
 	runnerCfg.Coreum.Network.ChainID = chain.Coreum.ChainSettings.ChainID
-	runnerCfg.Processes.RepeatDelay = 500 * time.Millisecond
 	runnerCfg.Processes.AddressBook.CustomRepoAddress = chain.Coreum.Config().AddressBookRepoAddress
 	port, err := getFreePort()
 	require.NoError(t, err)
 	runnerCfg.Processes.Queue.Path = path.Join(os.TempDir(), uniqueName)
 	runnerCfg.Processes.Server.ListenAddress = ":" + strconv.Itoa(port)
-
-	// exit on errors
-	runnerCfg.Processes.ExitOnError = true
 
 	// re-init log to use correct `CallerSkip`
 	log, err := logger.NewZapLogger(logger.DefaultZapLoggerConfig())

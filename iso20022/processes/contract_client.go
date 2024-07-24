@@ -72,7 +72,7 @@ func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger
 func (p *ContractClientProcess) Start(ctx context.Context) error {
 	p.log.Info(ctx, "Starting the contract client process")
 	return parallel.Run(ctx, func(ctx context.Context, spawn parallel.SpawnFn) error {
-		spawn("msg-receiver", parallel.Fail, func(ctx context.Context) error {
+		spawn("msg-receiver", parallel.Continue, func(ctx context.Context) error {
 			ticker := time.NewTicker(p.cfg.PollInterval)
 			for {
 				select {
@@ -100,7 +100,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 				}
 			}
 		})
-		spawn("msg-sender", parallel.Fail, func(ctx context.Context) error {
+		spawn("msg-sender", parallel.Continue, func(ctx context.Context) error {
 			for {
 				msgs := p.messageQueue.PopFromSend(ctx, 10, time.Second)
 				if len(msgs) == 0 {
@@ -126,12 +126,13 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 				}
 
 				if err := p.sendMessages(ctx, messages); err != nil {
-					if errors.Is(err, context.Canceled) {
+					if errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "context canceled") {
 						p.log.Warn(
 							ctx,
 							"Context canceled during the message processing",
 							zap.String("error", err.Error()),
 						)
+						return nil
 					} else {
 						for _, message := range messages {
 							p.messageQueue.SetStatus(message.Id, queue.StatusError)
@@ -290,7 +291,6 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		return err
 	}
 
-	p.log.Info(ctx, "Messages sent successfully", zap.Int("count", len(messages)))
 	_, err = p.contractClient.SendMessages(ctx, p.cfg.ClientAddress, sendMessages...)
 	if err != nil {
 		return err
