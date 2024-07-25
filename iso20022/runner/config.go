@@ -82,18 +82,10 @@ type Queue struct {
 
 // ProcessesConfig is processes config.
 type ProcessesConfig struct {
-	Server       ServerConfig      `yaml:"server"`
-	AddressBook  AddressBookConfig `yaml:"address_book"`
-	Queue        Queue             `yaml:"queue"`
-	RepeatDelay  time.Duration     `yaml:"repeat_delay"`
-	RetryDelay   time.Duration     `yaml:"retry_delay"`
-	PollInterval time.Duration     `yaml:"poll_interval"`
-	ExitOnError  bool              `yaml:"-"`
-}
-
-// MetricsPeriodicCollectorConfig is metric periodic collector config.
-type MetricsPeriodicCollectorConfig struct {
-	RepeatDelay time.Duration `yaml:"repeat_delay"`
+	Server      ServerConfig      `yaml:"server"`
+	AddressBook AddressBookConfig `yaml:"address_book"`
+	Queue       Queue             `yaml:"queue"`
+	RetryDelay  time.Duration     `yaml:"retry_delay"`
 }
 
 // Config is runner config.
@@ -154,10 +146,7 @@ func DefaultConfig() Config {
 				Path:                path.Join(os.TempDir(), "iso20022"),
 				StatusCacheDuration: time.Hour,
 			},
-			RepeatDelay:  10 * time.Second,
-			RetryDelay:   10 * time.Second,
-			PollInterval: time.Second,
-			ExitOnError:  false,
+			RetryDelay: 10 * time.Second,
 		},
 	}
 	config.Processes.Queue.Path = path.Join(os.TempDir(), config.Coreum.ClientKeyName)
@@ -166,19 +155,19 @@ func DefaultConfig() Config {
 
 // InitConfig creates config yaml file.
 func InitConfig(homePath string, cfg Config) error {
-	path := BuildFilePath(homePath)
-	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
-		return errors.Errorf("failed to init config, file already exists, path:%s", path)
+	filePath := BuildFilePath(homePath)
+	if _, err := os.Stat(filePath); !errors.Is(err, os.ErrNotExist) {
+		return errors.Errorf("failed to init config, file already exists, path:%s", filePath)
 	}
 
 	err := os.MkdirAll(homePath, 0o700)
 	if err != nil {
-		return errors.Errorf("failed to create dirs by path:%s", path)
+		return errors.Errorf("failed to create dirs by path:%s", filePath)
 	}
 
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create config file, path:%s", path)
+		return errors.Wrapf(err, "failed to create config file, path:%s", filePath)
 	}
 	defer func(file *os.File) {
 		_ = file.Close()
@@ -188,7 +177,7 @@ func InitConfig(homePath string, cfg Config) error {
 		return errors.Wrap(err, "failed convert default config to yaml")
 	}
 	if _, err := file.Write(yamlStringConfig); err != nil {
-		return errors.Wrapf(err, "failed to write yaml config file, path:%s", path)
+		return errors.Wrapf(err, "failed to write yaml config file, path:%s", filePath)
 	}
 
 	return nil
@@ -196,22 +185,22 @@ func InitConfig(homePath string, cfg Config) error {
 
 // ReadConfigFromFile reads config yaml file.
 func ReadConfigFromFile(homePath string) (Config, error) {
-	path := BuildFilePath(homePath)
-	file, err := os.OpenFile(path, os.O_RDONLY, 0o600)
+	filePath := BuildFilePath(homePath)
+	file, err := os.OpenFile(filePath, os.O_RDONLY, 0o600)
 	defer func(file *os.File) {
 		_ = file.Close()
 	}(file)
 	if errors.Is(err, os.ErrNotExist) {
-		return Config{}, errors.Errorf("config file does not exist, path:%s", path)
+		return Config{}, errors.Errorf("config file does not exist, path:%s", filePath)
 	}
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		return Config{}, errors.Wrapf(err, "failed to read bytes from file does not exist, path:%s", path)
+		return Config{}, errors.Wrapf(err, "failed to read bytes from file does not exist, path:%s", filePath)
 	}
 
 	var config Config
 	if err := yaml.Unmarshal(fileBytes, &config); err != nil {
-		return Config{}, errors.Wrapf(err, "failed to unmarshal file to yaml, path:%s", path)
+		return Config{}, errors.Wrapf(err, "failed to unmarshal file to yaml, path:%s", filePath)
 	}
 
 	return config, nil

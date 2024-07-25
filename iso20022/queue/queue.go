@@ -165,8 +165,8 @@ func (m *MessageQueue) Close() {
 	if !m.closed.CompareAndSwap(false, true) {
 		return
 	}
-	m.statuses.Stop()
 	m.save()
+	m.statuses.Stop()
 	close(m.receiveChannel)
 	close(m.sendChannel)
 }
@@ -259,9 +259,14 @@ func (m *MessageQueue) save() {
 		m.log.Error(context.Background(), "could not marshal the state", zap.Error(err))
 		return
 	}
-
 	err = os.WriteFile(path.Join(m.cacheDir, "state.json"), data, 0777)
 	if err != nil {
 		m.log.Error(context.Background(), "could not save the state", zap.Error(err))
 	}
+	m.log.Debug(
+		context.Background(),
+		"state saved",
+		zap.String("path", path.Join(m.cacheDir, "state.json")),
+		zap.Int("items", len(items)),
+	)
 }

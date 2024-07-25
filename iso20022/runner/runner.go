@@ -5,15 +5,12 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/url"
-	"runtime/debug"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -113,30 +110,10 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 // Start starts runner.
 func (r *Runner) Start(ctx context.Context) error {
 	runnerProcesses := map[string]func(context.Context) error{
-		"messageQueue": taskWithRestartOnError(
-			r.components.MessageQueue.Start,
-			r.log,
-			true,
-			r.cfg.Processes.RetryDelay,
-		),
-		"contractClient": taskWithRestartOnError(
-			r.contractClientProcess.Start,
-			r.log,
-			r.cfg.Processes.ExitOnError,
-			r.cfg.Processes.RetryDelay,
-		),
-		"updateAddressBook": taskWithRestartOnError(
-			r.addressBookUpdaterProcess.Start,
-			r.log,
-			r.cfg.Processes.ExitOnError,
-			r.cfg.Processes.RetryDelay,
-		),
-		"webServer": taskWithRestartOnError(
-			r.webServer.Start,
-			r.log,
-			true,
-			r.cfg.Processes.RetryDelay,
-		),
+		"messageQueue":      r.components.MessageQueue.Start,
+		"contractClient":    r.contractClientProcess.Start,
+		"updateAddressBook": r.addressBookUpdaterProcess.Start,
+		"webServer":         r.webServer.Start,
 	}
 
 	err := r.components.AddressBook.Update(ctx)
@@ -157,50 +134,6 @@ func (r *Runner) Start(ctx context.Context) error {
 		}
 		return nil
 	})
-}
-
-func taskWithRestartOnError(
-	task parallel.Task,
-	log logger.Logger,
-	exitOnError bool,
-	retryDelay time.Duration,
-) parallel.Task {
-	return func(ctx context.Context) error {
-		for {
-			// start the process and handle the panic
-			err := func() (err error) {
-				defer func() {
-					if p := recover(); p != nil {
-						err = errors.Wrap(parallel.ErrPanic{Value: p, Stack: debug.Stack()}, "handled panic")
-					}
-				}()
-				return task(ctx)
-			}()
-
-			if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-				return nil
-			}
-
-			// restart the process if it is restartable
-			log.Error(ctx, "Received unexpected error from the process", zap.Error(err))
-			if exitOnError {
-				log.Warn(ctx, "The process is not auto-restartable on error")
-				return err
-			}
-
-			if retryDelay > 0 {
-				log.Info(ctx,
-					"Process is paused and will be restarted later",
-					zap.Duration("retryDelay", retryDelay))
-				select {
-				case <-ctx.Done():
-					return nil
-				case <-time.After(retryDelay):
-				}
-			}
-			log.Info(ctx, "Restarting the process after the error")
-		}
-	}
 }
 
 // Components groups components required by runner.
