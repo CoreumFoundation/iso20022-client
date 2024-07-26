@@ -27,8 +27,7 @@ type AddressBook struct {
 
 // New creates a new address book
 func New(log logger.Logger, chainId string) *AddressBook {
-	// TODO: replace with main branch after release
-	repo := "https://raw.githubusercontent.com/CoreumFoundation/iso20022-addressbook/develop/%s/addressbook.json"
+	repo := "https://raw.githubusercontent.com/CoreumFoundation/iso20022-addressbook/master/%s/addressbook.json"
 	return NewWithRepoAddress(log, fmt.Sprintf(repo, chainId))
 }
 
