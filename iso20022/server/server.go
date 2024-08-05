@@ -26,6 +26,9 @@ func createHandlers(parser processes.Parser, messageQueue processes.MessageQueue
 		MessageQueue: messageQueue,
 	}
 
+	r.GET("", h.Doc)
+	r.GET("/swagger.json", h.Swagger)
+
 	v1 := r.Group("/v1")
 
 	v1.POST("/send", h.Send)

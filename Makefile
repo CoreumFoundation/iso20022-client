@@ -101,7 +101,7 @@ build-all:
 version:
 	@go version
 
-generate: generate-messages generate-mocks lint
+generate: generate-messages generate-mocks generate-swagger-doc lint
 
 generate-mocks:
 	which mockgen || go install go.uber.org/mock/mockgen@v0.4.0
@@ -152,6 +152,10 @@ generate-messages:
 		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.06=pacs_028_001_06" \
 		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:pacs.029.001.02=pacs_029_001_02"
 	@find ./iso20022-messages/gen -name '*.go' -exec gofmt -w {} \; -exec goimports -w {} \;
+
+generate-swagger-doc:
+	@go install github.com/swaggo/swag/cmd/swag@v1.16.3
+	@cd iso20022 && swag init -g ./cmd/main.go -o ./docs/swagger -p pascalcase --parseVendor --parseInternal
 
 lint:
 	@if test ! -e ./bin/golangci-lint; then \
