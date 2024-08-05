@@ -11,11 +11,14 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 
+	"github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/buildinfo"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
@@ -157,6 +160,40 @@ func withKeyring(
 	}
 
 	return clientCtx.WithKeyring(newCacheKeyring(suffix, kr, clientCtx.Codec, log)), nil
+}
+
+// KeyringCmd returns cosmos keyring cmd init with the correct keys home.
+func KeyringCmd() (*cobra.Command, error) {
+	// We need to set CoinType before initializing keys commands because keys.Commands() sets default
+	// flag value from sdk config.
+	// See github.com/cosmos/cosmos-sdk@v0.47.5/client/keys/add.go:78
+	sdk.GetConfig().SetCoinType(constant.CoinType)
+
+	// we set it for the keyring manually since it doesn't use the runner which does it for other CLI commands
+	cmd := keys.Commands(DefaultHomeDir)
+	for _, childCmd := range cmd.Commands() {
+		childCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+
+			log, err := GetCLILogger()
+			if err != nil {
+				return err
+			}
+
+			components, err := NewComponents(cmd, log)
+			if err != nil {
+				return err
+			}
+
+			clientSDKCtx := components.CoreumSDKClientCtx
+
+			if err := client.SetCmdClientContext(cmd, clientSDKCtx); err != nil {
+				return errors.WithStack(err)
+			}
+			return nil
+		}
+	}
+
+	return cmd, nil
 }
 
 // GetHomeRunnerConfig reads runner config from home directory.
@@ -406,7 +443,7 @@ func SendMessageCmd() *cobra.Command {
 				return errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
 			}
 
-			log.Info(cmd.Context(), "Message sent")
+			log.Info(cmd.Context(), "Message Queued")
 			return nil
 		},
 	}

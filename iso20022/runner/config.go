@@ -38,6 +38,7 @@ type CoreumGRPCConfig struct {
 // CoreumNetworkConfig is coreum network config.
 type CoreumNetworkConfig struct {
 	ChainID string `yaml:"chain_id"`
+	Denom   string `yaml:"denom"`
 }
 
 // CoreumContractConfig is coreum contract config.
@@ -114,14 +115,15 @@ func DefaultConfig() Config {
 			ClientKeyName: "iso20022-client",
 			GRPC: CoreumGRPCConfig{
 				// TODO: Change to mainnet url before release
-				URL: "https://full-node.devnet-1.coreum.dev:9090",
+				URL: "https://full-node.testnet-1.coreum.dev:9090",
 			},
 			Network: CoreumNetworkConfig{
 				ChainID: string(DefaultCoreumChainID),
+				Denom:   DefaultDenom,
 			},
 			Contract: CoreumContractConfig{
 				// TODO: Change to the contract address on mainnet before release
-				ContractAddress:       "devcore1hz83rpzpduazzaaj0vg9gyehe2cjymsfy4thdlvhlmvvlulvn59swq29nh",
+				ContractAddress:       "testcore19a3m5sqm4s4mjfkpj3r7mg2q0gamjeh24zqlqqg6ezncv6l95q9qahxn93",
 				GasAdjustment:         defaultCoreumContactConfig.GasAdjustment,
 				GasPriceAdjustment:    defaultCoreumContactConfig.GasPriceAdjustment.MustFloat64(),
 				PageLimit:             defaultCoreumContactConfig.PageLimit,

@@ -33,7 +33,7 @@ func (h *Handler) Send(c *gin.Context) {
 	}
 
 	// TODO: Check for duplicate messages by ID
-	fmt.Printf("Sending message with ID : %s\n", messageId)
+	fmt.Printf("Got message with ID : %s\n", messageId)
 
 	c.Status(http.StatusCreated)
 

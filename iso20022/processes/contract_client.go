@@ -30,6 +30,7 @@ type ContractClientProcessConfig struct {
 	ClientAddress         sdk.AccAddress
 	ClientKeyName         string
 	PollInterval          time.Duration
+	Denom                 string
 }
 
 // ContractClientProcess is the process that sends and receives messages to and from the contract.
@@ -171,6 +172,8 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 		return err
 	}
 
+	lastReadTime := uint64(0)
+
 	for _, msg := range messages {
 		nft, err := p.contractClient.QueryNFT(ctx, msg.Content.ClassId, msg.Content.Id)
 		if err != nil {
@@ -217,19 +220,22 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 
 		p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
 
-		_, err = p.contractClient.MarkAsRead(
-			ctx,
-			p.cfg.ClientAddress,
-			msg.Time,
-		)
-		if err != nil {
-			return err
+		if msg.Time > lastReadTime {
+			lastReadTime = msg.Time
 		}
 
 		p.messageQueue.PushToReceive(data.Data)
 	}
 
-	return nil
+	if lastReadTime > 0 {
+		_, err = p.contractClient.MarkAsRead(
+			ctx,
+			p.cfg.ClientAddress,
+			lastReadTime,
+		)
+	}
+
+	return err
 }
 
 func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*messageWithMetadata) error {
@@ -283,6 +289,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		sendMessages = append(sendMessages, coreum.MessageWithDestination{
 			Destination: message.Destination,
 			NFT:         nft,
+			Funds:       message.AttachedFunds,
 		})
 	}
 
@@ -291,7 +298,6 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		return err
 	}
 
-	p.log.Info(ctx, "Messages sent successfully", zap.Int("count", len(messages)))
 	_, err = p.contractClient.SendMessages(ctx, p.cfg.ClientAddress, sendMessages...)
 	if err != nil {
 		return err
@@ -307,6 +313,7 @@ type messageWithMetadata struct {
 	Destination    sdk.AccAddress
 	PublicKeyBytes []byte
 	Message        []byte
+	AttachedFunds  sdk.Coins
 }
 
 func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadata, error) {
@@ -330,7 +337,19 @@ func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadat
 		return nil, err
 	}
 
-	return &messageWithMetadata{messageId, address, publicKeyBytes, msg}, nil
+	attachedFunds := sdk.NewCoins()
+	// TODO
+	// if false {
+	// 	attachedFunds = sdk.NewCoins(sdk.NewCoin(p.cfg.Denom, sdk.NewInt(100)))
+	// }
+
+	return &messageWithMetadata{
+		messageId,
+		address,
+		publicKeyBytes,
+		msg,
+		attachedFunds,
+	}, nil
 }
 
 func (p *ContractClientProcess) generateNftId() (string, string) {
