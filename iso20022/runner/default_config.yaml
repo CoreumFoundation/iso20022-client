@@ -5,11 +5,12 @@ logging:
 coreum:
     client_key_name: iso20022-client
     grpc:
-        url: https://full-node.devnet-1.coreum.dev:9090
+        url: https://full-node.testnet-1.coreum.dev:9090
     network:
-        chain_id: coreum-devnet-1
+        chain_id: coreum-testnet-1
+        denom: utestcore
     contract:
-        contract_address: devcore1hz83rpzpduazzaaj0vg9gyehe2cjymsfy4thdlvhlmvvlulvn59swq29nh
+        contract_address: testcore19a3m5sqm4s4mjfkpj3r7mg2q0gamjeh24zqlqqg6ezncv6l95q9qahxn93
         gas_adjustment: 1.4
         gas_price_adjustment: 1.2
         page_limit: 50

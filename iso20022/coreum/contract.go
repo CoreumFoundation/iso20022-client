@@ -51,6 +51,7 @@ type NFTInfo struct {
 type MessageWithDestination struct {
 	Destination sdk.AccAddress
 	NFT         NFTInfo
+	Funds       sdk.Coins
 }
 
 // Messages is a list of messages.
@@ -318,7 +319,8 @@ func (c *ContractClient) SendMessages(
 		req.SendMessage.Destination = msg.Destination
 		req.SendMessage.Message = msg.NFT
 		reqs[i] = execRequest{
-			Body: req,
+			Body:  req,
+			Funds: msg.Funds,
 		}
 	}
 

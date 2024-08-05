@@ -38,7 +38,9 @@ const (
 	ConfigFileName = "client.yaml"
 	// DefaultCoreumChainID is default chain id.
 	// TODO: Change to ChainIDMain before release
-	DefaultCoreumChainID = coreumchainconstant.ChainIDDev
+	DefaultCoreumChainID = coreumchainconstant.ChainIDTest
+	// TODO: Change to DenomMain before release
+	DefaultDenom = coreumchainconstant.DenomTest
 )
 
 // Runner is client runner that aggregates all client components.
@@ -79,6 +81,7 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 			ClientAddress:         clientAddress,
 			ClientKeyName:         components.RunnerConfig.Coreum.ClientKeyName,
 			PollInterval:          cfg.Processes.RetryDelay,
+			Denom:                 cfg.Coreum.Network.Denom,
 		},
 		components.Log,
 		components.Compressor,
