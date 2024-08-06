@@ -14,6 +14,10 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli"
 )
 
+// @title ISO20022 Client
+// @version 0.0.1
+
+// @BasePath /v1
 func main() {
 	run.Tool("iso20022", func(ctx context.Context) error {
 		rootCmd, err := RootCmd(ctx)

@@ -1,0 +1,138 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "ISO20022 Client",
+        "contact": {},
+        "version": "0.0.1"
+    },
+    "basePath": "/v1",
+    "paths": {
+        "/receive": {
+            "get": {
+                "description": "Tries to receive an ISO20022 message if there is any",
+                "produces": [
+                    "application/xml"
+                ],
+                "tags": [
+                    "Messaging"
+                ],
+                "summary": "Receive a message",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "x-code-samples": [
+                    {
+                        "lang": "xml",
+                        "source": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\r\n\u003cFIToFICstmrCdtTrf\u003e\r\n\t\u003cGrpHdr\u003e\r\n\t\t\u003cMsgId\u003eBBBB/150928-CT/EUR/912\u003c/MsgId\u003e\r\n\t\t\u003cCreDtTm\u003e2015-09-28T16:01:00\u003c/CreDtTm\u003e\r\n\t\t\u003cNbOfTxs\u003e2\u003c/NbOfTxs\u003e\r\n\t\t\u003cTtlIntrBkSttlmAmt Ccy=\"EUR\"\u003e504500\u003c/TtlIntrBkSttlmAmt\u003e\r\n\t\t\u003cIntrBkSttlmDt\u003e2015-09-29\u003c/IntrBkSttlmDt\u003e\r\n\t\t\u003cSttlmInf\u003e\r\n\t\t\t\u003cSttlmMtd\u003eINDA\u003c/SttlmMtd\u003e\r\n\t\t\t\u003cSttlmAcct\u003e\r\n\t\t\t\t\u003cId\u003e\r\n\t\t\t\t\t\u003cOthr\u003e\r\n\t\t\t\t\t\t\u003cId\u003e29314569847\u003c/Id\u003e\r\n\t\t\t\t\t\u003c/Othr\u003e\r\n\t\t\t\t\u003c/Id\u003e\r\n\t\t\t\u003c/SttlmAcct\u003e\r\n\t\t\u003c/SttlmInf\u003e\r\n\t\t\u003cInstgAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/InstgAgt\u003e\r\n\t\t\u003cInstdAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eEEEEDEFF\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/InstdAgt\u003e\r\n\t\u003c/GrpHdr\u003e\r\n\t\u003cCdtTrfTxInf\u003e\r\n\t\t\u003cPmtId\u003e\r\n\t\t\t\u003cInstrId\u003eBBBB/150928-CCT/EUR/912/1\u003c/InstrId\u003e\r\n\t\t\t\u003cEndToEndId\u003eABC/ABC-13679/2015-09-15\u003c/EndToEndId\u003e\r\n\t\t\t\u003cTxId\u003eBBBB/150928-CCT/EUR/912/1\u003c/TxId\u003e\r\n\t\t\u003c/PmtId\u003e\r\n\t\t\u003cPmtTpInf\u003e\r\n\t\t\t\u003cInstrPrty\u003eNORM\u003c/InstrPrty\u003e\r\n\t\t\u003c/PmtTpInf\u003e\r\n\t\t\u003cIntrBkSttlmAmt Ccy=\"EUR\"\u003e499500\u003c/IntrBkSttlmAmt\u003e\r\n\t\t\u003cInstdAmt Ccy=\"EUR\"\u003e500000\u003c/InstdAmt\u003e\r\n\t\t\u003cChrgBr\u003eCRED\u003c/ChrgBr\u003e\r\n\t\t\u003cChrgsInf\u003e\r\n\t\t\t\u003cAmt Ccy=\"EUR\"\u003e500\u003c/Amt\u003e\r\n\t\t\t\u003cAgt\u003e\r\n\t\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\t\u003c/Agt\u003e\r\n\t\t\u003c/ChrgsInf\u003e\r\n\t\t\u003cDbtr\u003e\r\n\t\t\t\u003cNm\u003eABC Corporation\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003eTimes Square\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e7\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003eNY 10036\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eNew York\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eUS\u003c/Ctry\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Dbtr\u003e\r\n\t\t\u003cDbtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cOthr\u003e\r\n\t\t\t\t\t\u003cId\u003e00125574999\u003c/Id\u003e\r\n\t\t\t\t\u003c/Othr\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/DbtrAcct\u003e\r\n\t\t\u003cDbtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/DbtrAgt\u003e\r\n\t\t\u003cCdtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eDDDDBEBB\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/CdtrAgt\u003e\r\n\t\t\u003cCdtr\u003e\r\n\t\t\t\u003cNm\u003eGHI Semiconductors\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003eAvenue Brugmann\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e415\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003e1180\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eBrussels\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eBE\u003c/Ctry\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Cdtr\u003e\r\n\t\t\u003cCdtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cIBAN\u003eBE30001216371411\u003c/IBAN\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/CdtrAcct\u003e\r\n\t\t\u003cPurp\u003e\r\n\t\t\t\u003cCd\u003eGDDS\u003c/Cd\u003e\r\n\t\t\u003c/Purp\u003e\r\n\t\t\u003cRmtInf\u003e\r\n\t\t\t\u003cStrd\u003e\r\n\t\t\t\t\u003cRfrdDocInf\u003e\r\n\t\t\t\t\t\u003cTp\u003e\r\n\t\t\t\t\t\t\u003cCdOrPrtry\u003e\r\n\t\t\t\t\t\t\t\u003cCd\u003eCINV\u003c/Cd\u003e\r\n\t\t\t\t\t\t\u003c/CdOrPrtry\u003e\r\n\t\t\t\t\t\u003c/Tp\u003e\r\n\t\t\t\t\t\u003cNb\u003eABC-13679\u003c/Nb\u003e\r\n\t\t\t\t\t\u003cRltdDt\u003e\r\n\t\t\t\t\t\t\u003cTp\u003e\r\n\t\t\t\t\t\t\t\u003cCd\u003eINDA\u003c/Cd\u003e\r\n\t\t\t\t\t\t\u003c/Tp\u003e\r\n\t\t\t\t\t\t\u003cDt\u003e2015-09-08\u003c/Dt\u003e\r\n\t\t\t\t\t\u003c/RltdDt\u003e\r\n\t\t\t\t\u003c/RfrdDocInf\u003e\r\n\t\t\t\u003c/Strd\u003e\r\n\t\t\u003c/RmtInf\u003e\r\n\t\u003c/CdtTrfTxInf\u003e\r\n\t\u003cCdtTrfTxInf\u003e\r\n\t\t\u003cPmtId\u003e\r\n\t\t\t\u003cInstrId\u003eBBBB/150928-CCT/EUR/912/2\u003c/InstrId\u003e\r\n\t\t\t\u003cEndToEndId\u003eBBBB/150928-ZZ/JO/164794\u003c/EndToEndId\u003e\r\n\t\t\t\u003cTxId\u003eBBBB/150928-CCT/EUR/912/2\u003c/TxId\u003e\r\n\t\t\u003c/PmtId\u003e\r\n\t\t\u003cPmtTpInf\u003e\r\n\t\t\t\u003cInstrPrty\u003eNORM\u003c/InstrPrty\u003e\r\n\t\t\u003c/PmtTpInf\u003e\r\n\t\t\u003cIntrBkSttlmAmt Ccy=\"EUR\"\u003e5000\u003c/IntrBkSttlmAmt\u003e\r\n\t\t\u003cChrgBr\u003eSHAR\u003c/ChrgBr\u003e\r\n\t\t\u003cDbtr\u003e\r\n\t\t\t\u003cNm\u003eMr. Jones\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003e16th Street\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e30\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003eNY10023\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eNew York\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eUS\u003c/Ctry\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Dbtr\u003e\r\n\t\t\u003cDbtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cOthr\u003e\r\n\t\t\t\t\t\u003cId\u003e00125583145\u003c/Id\u003e\r\n\t\t\t\t\u003c/Othr\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/DbtrAcct\u003e\r\n\t\t\u003cDbtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/DbtrAgt\u003e\r\n\t\t\u003cCdtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eEEEEDEFF\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/CdtrAgt\u003e\r\n\t\t\u003cCdtr\u003e\r\n\t\t\t\u003cNm\u003eZZ Insurances\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003eFriedrich-Ebert-Anlage\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e2-14\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003eD-60 325\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eFrankfurt am Main\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eDE\u003c/Ctry\u003e\r\n\t\t\t\t\u003cAdrLine\u003eCity Haus 1 10th Floor\u003c/AdrLine\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Cdtr\u003e\r\n\t\t\u003cCdtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cIBAN\u003eDE89370400440532014000\u003c/IBAN\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/CdtrAcct\u003e\r\n\t\t\u003cRmtInf\u003e\r\n\t\t\t\u003cUstrd\u003eContract ZZ/JO/164794\u003c/Ustrd\u003e\r\n\t\t\u003c/RmtInf\u003e\r\n\t\u003c/CdtTrfTxInf\u003e\r\n\u003c/FIToFICstmrCdtTrf\u003e\r\n"
+                    }
+                ]
+            }
+        },
+        "/send": {
+            "post": {
+                "description": "Send an ISO20022 message",
+                "consumes": [
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messaging"
+                ],
+                "summary": "Send a message",
+                "parameters": [
+                    {
+                        "description": "ISO20022 message in xml format",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\r\n\u003cFIToFICstmrCdtTrf\u003e\r\n\t\u003cGrpHdr\u003e\r\n\t\t\u003cMsgId\u003eBBBB/150928-CT/EUR/912\u003c/MsgId\u003e\r\n\t\t\u003cCreDtTm\u003e2015-09-28T16:01:00\u003c/CreDtTm\u003e\r\n\t\t\u003cNbOfTxs\u003e2\u003c/NbOfTxs\u003e\r\n\t\t\u003cTtlIntrBkSttlmAmt Ccy=\"EUR\"\u003e504500\u003c/TtlIntrBkSttlmAmt\u003e\r\n\t\t\u003cIntrBkSttlmDt\u003e2015-09-29\u003c/IntrBkSttlmDt\u003e\r\n\t\t\u003cSttlmInf\u003e\r\n\t\t\t\u003cSttlmMtd\u003eINDA\u003c/SttlmMtd\u003e\r\n\t\t\t\u003cSttlmAcct\u003e\r\n\t\t\t\t\u003cId\u003e\r\n\t\t\t\t\t\u003cOthr\u003e\r\n\t\t\t\t\t\t\u003cId\u003e29314569847\u003c/Id\u003e\r\n\t\t\t\t\t\u003c/Othr\u003e\r\n\t\t\t\t\u003c/Id\u003e\r\n\t\t\t\u003c/SttlmAcct\u003e\r\n\t\t\u003c/SttlmInf\u003e\r\n\t\t\u003cInstgAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/InstgAgt\u003e\r\n\t\t\u003cInstdAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eEEEEDEFF\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/InstdAgt\u003e\r\n\t\u003c/GrpHdr\u003e\r\n\t\u003cCdtTrfTxInf\u003e\r\n\t\t\u003cPmtId\u003e\r\n\t\t\t\u003cInstrId\u003eBBBB/150928-CCT/EUR/912/1\u003c/InstrId\u003e\r\n\t\t\t\u003cEndToEndId\u003eABC/ABC-13679/2015-09-15\u003c/EndToEndId\u003e\r\n\t\t\t\u003cTxId\u003eBBBB/150928-CCT/EUR/912/1\u003c/TxId\u003e\r\n\t\t\u003c/PmtId\u003e\r\n\t\t\u003cPmtTpInf\u003e\r\n\t\t\t\u003cInstrPrty\u003eNORM\u003c/InstrPrty\u003e\r\n\t\t\u003c/PmtTpInf\u003e\r\n\t\t\u003cIntrBkSttlmAmt Ccy=\"EUR\"\u003e499500\u003c/IntrBkSttlmAmt\u003e\r\n\t\t\u003cInstdAmt Ccy=\"EUR\"\u003e500000\u003c/InstdAmt\u003e\r\n\t\t\u003cChrgBr\u003eCRED\u003c/ChrgBr\u003e\r\n\t\t\u003cChrgsInf\u003e\r\n\t\t\t\u003cAmt Ccy=\"EUR\"\u003e500\u003c/Amt\u003e\r\n\t\t\t\u003cAgt\u003e\r\n\t\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\t\u003c/Agt\u003e\r\n\t\t\u003c/ChrgsInf\u003e\r\n\t\t\u003cDbtr\u003e\r\n\t\t\t\u003cNm\u003eABC Corporation\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003eTimes Square\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e7\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003eNY 10036\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eNew York\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eUS\u003c/Ctry\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Dbtr\u003e\r\n\t\t\u003cDbtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cOthr\u003e\r\n\t\t\t\t\t\u003cId\u003e00125574999\u003c/Id\u003e\r\n\t\t\t\t\u003c/Othr\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/DbtrAcct\u003e\r\n\t\t\u003cDbtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/DbtrAgt\u003e\r\n\t\t\u003cCdtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eDDDDBEBB\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/CdtrAgt\u003e\r\n\t\t\u003cCdtr\u003e\r\n\t\t\t\u003cNm\u003eGHI Semiconductors\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003eAvenue Brugmann\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e415\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003e1180\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eBrussels\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eBE\u003c/Ctry\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Cdtr\u003e\r\n\t\t\u003cCdtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cIBAN\u003eBE30001216371411\u003c/IBAN\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/CdtrAcct\u003e\r\n\t\t\u003cPurp\u003e\r\n\t\t\t\u003cCd\u003eGDDS\u003c/Cd\u003e\r\n\t\t\u003c/Purp\u003e\r\n\t\t\u003cRmtInf\u003e\r\n\t\t\t\u003cStrd\u003e\r\n\t\t\t\t\u003cRfrdDocInf\u003e\r\n\t\t\t\t\t\u003cTp\u003e\r\n\t\t\t\t\t\t\u003cCdOrPrtry\u003e\r\n\t\t\t\t\t\t\t\u003cCd\u003eCINV\u003c/Cd\u003e\r\n\t\t\t\t\t\t\u003c/CdOrPrtry\u003e\r\n\t\t\t\t\t\u003c/Tp\u003e\r\n\t\t\t\t\t\u003cNb\u003eABC-13679\u003c/Nb\u003e\r\n\t\t\t\t\t\u003cRltdDt\u003e\r\n\t\t\t\t\t\t\u003cTp\u003e\r\n\t\t\t\t\t\t\t\u003cCd\u003eINDA\u003c/Cd\u003e\r\n\t\t\t\t\t\t\u003c/Tp\u003e\r\n\t\t\t\t\t\t\u003cDt\u003e2015-09-08\u003c/Dt\u003e\r\n\t\t\t\t\t\u003c/RltdDt\u003e\r\n\t\t\t\t\u003c/RfrdDocInf\u003e\r\n\t\t\t\u003c/Strd\u003e\r\n\t\t\u003c/RmtInf\u003e\r\n\t\u003c/CdtTrfTxInf\u003e\r\n\t\u003cCdtTrfTxInf\u003e\r\n\t\t\u003cPmtId\u003e\r\n\t\t\t\u003cInstrId\u003eBBBB/150928-CCT/EUR/912/2\u003c/InstrId\u003e\r\n\t\t\t\u003cEndToEndId\u003eBBBB/150928-ZZ/JO/164794\u003c/EndToEndId\u003e\r\n\t\t\t\u003cTxId\u003eBBBB/150928-CCT/EUR/912/2\u003c/TxId\u003e\r\n\t\t\u003c/PmtId\u003e\r\n\t\t\u003cPmtTpInf\u003e\r\n\t\t\t\u003cInstrPrty\u003eNORM\u003c/InstrPrty\u003e\r\n\t\t\u003c/PmtTpInf\u003e\r\n\t\t\u003cIntrBkSttlmAmt Ccy=\"EUR\"\u003e5000\u003c/IntrBkSttlmAmt\u003e\r\n\t\t\u003cChrgBr\u003eSHAR\u003c/ChrgBr\u003e\r\n\t\t\u003cDbtr\u003e\r\n\t\t\t\u003cNm\u003eMr. Jones\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003e16th Street\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e30\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003eNY10023\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eNew York\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eUS\u003c/Ctry\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Dbtr\u003e\r\n\t\t\u003cDbtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cOthr\u003e\r\n\t\t\t\t\t\u003cId\u003e00125583145\u003c/Id\u003e\r\n\t\t\t\t\u003c/Othr\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/DbtrAcct\u003e\r\n\t\t\u003cDbtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eBBBBUS33\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/DbtrAgt\u003e\r\n\t\t\u003cCdtrAgt\u003e\r\n\t\t\t\u003cFinInstnId\u003e\r\n\t\t\t\t\u003cBICFI\u003eEEEEDEFF\u003c/BICFI\u003e\r\n\t\t\t\u003c/FinInstnId\u003e\r\n\t\t\u003c/CdtrAgt\u003e\r\n\t\t\u003cCdtr\u003e\r\n\t\t\t\u003cNm\u003eZZ Insurances\u003c/Nm\u003e\r\n\t\t\t\u003cPstlAdr\u003e\r\n\t\t\t\t\u003cStrtNm\u003eFriedrich-Ebert-Anlage\u003c/StrtNm\u003e\r\n\t\t\t\t\u003cBldgNb\u003e2-14\u003c/BldgNb\u003e\r\n\t\t\t\t\u003cPstCd\u003eD-60 325\u003c/PstCd\u003e\r\n\t\t\t\t\u003cTwnNm\u003eFrankfurt am Main\u003c/TwnNm\u003e\r\n\t\t\t\t\u003cCtry\u003eDE\u003c/Ctry\u003e\r\n\t\t\t\t\u003cAdrLine\u003eCity Haus 1 10th Floor\u003c/AdrLine\u003e\r\n\t\t\t\u003c/PstlAdr\u003e\r\n\t\t\u003c/Cdtr\u003e\r\n\t\t\u003cCdtrAcct\u003e\r\n\t\t\t\u003cId\u003e\r\n\t\t\t\t\u003cIBAN\u003eDE89370400440532014000\u003c/IBAN\u003e\r\n\t\t\t\u003c/Id\u003e\r\n\t\t\u003c/CdtrAcct\u003e\r\n\t\t\u003cRmtInf\u003e\r\n\t\t\t\u003cUstrd\u003eContract ZZ/JO/164794\u003c/Ustrd\u003e\r\n\t\t\u003c/RmtInf\u003e\r\n\t\u003c/CdtTrfTxInf\u003e\r\n\u003c/FIToFICstmrCdtTrf\u003e\r\n"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/server.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/server.MessageSendResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/server.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Something bad happened"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "server.MessageSendResponse": {
+            "type": "object",
+            "properties": {
+                "message_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.ResponseStatus": {
+            "type": "string",
+            "enum": [
+                "Ok",
+                "Fail"
+            ],
+            "x-enum-varnames": [
+                "OK",
+                "Fail"
+            ]
+        },
+        "server.StandardResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/server.ResponseStatus"
+                }
+            }
+        }
+    }
+}
