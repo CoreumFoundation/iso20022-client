@@ -96,23 +96,15 @@ func TestParseIsoMessage(t *testing.T) {
 			name:            "pacs008 within envelope without header 2",
 			messageFilePath: "testdata/pacs008-5.xml",
 			id:              "20220717USDDSO0123456789BLUEUSNY001",
-			party: &addressbook.Party{
-				Identification: addressbook.Identification{
-					BusinessIdentifiersCode: "GRENCHZZ002",
-				},
-			},
-			hasError: false,
+			party:           &addressbook.Party{},
+			hasError:        true,
 		},
 		{
 			name:            "pacs008 within envelope without header 3",
 			messageFilePath: "testdata/pacs008-8.xml",
 			id:              "20220718USDDSA9153934686BLUEUSNY001",
-			party: &addressbook.Party{
-				Identification: addressbook.Identification{
-					BusinessIdentifiersCode: "GRENCHZZ002",
-				},
-			},
-			hasError: false,
+			party:           &addressbook.Party{},
+			hasError:        true,
 		},
 		{
 			name:            "pacs008 - First FIToFICustomerCreditTransfer",
@@ -184,12 +176,8 @@ func TestParseIsoMessage(t *testing.T) {
 			name:            "pacs009 within envelope without header",
 			messageFilePath: "testdata/pacs009-3.xml",
 			id:              "20220720CHFDSA9621795075GRENCHZZ002",
-			party: &addressbook.Party{
-				Identification: addressbook.Identification{
-					BusinessIdentifiersCode: "CBFCCHZZ003",
-				},
-			},
-			hasError: false,
+			party:           &addressbook.Party{},
+			hasError:        true,
 		},
 		{
 			name:            "pacs002 within envelope",
@@ -444,14 +432,14 @@ func TestParseIsoMessage(t *testing.T) {
 			fileContent, err := os.ReadFile(tt.messageFilePath)
 			require.NoError(t, err)
 
-			id, party, err := parser.ExtractMetadataFromIsoMessage(fileContent)
+			metadata, err := parser.ExtractMetadataFromIsoMessage(fileContent)
 			if tt.hasError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.NotNil(t, party)
-				require.Equal(t, tt.id, id)
-				require.True(t, tt.party.Equal(*party))
+				require.NotNil(t, metadata.Receiver)
+				require.Equal(t, tt.id, metadata.ID)
+				require.True(t, tt.party.Equal(*metadata.Receiver))
 			}
 		})
 	}

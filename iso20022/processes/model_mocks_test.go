@@ -17,6 +17,7 @@ import (
 	client "github.com/CoreumFoundation/coreum/v4/pkg/client"
 	addressbook "github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	coreum "github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
+	processes "github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 	queue "github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 	types "github.com/cosmos/cosmos-sdk/codec/types"
 	types0 "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -421,13 +422,12 @@ func (m *MockParser) EXPECT() *MockParserMockRecorder {
 }
 
 // ExtractMetadataFromIsoMessage mocks base method.
-func (m *MockParser) ExtractMetadataFromIsoMessage(arg0 []byte) (string, *addressbook.Party, error) {
+func (m *MockParser) ExtractMetadataFromIsoMessage(arg0 []byte) (processes.Metadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExtractMetadataFromIsoMessage", arg0)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(*addressbook.Party)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(processes.Metadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ExtractMetadataFromIsoMessage indicates an expected call of ExtractMetadataFromIsoMessage.

@@ -27,6 +27,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_06"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 )
 
 type Parser struct {
@@ -205,23 +206,29 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 	return envelope.AppHdr, resDoc, nil
 }
 
-func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (id string, party *addressbook.Party, err error) {
+func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metadata, err error) {
 	headDoc, containedDoc, err := p.parseIsoMessage(msg)
 	if err != nil {
-		return "", nil, err
+		return data, err
 	}
 
-	party = new(addressbook.Party)
+	id := ""
+	sender := new(addressbook.Party)
+	receiver := new(addressbook.Party)
 	emptyParty := new(addressbook.Party)
 
 	if headDoc != nil {
 		switch head := headDoc.(type) {
 		case *head_001_001_01.BusinessApplicationHeaderV01:
-			party = p.converter.ConvertFromHead00100101(head.To.FIId).ToParty()
-			return string(head.BizMsgIdr), party, nil
+			data.ID = string(head.BizMsgIdr)
+			data.Receiver = p.converter.ConvertFromHead00100101(head.To.FIId).ToParty()
+			data.Sender = p.converter.ConvertFromHead00100101(head.Fr.FIId).ToParty()
+			return data, nil
 		case *head_001_001_02.BusinessApplicationHeaderV02:
-			party = p.converter.ConvertFromHead00100102(head.To.FIId).ToParty()
-			return string(head.BizMsgIdr), party, nil
+			data.ID = string(head.BizMsgIdr)
+			data.Receiver = p.converter.ConvertFromHead00100102(head.To.FIId).ToParty()
+			data.Sender = p.converter.ConvertFromHead00100102(head.Fr.FIId).ToParty()
+			return data, nil
 		}
 	}
 
@@ -229,159 +236,223 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (id string, party *add
 		switch doc := containedDoc.(type) {
 		case *pacs_028_001_04.FIToFIPaymentStatusRequestV04:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs02800104(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs02800104(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs02800104(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInf) > 0 {
 				if id == "" && doc.TxInf[0].StsReqId != nil {
 					id = string(*doc.TxInf[0].StsReqId)
 				}
-				party = p.converter.ConvertFromPacs02800104(doc.TxInf[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs02800104(doc.TxInf[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
+				sender = p.converter.ConvertFromPacs02800104(doc.TxInf[0].InstgAgt).ToParty()
 			}
 		case *pacs_028_001_06.FIToFIPaymentStatusRequestV06:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs02800106(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs02800106(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs02800106(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInf) > 0 {
 				if id == "" && doc.TxInf[0].StsReqId != nil {
 					id = string(*doc.TxInf[0].StsReqId)
 				}
-				party = p.converter.ConvertFromPacs02800106(doc.TxInf[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs02800106(doc.TxInf[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
+				sender = p.converter.ConvertFromPacs02800106(doc.TxInf[0].InstgAgt).ToParty()
 			}
 		case *pacs_010_001_04.FinancialInstitutionDirectDebitV04:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs01000104(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtInstr) > 0 {
+			receiver = p.converter.ConvertFromPacs01000104(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs01000104(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.CdtInstr) > 0 {
 				if id == "" {
 					id = string(doc.CdtInstr[0].CdtId)
 				}
-				party = p.converter.ConvertFromPacs01000104(doc.CdtInstr[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs01000104(doc.CdtInstr[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtInstr) > 0 {
+				sender = p.converter.ConvertFromPacs01000104(doc.CdtInstr[0].InstgAgt).ToParty()
 			}
 		case *pacs_008_001_06.FIToFICustomerCreditTransferV06:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00800106(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00800106(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00800106(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
 					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
 				}
-				party = p.converter.ConvertFromPacs00800106(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00800106(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				sender = p.converter.ConvertFromPacs00800106(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 			}
 		case *pacs_002_001_07.FIToFIPaymentStatusReportV07:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00200107(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+			receiver = p.converter.ConvertFromPacs00200107(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00200107(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				if id == "" && doc.TxInfAndSts[0].StsId != nil {
 					id = string(*doc.TxInfAndSts[0].StsId)
 				}
-				party = p.converter.ConvertFromPacs00200107(doc.TxInfAndSts[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00200107(doc.TxInfAndSts[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				sender = p.converter.ConvertFromPacs00200107(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
 		case *pacs_008_001_08.FIToFICustomerCreditTransferV08:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00800108(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00800108(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00800108(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
 					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
 				}
-				party = p.converter.ConvertFromPacs00800108(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00800108(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				sender = p.converter.ConvertFromPacs00800108(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 			}
 		case *pacs_003_001_08.FIToFICustomerDirectDebitV08:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00300108(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.DrctDbtTxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00300108(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00300108(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.DrctDbtTxInf) > 0 {
 				if id == "" && doc.DrctDbtTxInf[0].PmtId.InstrId != nil {
 					id = string(*doc.DrctDbtTxInf[0].PmtId.InstrId)
 				}
-				party = p.converter.ConvertFromPacs00300108(doc.DrctDbtTxInf[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00300108(doc.DrctDbtTxInf[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.DrctDbtTxInf) > 0 {
+				sender = p.converter.ConvertFromPacs00300108(doc.DrctDbtTxInf[0].InstgAgt).ToParty()
 			}
 		case *pacs_002_001_08.FIToFIPaymentStatusReportV08:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00200108(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+			receiver = p.converter.ConvertFromPacs00200108(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00200108(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				if id == "" && doc.TxInfAndSts[0].StsId != nil {
 					id = string(*doc.TxInfAndSts[0].StsId)
 				}
-				party = p.converter.ConvertFromPacs00200108(doc.TxInfAndSts[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00200108(doc.TxInfAndSts[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				sender = p.converter.ConvertFromPacs00200108(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
 		case *pacs_008_001_09.FIToFICustomerCreditTransferV09:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00800109(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00800109(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00800109(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
 					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
 				}
 				if doc.CdtTrfTxInf[0].InstdAgt != nil {
-					party = p.converter.ConvertFromPacs00800109(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
-				} else {
-					party = p.converter.ConvertFromPacs00800109(&doc.CdtTrfTxInf[0].CdtrAgt).ToParty()
+					receiver = p.converter.ConvertFromPacs00800109(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
+				}
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				if doc.CdtTrfTxInf[0].InstgAgt != nil {
+					sender = p.converter.ConvertFromPacs00800109(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 				}
 			}
 		case *pacs_009_001_09.FinancialInstitutionCreditTransferV09:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00900109(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00900109(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00900109(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
 					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
 				}
 				if doc.CdtTrfTxInf[0].InstdAgt != nil {
-					party = p.converter.ConvertFromPacs00900109(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
-				} else {
-					party = p.converter.ConvertFromPacs00900109(doc.CdtTrfTxInf[0].CdtrAgt).ToParty()
+					receiver = p.converter.ConvertFromPacs00900109(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
+				}
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				if doc.CdtTrfTxInf[0].InstdAgt != nil {
+					sender = p.converter.ConvertFromPacs00900109(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 				}
 			}
 		case *pacs_007_001_10.FIToFIPaymentReversalV10:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00700110(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00700110(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00700110(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInf) > 0 {
 				if id == "" && doc.TxInf[0].RvslId != nil {
 					id = string(*doc.TxInf[0].RvslId)
 				}
-				party = p.converter.ConvertFromPacs00700110(doc.TxInf[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00700110(doc.TxInf[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
+				sender = p.converter.ConvertFromPacs00700110(doc.TxInf[0].InstgAgt).ToParty()
 			}
 		case *pacs_002_001_10.FIToFIPaymentStatusReportV10:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00200110(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+			receiver = p.converter.ConvertFromPacs00200110(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00200110(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				if id == "" && doc.TxInfAndSts[0].StsId != nil {
 					id = string(*doc.TxInfAndSts[0].StsId)
 				}
-				party = p.converter.ConvertFromPacs00200110(doc.TxInfAndSts[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00200110(doc.TxInfAndSts[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				sender = p.converter.ConvertFromPacs00200110(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
 		case *pacs_004_001_10.PaymentReturnV10:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00400110(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00400110(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00400110(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInf) > 0 {
 				if id == "" && doc.TxInf[0].RtrId != nil {
 					id = string(*doc.TxInf[0].RtrId)
 				}
-				party = p.converter.ConvertFromPacs00400110(doc.TxInf[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00400110(doc.TxInf[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
+				sender = p.converter.ConvertFromPacs00400110(doc.TxInf[0].InstgAgt).ToParty()
 			}
 		case *pacs_002_001_11.FIToFIPaymentStatusReportV11:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00200111(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+			receiver = p.converter.ConvertFromPacs00200111(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00200111(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				if id == "" && doc.TxInfAndSts[0].StsId != nil {
 					id = string(*doc.TxInfAndSts[0].StsId)
 				}
-				party = p.converter.ConvertFromPacs00200111(doc.TxInfAndSts[0].InstdAgt).ToParty()
+				receiver = p.converter.ConvertFromPacs00200111(doc.TxInfAndSts[0].InstdAgt).ToParty()
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
+				sender = p.converter.ConvertFromPacs00200111(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
 		case *pacs_008_001_12.FIToFICustomerCreditTransferV12:
 			id = string(doc.GrpHdr.MsgId)
-			party = p.converter.ConvertFromPacs00800112(doc.GrpHdr.InstdAgt).ToParty()
-			if (party == nil || reflect.DeepEqual(party, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+			receiver = p.converter.ConvertFromPacs00800112(doc.GrpHdr.InstdAgt).ToParty()
+			sender = p.converter.ConvertFromPacs00800112(doc.GrpHdr.InstgAgt).ToParty()
+			if (receiver == nil || reflect.DeepEqual(receiver, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				if id == "" && doc.CdtTrfTxInf[0].PmtId.InstrId != nil {
 					id = string(*doc.CdtTrfTxInf[0].PmtId.InstrId)
 				}
 				if doc.CdtTrfTxInf[0].InstdAgt != nil {
-					party = p.converter.ConvertFromPacs00800112(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
-				} else {
-					party = p.converter.ConvertFromPacs00800112(&doc.CdtTrfTxInf[0].CdtrAgt).ToParty()
+					receiver = p.converter.ConvertFromPacs00800112(doc.CdtTrfTxInf[0].InstdAgt).ToParty()
+				}
+			}
+			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
+				if doc.CdtTrfTxInf[0].InstdAgt != nil {
+					sender = p.converter.ConvertFromPacs00800112(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 				}
 			}
 		default:
-			return "", nil, errors.New("couldn't find party from " + reflect.TypeOf(containedDoc).String())
+			return data, errors.New("couldn't find receiver from " + reflect.TypeOf(containedDoc).String())
 		}
 	}
 
-	if party == nil || reflect.DeepEqual(party, emptyParty) {
-		return "", nil, errors.New("couldn't find party")
+	if receiver == nil || reflect.DeepEqual(receiver, emptyParty) {
+		return data, errors.New("couldn't find receiver")
 	}
 
-	return
+	data.ID = id
+	data.Sender = sender
+	data.Receiver = receiver
+
+	return data, nil
 }

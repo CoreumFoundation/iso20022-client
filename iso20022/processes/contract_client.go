@@ -118,6 +118,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 							"Failed to process the message",
 							zap.Error(err),
 							zap.Any("id", message.Id),
+							zap.Any("source", message.Source),
 							zap.Any("destination", message.Destination),
 							zap.Any("msg", msg),
 						)
@@ -218,6 +219,17 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
+		metadata, err := p.parser.ExtractMetadataFromIsoMessage(data.Data)
+		if err != nil {
+			p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
+			continue
+		}
+
+		if !metadata.Sender.Equal(entry.Party) {
+			p.log.Error(ctx, "message sender is not verified") // TODO
+			continue
+		}
+
 		p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
 
 		if msg.Time > lastReadTime {
@@ -310,6 +322,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 
 type messageWithMetadata struct {
 	Id             string
+	Source         sdk.AccAddress
 	Destination    sdk.AccAddress
 	PublicKeyBytes []byte
 	Message        []byte
@@ -317,22 +330,32 @@ type messageWithMetadata struct {
 }
 
 func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadata, error) {
-	messageId, parsedTarget, err := p.parser.ExtractMetadataFromIsoMessage(msg)
+	metadata, err := p.parser.ExtractMetadataFromIsoMessage(msg)
 	if err != nil {
 		return nil, err
 	}
 
-	entry, found := p.addressBook.Lookup(*parsedTarget)
+	receiver, found := p.addressBook.Lookup(*metadata.Receiver)
 	if !found {
-		return nil, errors.New("could not find the target party in the address book")
+		return nil, errors.New("could not find the receiver party in the address book")
 	}
 
-	address, err := sdk.AccAddressFromBech32(entry.Bech32EncodedAddress)
+	receiverAddress, err := sdk.AccAddressFromBech32(receiver.Bech32EncodedAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	publicKeyBytes, err := base64.StdEncoding.DecodeString(entry.PublicKey)
+	var senderAddress = sdk.AccAddress{}
+
+	sender, found := p.addressBook.Lookup(*metadata.Receiver)
+	if found {
+		senderAddress, err = sdk.AccAddressFromBech32(sender.Bech32EncodedAddress)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	publicKeyBytes, err := base64.StdEncoding.DecodeString(receiver.PublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -344,8 +367,9 @@ func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadat
 	// }
 
 	return &messageWithMetadata{
-		messageId,
-		address,
+		metadata.ID,
+		senderAddress,
+		receiverAddress,
 		publicKeyBytes,
 		msg,
 		attachedFunds,

@@ -76,8 +76,14 @@ type Cryptography interface {
 	DecryptSymmetric(ciphertext []byte, secret []byte) (plaintext []byte, err error)
 }
 
+type Metadata struct {
+	ID       string
+	Sender   *addressbook.Party
+	Receiver *addressbook.Party
+}
+
 type Parser interface {
-	ExtractMetadataFromIsoMessage(msg []byte) (id string, party *addressbook.Party, err error)
+	ExtractMetadataFromIsoMessage(msg []byte) (data Metadata, err error)
 }
 
 type MessageQueue interface {
