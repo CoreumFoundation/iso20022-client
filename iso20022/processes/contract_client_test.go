@@ -50,11 +50,7 @@ func TestContractClient_Start(t *testing.T) {
 			},
 			addressBookBuilder: func(ctrl *gomock.Controller) processes.AddressBook {
 				addressBookMock := NewMockAddressBook(ctrl)
-				addressBookMock.EXPECT().Lookup(addressbook.Party{
-					Identification: addressbook.Identification{
-						BusinessIdentifiersCode: "6P9YGUDF",
-					},
-				}).Return(&addressbook.Address{
+				addressBookMock.EXPECT().Lookup(gomock.Any()).Return(&addressbook.Address{
 					Bech32EncodedAddress: "devcore1kdujjkp8u0j9lww3n7qs7r5fwkljelvecsq43d",
 					PublicKey:            "A2nYC1ZLFxVLL3kyGUGF4Hjlpwsd+FS7jmxIWahM0P5V",
 					Party: addressbook.Party{
@@ -62,7 +58,7 @@ func TestContractClient_Start(t *testing.T) {
 							BusinessIdentifiersCode: "6P9YGUDF",
 						},
 					},
-				}, true)
+				}, true).Times(2)
 				return addressBookMock
 			},
 			cryptographyBuilder: func(ctrl *gomock.Controller) processes.Cryptography {
@@ -74,10 +70,17 @@ func TestContractClient_Start(t *testing.T) {
 			parserBuilder: func(ctrl *gomock.Controller) processes.Parser {
 				parserMock := NewMockParser(ctrl)
 				parserMock.EXPECT().ExtractMetadataFromIsoMessage(gomock.Any()).Return(
-					"abc123",
-					&addressbook.Party{
-						Identification: addressbook.Identification{
-							BusinessIdentifiersCode: "6P9YGUDF",
+					processes.Metadata{
+						ID: "abc123",
+						Sender: &addressbook.Party{
+							Identification: addressbook.Identification{
+								BusinessIdentifiersCode: "B61NZT4Y",
+							},
+						},
+						Receiver: &addressbook.Party{
+							Identification: addressbook.Identification{
+								BusinessIdentifiersCode: "6P9YGUDF",
+							},
 						},
 					},
 					nil,

@@ -39,7 +39,7 @@ func (h *Handler) Send(c *gin.Context) {
 		return
 	}
 
-	messageId, _, err := h.Parser.ExtractMetadataFromIsoMessage(message)
+	metadata, err := h.Parser.ExtractMetadataFromIsoMessage(message)
 	if err != nil {
 		resp := GetFailResponseFromErrors(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, resp)
@@ -47,12 +47,12 @@ func (h *Handler) Send(c *gin.Context) {
 	}
 
 	// TODO: Check for duplicate messages by ID
-	fmt.Printf("Got message with ID : %s\n", messageId)
+	fmt.Printf("Got message with ID : %s\n", metadata.ID)
 
-	resp := GetSuccessResponse(MessageSendResponse{MessageID: messageId})
+	resp := GetSuccessResponse(MessageSendResponse{MessageID: metadata.ID})
 	c.JSON(http.StatusCreated, resp)
 
-	go h.MessageQueue.PushToSend(messageId, message)
+	go h.MessageQueue.PushToSend(metadata.ID, message)
 }
 
 // Receive godoc
