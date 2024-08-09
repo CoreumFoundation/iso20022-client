@@ -36,12 +36,12 @@ func TestProcesses(t *testing.T) {
 
 	requireT.NotEmpty(msg)
 
-	_, err = secondPartyRunnerEnv.MessageStatus("P5607186 298")
+	_, err = firstPartyRunnerEnv.MessageStatus("P5607186 298")
 	requireT.ErrorContains(err, "message not found")
 
 	requireT.NoError(firstPartyRunnerEnv.SendMessage("../../iso20022/messages/testdata/pacs008-2.xml"))
 
-	status, err := secondPartyRunnerEnv.MessageStatus("P5607186 298")
+	status, err := firstPartyRunnerEnv.MessageStatus("P5607186 298")
 	requireT.NoError(err)
 	requireT.Equal(queue.StatusSending, status.DeliveryStatus)
 
