@@ -256,12 +256,12 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) (server.MessageStatusRes
 		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
 	}
 
-	statusResponse, ok := response.Data.(server.MessageStatusResponse)
+	statusResponse, ok := response.Data.(*server.MessageStatusResponse)
 	if !ok {
 		return server.MessageStatusResponse{}, errors.Errorf("Malformed data response : %v", response.Data)
 	}
 
-	return statusResponse, nil
+	return *statusResponse, nil
 }
 
 func (r *RunnerEnv) ReceiveMessage() ([]byte, error) {
@@ -329,12 +329,12 @@ func (r *RunnerEnv) MessageStatus(messageID string) (server.MessageStatusRespons
 		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
 	}
 
-	statusResponse, ok := response.Data.(server.MessageStatusResponse)
+	statusResponse, ok := response.Data.(*server.MessageStatusResponse)
 	if !ok {
 		return server.MessageStatusResponse{}, errors.Errorf("Malformed data response : %v", response.Data)
 	}
 
-	return statusResponse, nil
+	return *statusResponse, nil
 }
 
 func getFreePort() (port int, err error) {
