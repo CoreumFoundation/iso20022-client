@@ -2,9 +2,11 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +23,9 @@ import (
 	"github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/buildinfo"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/server"
 )
 
 //go:generate mockgen -destination=cli_mocks_test.go -package=cli . Runner
@@ -398,13 +402,32 @@ func MessageCmd() *cobra.Command {
 
 	cmd.AddCommand(SendMessageCmd())
 	cmd.AddCommand(ReceiveMessageCmd())
+	cmd.AddCommand(MessageStatusCmd())
+
+	log, err := GetCLILogger()
+	if err == nil {
+		handleError(log, cmd.Commands())
+	}
 
 	return cmd
 }
 
+func handleError(log *logger.ZapLogger, commands []*cobra.Command) {
+	for _, command := range commands {
+		cmd := command
+		originalRunE := cmd.RunE
+		cmd.RunE = func(cmd *cobra.Command, args []string) error {
+			err := originalRunE(cmd, args)
+			if err != nil {
+				log.Info(cmd.Context(), err.Error())
+			}
+			return nil
+		}
+	}
+}
+
 // SendMessageCmd returns a CLI command to interactively send an ISO20022 message to the chain.
 func SendMessageCmd() *cobra.Command {
-	// TODO: Should validate fully before sending and there should be a local batch in a WAL style
 	cmd := &cobra.Command{
 		Use:   "send <message xml file>",
 		Short: "Send an ISO20022 message to the chain",
@@ -439,11 +462,42 @@ func SendMessageCmd() *cobra.Command {
 				_ = Body.Close()
 			}(res.Body)
 
-			if res.StatusCode != http.StatusCreated {
+			if res.StatusCode != http.StatusBadRequest && res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusOK {
 				return errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
 			}
 
-			log.Info(cmd.Context(), "Message Queued")
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+
+			var response server.StandardResponse
+			err = json.Unmarshal(body, &response)
+			if err != nil {
+				return err
+			}
+
+			if res.StatusCode == http.StatusBadRequest {
+				return errors.Errorf(response.Message)
+			}
+
+			statusResponse, ok := response.Data.(server.MessageStatusResponse)
+			if !ok {
+				return errors.Errorf("Malformed data response : %v", response.Data)
+			}
+
+			if res.StatusCode == http.StatusCreated {
+				log.Info(cmd.Context(), "Message queued", zap.String("MessageID", statusResponse.MessageID))
+				return nil
+			}
+
+			switch statusResponse.DeliveryStatus {
+			case queue.StatusSending:
+				log.Info(cmd.Context(), "The message was already in the queue", zap.String("MessageID", statusResponse.MessageID))
+			case queue.StatusSent:
+				log.Info(cmd.Context(), "The message was already sent", zap.String("MessageID", statusResponse.MessageID))
+			}
+
 			return nil
 		},
 	}
@@ -504,6 +558,75 @@ func ReceiveMessageCmd() *cobra.Command {
 			}
 
 			log.Info(cmd.Context(), "Message received")
+			return nil
+		},
+	}
+
+	AddServerAddressFlag(cmd)
+
+	return cmd
+}
+
+// MessageStatusCmd returns a CLI command to interactively query status of an ISO20022 message.
+func MessageStatusCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "status <message ID>",
+		Short: "Query status of an ISO20022 message",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			log, err := GetCLILogger()
+			if err != nil {
+				return err
+			}
+			messageID := args[0]
+
+			cfg, err := GetHomeRunnerConfig(cmd)
+			if err != nil {
+				return err
+			}
+
+			res, err := http.Get(parseListenAddress(cfg.Processes.Server.ListenAddress) + "/v1/status/" + url.PathEscape(messageID))
+			if err != nil {
+				return err
+			}
+
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(res.Body)
+
+			if res.StatusCode != http.StatusBadRequest && res.StatusCode != http.StatusOK {
+				return errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
+			}
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+
+			var response server.StandardResponse
+			err = json.Unmarshal(body, &response)
+			if err != nil {
+				return err
+			}
+
+			if res.StatusCode == http.StatusBadRequest {
+				return errors.Errorf(response.Message)
+			}
+
+			statusResponse, ok := response.Data.(server.MessageStatusResponse)
+			if !ok {
+				return errors.Errorf("Malformed data response : %v", response.Data)
+			}
+
+			switch statusResponse.DeliveryStatus {
+			case queue.StatusError:
+				log.Info(cmd.Context(), "The message failed to send", zap.String("MessageID", statusResponse.MessageID))
+			case queue.StatusSending:
+				log.Info(cmd.Context(), "The message is in the queue", zap.String("MessageID", statusResponse.MessageID))
+			case queue.StatusSent:
+				log.Info(cmd.Context(), "The message is sent", zap.String("MessageID", statusResponse.MessageID))
+			}
+
 			return nil
 		},
 	}

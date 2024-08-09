@@ -17,7 +17,7 @@ type StandardResponse struct {
 	Data    any            `json:"data,omitempty"`
 }
 
-func GetFailResponse(msg string, data map[string]string) StandardResponse {
+func GetFailResponse(msg string, data any) StandardResponse {
 	return StandardResponse{
 		Status:  Fail,
 		Message: msg,

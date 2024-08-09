@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 )
 
@@ -16,12 +17,13 @@ type Server struct {
 	httpServer   http.Server
 }
 
-func createHandlers(parser processes.Parser, messageQueue processes.MessageQueue) http.Handler {
+func createHandlers(logger logger.Logger, parser processes.Parser, messageQueue processes.MessageQueue) http.Handler {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
 	h := Handler{
+		Logger:       logger,
 		Parser:       parser,
 		MessageQueue: messageQueue,
 	}
@@ -33,15 +35,16 @@ func createHandlers(parser processes.Parser, messageQueue processes.MessageQueue
 
 	v1.POST("/send", h.Send)
 	v1.GET("/receive", h.Receive)
+	v1.GET("/status/:id", h.Status)
 	return r
 }
 
-func New(parser processes.Parser, messageQueue processes.MessageQueue, addr string) *Server {
+func New(logger logger.Logger, parser processes.Parser, messageQueue processes.MessageQueue, addr string) *Server {
 	return &Server{
 		messageQueue: messageQueue,
 		httpServer: http.Server{
 			Addr:    addr,
-			Handler: createHandlers(parser, messageQueue),
+			Handler: createHandlers(logger, parser, messageQueue),
 			// Good practice to set timeouts to avoid Slowloris attacks.
 			WriteTimeout: time.Second * 15,
 			ReadTimeout:  time.Second * 15,

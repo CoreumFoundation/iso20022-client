@@ -92,6 +92,7 @@ type MessageQueue interface {
 	PushToReceive(msg []byte)
 	PopFromSend(ctx context.Context, n int, dur time.Duration) [][]byte
 	PopFromReceive() ([]byte, bool)
+	GetStatus(id string) *queue.Status
 	SetStatus(id string, status queue.Status)
 	Close()
 }

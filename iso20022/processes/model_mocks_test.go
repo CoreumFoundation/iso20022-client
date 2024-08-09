@@ -471,6 +471,20 @@ func (mr *MockMessageQueueMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockMessageQueue)(nil).Close))
 }
 
+// GetStatus mocks base method.
+func (m *MockMessageQueue) GetStatus(arg0 string) *queue.Status {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStatus", arg0)
+	ret0, _ := ret[0].(*queue.Status)
+	return ret0
+}
+
+// GetStatus indicates an expected call of GetStatus.
+func (mr *MockMessageQueueMockRecorder) GetStatus(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockMessageQueue)(nil).GetStatus), arg0)
+}
+
 // PopFromReceive mocks base method.
 func (m *MockMessageQueue) PopFromReceive() ([]byte, bool) {
 	m.ctrl.T.Helper()
