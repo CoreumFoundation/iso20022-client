@@ -225,16 +225,16 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
+		if msg.Time > lastReadTime {
+			lastReadTime = msg.Time
+		}
+
 		if !metadata.Sender.Equal(entry.Party) {
 			p.log.Error(ctx, "message sender is not verified") // TODO
 			continue
 		}
 
 		p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
-
-		if msg.Time > lastReadTime {
-			lastReadTime = msg.Time
-		}
 
 		p.messageQueue.PushToReceive(data.Data)
 	}

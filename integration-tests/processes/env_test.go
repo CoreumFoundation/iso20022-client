@@ -3,10 +3,12 @@ package processes_test
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -27,6 +29,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/server"
 )
 
 // RunnerEnvConfig is runner environment config.
@@ -265,6 +268,48 @@ func (r *RunnerEnv) ReceiveMessage() ([]byte, error) {
 		return nil, err
 	}
 	return body, nil
+}
+
+func (r *RunnerEnv) MessageStatus(messageID string) (server.MessageStatusResponse, error) {
+	// listen address here is always in the form of ":port", so we can append it to 0.0.0.0
+	// to have full url of the listening service
+	// the reason it is not just called port is that the RunnerConfig is the same between
+	// integration-test and app
+	uri := "http://0.0.0.0" + r.RunnerComponent.RunnerConfig.Processes.Server.ListenAddress
+	res, err := http.Get(uri + "/v1/status/" + url.PathEscape(messageID))
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
+
+	if res.StatusCode != http.StatusBadRequest && res.StatusCode != http.StatusOK {
+		return server.MessageStatusResponse{}, errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	var response server.StandardResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	if res.StatusCode == http.StatusBadRequest {
+		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
+	}
+
+	statusResponse, ok := response.Data.(server.MessageStatusResponse)
+	if !ok {
+		return server.MessageStatusResponse{}, errors.Errorf("Malformed data response : %v", response.Data)
+	}
+
+	return statusResponse, nil
 }
 
 func getFreePort() (port int, err error) {
