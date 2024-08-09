@@ -46,7 +46,7 @@ func TestParseIsoMessage(t *testing.T) {
 		{
 			name:            "pacs008 within envelope",
 			messageFilePath: "testdata/pacs008-2.xml",
-			id:              "P5607186 298",
+			id:              "P5607186 299",
 			receiver: &addressbook.Party{
 				Identification: addressbook.Identification{
 					BusinessIdentifiersCode: "6P9YGUDF",
