@@ -54,7 +54,7 @@ func TestParseIsoMessage(t *testing.T) {
 			},
 			sender: &addressbook.Party{
 				Identification: addressbook.Identification{
-					BusinessIdentifiersCode: "CHASDEFXXXX",
+					BusinessIdentifiersCode: "B61NZT4Y",
 				},
 			},
 			hasError: false,
