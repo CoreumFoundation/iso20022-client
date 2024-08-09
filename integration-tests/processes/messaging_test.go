@@ -46,7 +46,7 @@ func TestProcesses(t *testing.T) {
 
 	<-time.After(15 * time.Second) // Wait a bit till the message is received
 
-	status, err = secondPartyRunnerEnv.MessageStatus("P5607186 299")
+	status, err = firstPartyRunnerEnv.MessageStatus("P5607186 299")
 	requireT.NoError(err)
 	requireT.Equal(queue.StatusSent, status.DeliveryStatus)
 
