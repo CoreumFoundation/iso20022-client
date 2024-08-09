@@ -246,6 +246,7 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) (server.MessageStatusRes
 	}
 
 	var response server.StandardResponse
+	response.Data = server.MessageStatusResponse{}
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return server.MessageStatusResponse{}, err
@@ -318,6 +319,7 @@ func (r *RunnerEnv) MessageStatus(messageID string) (server.MessageStatusRespons
 	}
 
 	var response server.StandardResponse
+	response.Data = server.MessageStatusResponse{}
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return server.MessageStatusResponse{}, err
