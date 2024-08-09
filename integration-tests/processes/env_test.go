@@ -142,15 +142,18 @@ func fundAccount(
 ) sdk.AccAddress {
 	t.Helper()
 
-	keyInfo, err := coreumChain.ClientContext.Keyring().NewAccount(
-		keyName,
-		mnemonic,
-		"",
-		hd.CreateHDPath(coreumChain.ChainSettings.CoinType, 0, 0).String(),
-		hd.Secp256k1,
-	)
+	keyInfo, err := coreumChain.ClientContext.Keyring().Key(keyName)
 	if err != nil {
-		panic(err)
+		keyInfo, err = coreumChain.ClientContext.Keyring().NewAccount(
+			keyName,
+			mnemonic,
+			"",
+			hd.CreateHDPath(coreumChain.ChainSettings.CoinType, 0, 0).String(),
+			hd.Secp256k1,
+		)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	address, err := keyInfo.GetAddress()
