@@ -236,7 +236,7 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 		_ = Body.Close()
 	}(res.Body)
 
-	if res.StatusCode != http.StatusCreated {
+	if res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusOK {
 		return errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
 	}
 
