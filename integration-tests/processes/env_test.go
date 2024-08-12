@@ -3,10 +3,12 @@ package processes_test
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -27,6 +29,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/server"
 )
 
 // RunnerEnvConfig is runner environment config.
@@ -139,15 +142,18 @@ func fundAccount(
 ) sdk.AccAddress {
 	t.Helper()
 
-	keyInfo, err := coreumChain.ClientContext.Keyring().NewAccount(
-		keyName,
-		mnemonic,
-		"",
-		hd.CreateHDPath(coreumChain.ChainSettings.CoinType, 0, 0).String(),
-		hd.Secp256k1,
-	)
+	keyInfo, err := coreumChain.ClientContext.Keyring().Key(keyName)
 	if err != nil {
-		panic(err)
+		keyInfo, err = coreumChain.ClientContext.Keyring().NewAccount(
+			keyName,
+			mnemonic,
+			"",
+			hd.CreateHDPath(coreumChain.ChainSettings.CoinType, 0, 0).String(),
+			hd.Secp256k1,
+		)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	address, err := keyInfo.GetAddress()
@@ -206,10 +212,10 @@ func uniqueNameFromMnemonic(mnemonic string) string {
 	return fmt.Sprintf("iso20022-integration-test-%x", md5.Sum([]byte(mnemonic)))
 }
 
-func (r *RunnerEnv) SendMessage(messageFilePath string) error {
+func (r *RunnerEnv) SendMessage(messageFilePath string) (server.MessageStatusResponse, error) {
 	file, err := os.OpenFile(messageFilePath, os.O_RDONLY, 0600)
 	if err != nil {
-		return err
+		return server.MessageStatusResponse{}, err
 	}
 
 	defer func(file *os.File) {
@@ -223,18 +229,39 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) error {
 	uri := "http://0.0.0.0" + r.RunnerComponent.RunnerConfig.Processes.Server.ListenAddress
 	res, err := http.Post(uri+"/v1/send", "application/xml", file)
 	if err != nil {
-		return err
+		return server.MessageStatusResponse{}, err
 	}
 
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(res.Body)
 
-	if res.StatusCode != http.StatusCreated {
-		return errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
+	if res.StatusCode != http.StatusBadRequest && res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusOK {
+		return server.MessageStatusResponse{}, errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
 	}
 
-	return nil
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	var response server.StandardResponse
+	response.Data = &server.MessageStatusResponse{}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	if res.StatusCode == http.StatusBadRequest {
+		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
+	}
+
+	statusResponse, ok := response.Data.(*server.MessageStatusResponse)
+	if !ok {
+		return server.MessageStatusResponse{}, errors.Errorf("Malformed data response : %v", response.Data)
+	}
+
+	return *statusResponse, nil
 }
 
 func (r *RunnerEnv) ReceiveMessage() ([]byte, error) {
@@ -265,6 +292,49 @@ func (r *RunnerEnv) ReceiveMessage() ([]byte, error) {
 		return nil, err
 	}
 	return body, nil
+}
+
+func (r *RunnerEnv) MessageStatus(messageID string) (server.MessageStatusResponse, error) {
+	// listen address here is always in the form of ":port", so we can append it to 0.0.0.0
+	// to have full url of the listening service
+	// the reason it is not just called port is that the RunnerConfig is the same between
+	// integration-test and app
+	uri := "http://0.0.0.0" + r.RunnerComponent.RunnerConfig.Processes.Server.ListenAddress
+	res, err := http.Get(uri + "/v1/status/" + url.PathEscape(messageID))
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
+
+	if res.StatusCode != http.StatusBadRequest && res.StatusCode != http.StatusOK {
+		return server.MessageStatusResponse{}, errors.Errorf("http status %d: %s", res.StatusCode, res.Status)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	var response server.StandardResponse
+	response.Data = &server.MessageStatusResponse{}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return server.MessageStatusResponse{}, err
+	}
+
+	if res.StatusCode == http.StatusBadRequest {
+		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
+	}
+
+	statusResponse, ok := response.Data.(*server.MessageStatusResponse)
+	if !ok {
+		return server.MessageStatusResponse{}, errors.Errorf("Malformed data response : %v", response.Data)
+	}
+
+	return *statusResponse, nil
 }
 
 func getFreePort() (port int, err error) {

@@ -140,6 +140,15 @@ func (m *MessageQueue) PopFromReceive() ([]byte, bool) {
 	}
 }
 
+func (m *MessageQueue) GetStatus(id string) *Status {
+	item := m.statuses.Get(id)
+	if item == nil {
+		return nil
+	}
+	status := item.Value()
+	return &status
+}
+
 func (m *MessageQueue) SetStatus(id string, status Status) {
 	switch status {
 	case StatusSending:

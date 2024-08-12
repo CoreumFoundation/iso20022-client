@@ -96,7 +96,7 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		return nil, err
 	}
 
-	webServer := server.New(components.Parser, components.MessageQueue, cfg.Processes.Server.ListenAddress)
+	webServer := server.New(components.Log, components.Parser, components.MessageQueue, cfg.Processes.Server.ListenAddress)
 
 	return &Runner{
 		cfg:           cfg,

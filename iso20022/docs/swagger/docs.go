@@ -67,6 +67,24 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/server.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/server.MessageStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
                     "201": {
                         "description": "Created",
                         "schema": {
@@ -78,7 +96,73 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/server.MessageSendResponse"
+                                            "$ref": "#/definitions/server.MessageStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/server.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Something bad happened"
+                    }
+                }
+            }
+        },
+        "/status/{id}": {
+            "get": {
+                "description": "Reports whether a message is sent, is sending or failed by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reporting"
+                ],
+                "summary": "Reports status of a message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "BBBB150928CTEUR912",
+                        "description": "Message ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/server.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/server.MessageStatusResponse"
                                         }
                                     }
                                 }
@@ -111,9 +195,25 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "server.MessageSendResponse": {
+        "queue.Status": {
+            "type": "string",
+            "enum": [
+                "error",
+                "sending",
+                "sent"
+            ],
+            "x-enum-varnames": [
+                "StatusError",
+                "StatusSending",
+                "StatusSent"
+            ]
+        },
+        "server.MessageStatusResponse": {
             "type": "object",
             "properties": {
+                "delivery_status": {
+                    "$ref": "#/definitions/queue.Status"
+                },
                 "message_id": {
                     "type": "string"
                 }

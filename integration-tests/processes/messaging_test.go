@@ -8,9 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/CoreumFoundation/iso20022-client/integration-tests"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 )
 
-func TestMessaging(t *testing.T) {
+func TestProcesses(t *testing.T) {
 	t.Parallel()
 	requireT := require.New(t)
 
@@ -28,9 +29,28 @@ func TestMessaging(t *testing.T) {
 	secondPartyRunnerEnv := NewRunnerEnv(ctx, t, secondPartyRunnerEnvCfg, chain)
 	secondPartyRunnerEnv.StartRunnerProcesses()
 
-	requireT.NoError(firstPartyRunnerEnv.SendMessage("../../iso20022/messages/testdata/pacs008-1.xml"))
+	_, err := firstPartyRunnerEnv.SendMessage("../../iso20022/messages/testdata/pacs008-1.xml")
+	requireT.NoError(err)
 	<-time.After(15 * time.Second) // Wait a bit till the message is received
 	msg, err := secondPartyRunnerEnv.ReceiveMessage()
+	requireT.NoError(err)
+
+	requireT.NotEmpty(msg)
+
+	_, err = firstPartyRunnerEnv.MessageStatus("P5607186 299")
+	requireT.ErrorContains(err, "message not found")
+
+	status, err := firstPartyRunnerEnv.SendMessage("../../iso20022/messages/testdata/pacs008-2.xml")
+	requireT.NoError(err)
+	requireT.Equal(queue.StatusSending, status.DeliveryStatus)
+
+	<-time.After(15 * time.Second) // Wait a bit till the message is received
+
+	status, err = firstPartyRunnerEnv.MessageStatus("P5607186 299")
+	requireT.NoError(err)
+	requireT.Equal(queue.StatusSent, status.DeliveryStatus)
+
+	msg, err = secondPartyRunnerEnv.ReceiveMessage()
 	requireT.NoError(err)
 
 	requireT.NotEmpty(msg)

@@ -1,7 +1,19 @@
 basePath: /v1
 definitions:
-  server.MessageSendResponse:
+  queue.Status:
+    enum:
+    - error
+    - sending
+    - sent
+    type: string
+    x-enum-varnames:
+    - StatusError
+    - StatusSending
+    - StatusSent
+  server.MessageStatusResponse:
     properties:
+      delivery_status:
+        $ref: '#/definitions/queue.Status'
       message_id:
         type: string
     type: object
@@ -84,6 +96,15 @@ paths:
       produces:
       - application/json
       responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/server.StandardResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/server.MessageStatusResponse'
+              type: object
         "201":
           description: Created
           schema:
@@ -91,7 +112,7 @@ paths:
             - $ref: '#/definitions/server.StandardResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/server.MessageSendResponse'
+                  $ref: '#/definitions/server.MessageStatusResponse'
               type: object
         "400":
           description: Bad Request
@@ -107,4 +128,42 @@ paths:
       summary: Send a message
       tags:
       - Messaging
+  /status/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Reports whether a message is sent, is sending or failed by ID
+      parameters:
+      - description: Message ID
+        example: BBBB150928CTEUR912
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/server.StandardResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/server.MessageStatusResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/server.StandardResponse'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Something bad happened
+      summary: Reports status of a message
+      tags:
+      - Reporting
 swagger: "2.0"
