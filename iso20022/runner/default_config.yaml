@@ -25,6 +25,9 @@ processes:
     address_book:
         update_interval: 1m0s
         custom_repo_address: ""
+    dtif:
+        update_interval: 1m0s
+        custom_source_address: ""
     queue:
         size: 50
         path: {{QUEUE_PATH}}

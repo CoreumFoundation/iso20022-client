@@ -15,18 +15,18 @@ import (
 )
 
 //nolint:tparallel // the test is parallel, but test cases are not
-func TestAddressBookUpdater_Start(t *testing.T) {
+func TestDtifUpdater_Start(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name               string
-		addressBookBuilder func(ctrl *gomock.Controller) processes.AddressBook
+		name        string
+		dtifBuilder func(ctrl *gomock.Controller) processes.Dtif
 	}{
 		{
 			name: "update_once",
-			addressBookBuilder: func(ctrl *gomock.Controller) processes.AddressBook {
-				addressBookMock := NewMockAddressBook(ctrl)
-				addressBookMock.EXPECT().Update(gomock.Any()).Return(nil)
-				return addressBookMock
+			dtifBuilder: func(ctrl *gomock.Controller) processes.Dtif {
+				dtifMock := NewMockDtif(ctrl)
+				dtifMock.EXPECT().Update(gomock.Any()).Return(nil)
+				return dtifMock
 			},
 		},
 	}
@@ -41,11 +41,11 @@ func TestAddressBookUpdater_Start(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			logMock := logger.NewAnyLogMock(ctrl)
 
-			var addressBook processes.AddressBook
-			if tt.addressBookBuilder != nil {
-				addressBook = tt.addressBookBuilder(ctrl)
+			var dtifProcess processes.Dtif
+			if tt.dtifBuilder != nil {
+				dtifProcess = tt.dtifBuilder(ctrl)
 			}
-			client, err := processes.NewAddressBookUpdaterProcess(3*time.Second, logMock, addressBook)
+			client, err := processes.NewDtifUpdaterProcess(3*time.Second, logMock, dtifProcess)
 			require.NoError(t, err)
 
 			err = client.Start(ctx)

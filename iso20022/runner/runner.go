@@ -24,6 +24,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/crypto"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/dtif"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/messages"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/messages/generated"
@@ -39,6 +40,7 @@ const (
 	// DefaultCoreumChainID is default chain id.
 	// TODO: Change to ChainIDMain before release
 	DefaultCoreumChainID = coreumchainconstant.ChainIDTest
+	// DefaultDenom is default chain denom.
 	// TODO: Change to DenomMain before release
 	DefaultDenom = coreumchainconstant.DenomTest
 )
@@ -52,6 +54,7 @@ type Runner struct {
 
 	contractClientProcess     *processes.ContractClientProcess
 	addressBookUpdaterProcess *processes.AddressBookUpdaterProcess
+	dtifUpdaterProcess        *processes.DtifUpdaterProcess
 	webServer                 *server.Server
 }
 
@@ -70,6 +73,15 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		cfg.Processes.AddressBook.UpdateInterval,
 		components.Log,
 		components.AddressBook,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	dtifUpdaterProcess, err := processes.NewDtifUpdaterProcess(
+		cfg.Processes.AddressBook.UpdateInterval,
+		components.Log,
+		components.Dtif,
 	)
 	if err != nil {
 		return nil, err
@@ -99,13 +111,13 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 	webServer := server.New(components.Log, components.Parser, components.MessageQueue, cfg.Processes.Server.ListenAddress)
 
 	return &Runner{
-		cfg:           cfg,
-		log:           components.Log,
-		components:    components,
-		clientAddress: clientAddress,
-
+		cfg:                       cfg,
+		log:                       components.Log,
+		components:                components,
+		clientAddress:             clientAddress,
 		contractClientProcess:     receiverProcess,
 		addressBookUpdaterProcess: addressBookUpdaterProcess,
+		dtifUpdaterProcess:        dtifUpdaterProcess,
 		webServer:                 webServer,
 	}, nil
 }
@@ -116,6 +128,7 @@ func (r *Runner) Start(ctx context.Context) error {
 		"messageQueue":      r.components.MessageQueue.Start,
 		"contractClient":    r.contractClientProcess.Start,
 		"updateAddressBook": r.addressBookUpdaterProcess.Start,
+		"updateDtif":        r.dtifUpdaterProcess.Start,
 		"webServer":         r.webServer.Start,
 	}
 
@@ -125,6 +138,11 @@ func (r *Runner) Start(ctx context.Context) error {
 	}
 
 	err = r.components.AddressBook.Validate()
+	if err != nil {
+		return err
+	}
+
+	err = r.components.Dtif.Update(ctx)
 	if err != nil {
 		return err
 	}
@@ -148,6 +166,7 @@ type Components struct {
 	CoreumClientCtx      coreumchainclient.Context
 	CoreumContractClient *coreum.ContractClient
 	AddressBook          *addressbook.AddressBook
+	Dtif                 *dtif.Dtif
 	Cryptography         *crypto.Cryptography
 	Parser               *messages.Parser
 	MessageQueue         *queue.MessageQueue
@@ -221,6 +240,13 @@ func NewComponents(
 		addressBook = addressbook.NewWithRepoAddress(log, cfg.Processes.AddressBook.CustomRepoAddress)
 	}
 
+	var dti *dtif.Dtif
+	if cfg.Processes.Dtif.CustomSourceAddress == "" {
+		dti = dtif.New(log)
+	} else {
+		dti = dtif.NewWithSourceAddress(log, cfg.Processes.Dtif.CustomSourceAddress)
+	}
+
 	compressor, err := compress.New()
 	if err != nil {
 		return Components{}, err
@@ -245,6 +271,7 @@ func NewComponents(
 		CoreumClientCtx:      coreumClientCtx,
 		CoreumContractClient: contractClient,
 		AddressBook:          addressBook,
+		Dtif:                 dti,
 		Cryptography:         cryptography,
 		Parser:               parser,
 		MessageQueue:         messageQueue,
