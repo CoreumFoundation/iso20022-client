@@ -14,7 +14,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 )
 
-//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser,MessageQueue
+//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser,MessageQueue,Dtif
 
 type ContractClient interface {
 	SetContractAddress(contractAddress types.AccAddress) error
@@ -95,4 +95,10 @@ type MessageQueue interface {
 	GetStatus(id string) *queue.Status
 	SetStatus(id string, status queue.Status)
 	Close()
+}
+
+type Dtif interface {
+	Update(ctx context.Context) error
+	LookupByDTI(dti string) (string, bool)
+	LookupByDenom(denom string) (string, bool)
 }
