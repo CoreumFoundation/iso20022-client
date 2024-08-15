@@ -189,6 +189,6 @@ func (d *Dtif) LookupByDTI(dti string) (string, bool) {
 func (d *Dtif) LookupByDenom(denom string) (string, bool) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	dti, found := d.dtiToDenom[denom]
+	dti, found := d.denomToDti[denom]
 	return dti, found
 }
