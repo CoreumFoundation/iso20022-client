@@ -74,6 +74,12 @@ type AddressBookConfig struct {
 	CustomRepoAddress string        `yaml:"custom_repo_address"`
 }
 
+// DtifConfig is the dtif config.
+type DtifConfig struct {
+	UpdateInterval      time.Duration `yaml:"update_interval"`
+	CustomSourceAddress string        `yaml:"custom_source_address"`
+}
+
 // Queue is the message queue config.
 type Queue struct {
 	Size                int           `yaml:"size"`
@@ -85,6 +91,7 @@ type Queue struct {
 type ProcessesConfig struct {
 	Server      ServerConfig      `yaml:"server"`
 	AddressBook AddressBookConfig `yaml:"address_book"`
+	Dtif        DtifConfig        `yaml:"dtif"`
 	Queue       Queue             `yaml:"queue"`
 	RetryDelay  time.Duration     `yaml:"retry_delay"`
 }
@@ -141,6 +148,9 @@ func DefaultConfig() Config {
 				ListenAddress: ":2843",
 			},
 			AddressBook: AddressBookConfig{
+				UpdateInterval: 60 * time.Second,
+			},
+			Dtif: DtifConfig{
 				UpdateInterval: 60 * time.Second,
 			},
 			Queue: Queue{
