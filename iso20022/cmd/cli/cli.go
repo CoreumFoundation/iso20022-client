@@ -472,6 +472,7 @@ func SendMessageCmd() *cobra.Command {
 			}
 
 			var response server.StandardResponse
+			response.Data = &server.MessageStatusResponse{}
 			err = json.Unmarshal(body, &response)
 			if err != nil {
 				return err
@@ -481,7 +482,7 @@ func SendMessageCmd() *cobra.Command {
 				return errors.Errorf(response.Message)
 			}
 
-			statusResponse, ok := response.Data.(server.MessageStatusResponse)
+			statusResponse, ok := response.Data.(*server.MessageStatusResponse)
 			if !ok {
 				return errors.Errorf("Malformed data response : %v", response.Data)
 			}
@@ -604,6 +605,7 @@ func MessageStatusCmd() *cobra.Command {
 			}
 
 			var response server.StandardResponse
+			response.Data = &server.MessageStatusResponse{}
 			err = json.Unmarshal(body, &response)
 			if err != nil {
 				return err
@@ -613,7 +615,7 @@ func MessageStatusCmd() *cobra.Command {
 				return errors.Errorf(response.Message)
 			}
 
-			statusResponse, ok := response.Data.(server.MessageStatusResponse)
+			statusResponse, ok := response.Data.(*server.MessageStatusResponse)
 			if !ok {
 				return errors.Errorf("Malformed data response : %v", response.Data)
 			}
