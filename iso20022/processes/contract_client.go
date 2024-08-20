@@ -45,6 +45,7 @@ type ContractClientProcess struct {
 	parser         Parser
 	messageQueue   MessageQueue
 	nftClassId     string
+	offset         *uint64
 }
 
 // NewContractClientProcess returns a new instance of the ContractClientProcess.
@@ -164,9 +165,11 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 	limit := uint32(10)
 
-	messages, err := p.contractClient.GetUnreadMessages(
+	sessions, err := p.contractClient.GetActiveSessions(
 		ctx,
 		p.cfg.ClientAddress,
+		coreum.UserTypeDestination,
+		p.offset,
 		&limit,
 	)
 	if err != nil {
@@ -175,76 +178,81 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 
 	lastReadTime := uint64(0)
 
-	for _, msg := range messages {
-		nft, err := p.contractClient.QueryNFT(ctx, msg.Content.ClassId, msg.Content.Id)
-		if err != nil {
-			p.log.Error(ctx, "could not get the NFT") // TODO
-			continue
+	for _, session := range sessions {
+		for _, msg := range session.Messages {
+			nft, err := p.contractClient.QueryNFT(ctx, msg.Content.ClassId, msg.Content.Id)
+			if err != nil {
+				p.log.Error(ctx, "could not get the NFT") // TODO
+				continue
+			}
+
+			var data nfttypes.DataBytes
+
+			err = proto.Unmarshal(nft.Value, &data)
+			if err != nil {
+				return err
+			}
+
+			entry, found := p.addressBook.LookupByAccountAddress(msg.Sender.String())
+			if !found {
+				p.log.Error(ctx, "could not find sender institute in the address book") // TODO
+				continue
+			}
+
+			publicKeyBytes, err := base64.StdEncoding.DecodeString(entry.PublicKey)
+			if err != nil {
+				p.log.Error(ctx, "could not decode the sender public key", zap.Error(err)) // TODO
+				continue
+			}
+
+			sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, publicKeyBytes)
+			if err != nil {
+				p.log.Error(ctx, "could not calculate the shared key", zap.Error(err)) // TODO
+				continue
+			}
+
+			data.Data, err = p.cryptography.DecryptSymmetric(data.Data, sharedKey)
+			if err != nil {
+				p.log.Error(ctx, "could not decrypt the message", zap.Error(err)) // TODO
+				continue
+			}
+
+			data.Data, err = p.compressor.Decompress(data.Data)
+			if err != nil {
+				p.log.Error(ctx, "could not decompress the message", zap.Error(err)) // TODO
+				continue
+			}
+
+			metadata, err := p.parser.ExtractMetadataFromIsoMessage(data.Data)
+			if err != nil {
+				p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
+				continue
+			}
+
+			if msg.Time > lastReadTime {
+				lastReadTime = msg.Time
+			}
+
+			if !metadata.Sender.Equal(entry.Party) {
+				p.log.Error(ctx, "message sender is not verified") // TODO
+				continue
+			}
+
+			p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
+
+			p.messageQueue.PushToReceive(data.Data)
 		}
-
-		var data nfttypes.DataBytes
-
-		err = proto.Unmarshal(nft.Value, &data)
-		if err != nil {
-			return err
-		}
-
-		entry, found := p.addressBook.LookupByAccountAddress(msg.Sender.String())
-		if !found {
-			p.log.Error(ctx, "could not find sender institute in the address book") // TODO
-			continue
-		}
-
-		publicKeyBytes, err := base64.StdEncoding.DecodeString(entry.PublicKey)
-		if err != nil {
-			p.log.Error(ctx, "could not decode the sender public key", zap.Error(err)) // TODO
-			continue
-		}
-
-		sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, publicKeyBytes)
-		if err != nil {
-			p.log.Error(ctx, "could not calculate the shared key", zap.Error(err)) // TODO
-			continue
-		}
-
-		data.Data, err = p.cryptography.DecryptSymmetric(data.Data, sharedKey)
-		if err != nil {
-			p.log.Error(ctx, "could not decrypt the message", zap.Error(err)) // TODO
-			continue
-		}
-
-		data.Data, err = p.compressor.Decompress(data.Data)
-		if err != nil {
-			p.log.Error(ctx, "could not decompress the message", zap.Error(err)) // TODO
-			continue
-		}
-
-		metadata, err := p.parser.ExtractMetadataFromIsoMessage(data.Data)
-		if err != nil {
-			p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
-			continue
-		}
-
-		if msg.Time > lastReadTime {
-			lastReadTime = msg.Time
-		}
-
-		if !metadata.Sender.Equal(entry.Party) {
-			p.log.Error(ctx, "message sender is not verified") // TODO
-			continue
-		}
-
-		p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
-
-		p.messageQueue.PushToReceive(data.Data)
 	}
 
 	if lastReadTime > 0 {
-		_, err = p.contractClient.MarkAsRead(
-			ctx,
-			p.cfg.ClientAddress,
-			lastReadTime,
-		)
+		lastReadTime += 1
+		p.offset = &lastReadTime
+		// TODO: Bring back marking as read
+		//_, err = p.contractClient.MarkAsRead(
+		//	ctx,
+		//	p.cfg.ClientAddress,
+		//	lastReadTime,
+		//)
 	}
 
 	return err
@@ -269,7 +277,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 	}
 
 	mintMsgs := make([]sdk.Msg, 0, len(messages))
-	sendMessages := make([]coreum.MessageWithDestination, 0, len(messages))
+	startSessions := make([]coreum.StartSession, 0, len(messages))
 
 	for _, message := range messages {
 		sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, message.PublicKeyBytes)
@@ -298,9 +306,9 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 			ClassId: strings.ToLower(classId),
 			Id:      id,
 		}
-		sendMessages = append(sendMessages, coreum.MessageWithDestination{
+		startSessions = append(startSessions, coreum.StartSession{
 			Destination: message.Destination,
-			NFT:         nft,
+			Message:     nft,
 			Funds:       message.AttachedFunds,
 		})
 	}
@@ -310,7 +318,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		return err
 	}
 
-	_, err = p.contractClient.SendMessages(ctx, p.cfg.ClientAddress, sendMessages...)
+	_, err = p.contractClient.StartSessions(ctx, p.cfg.ClientAddress, startSessions...)
 	if err != nil {
 		return err
 	}

@@ -68,6 +68,66 @@ func (mr *MockContractClientMockRecorder) BroadcastMessages(arg0, arg1 any, arg2
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMessages", reflect.TypeOf((*MockContractClient)(nil).BroadcastMessages), varargs...)
 }
 
+// CancelSession mocks base method.
+func (m *MockContractClient) CancelSession(arg0 context.Context, arg1 types1.AccAddress, arg2 string) (*types1.TxResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelSession", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*types1.TxResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CancelSession indicates an expected call of CancelSession.
+func (mr *MockContractClientMockRecorder) CancelSession(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelSession", reflect.TypeOf((*MockContractClient)(nil).CancelSession), arg0, arg1, arg2)
+}
+
+// ConfirmSession mocks base method.
+func (m *MockContractClient) ConfirmSession(arg0 context.Context, arg1 types1.AccAddress, arg2 string) (*types1.TxResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfirmSession", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*types1.TxResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConfirmSession indicates an expected call of ConfirmSession.
+func (mr *MockContractClientMockRecorder) ConfirmSession(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmSession", reflect.TypeOf((*MockContractClient)(nil).ConfirmSession), arg0, arg1, arg2)
+}
+
+// GetActiveSessions mocks base method.
+func (m *MockContractClient) GetActiveSessions(arg0 context.Context, arg1 types1.AccAddress, arg2 coreum.UserType, arg3 *uint64, arg4 *uint32) ([]coreum.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveSessions", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].([]coreum.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActiveSessions indicates an expected call of GetActiveSessions.
+func (mr *MockContractClientMockRecorder) GetActiveSessions(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveSessions", reflect.TypeOf((*MockContractClient)(nil).GetActiveSessions), arg0, arg1, arg2, arg3, arg4)
+}
+
+// GetClosedSessions mocks base method.
+func (m *MockContractClient) GetClosedSessions(arg0 context.Context, arg1 types1.AccAddress, arg2 coreum.UserType, arg3 *uint64, arg4 *uint32) ([]coreum.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClosedSessions", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].([]coreum.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClosedSessions indicates an expected call of GetClosedSessions.
+func (mr *MockContractClientMockRecorder) GetClosedSessions(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClosedSessions", reflect.TypeOf((*MockContractClient)(nil).GetClosedSessions), arg0, arg1, arg2, arg3, arg4)
+}
+
 // GetContractAddress mocks base method.
 func (m *MockContractClient) GetContractAddress() types1.AccAddress {
 	m.ctrl.T.Helper()
@@ -80,36 +140,6 @@ func (m *MockContractClient) GetContractAddress() types1.AccAddress {
 func (mr *MockContractClientMockRecorder) GetContractAddress() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractAddress", reflect.TypeOf((*MockContractClient)(nil).GetContractAddress))
-}
-
-// GetReadMessages mocks base method.
-func (m *MockContractClient) GetReadMessages(arg0 context.Context, arg1 types1.AccAddress, arg2 string, arg3 *uint32) ([]coreum.Message, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReadMessages", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]coreum.Message)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetReadMessages indicates an expected call of GetReadMessages.
-func (mr *MockContractClientMockRecorder) GetReadMessages(arg0, arg1, arg2, arg3 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReadMessages", reflect.TypeOf((*MockContractClient)(nil).GetReadMessages), arg0, arg1, arg2, arg3)
-}
-
-// GetUnreadMessages mocks base method.
-func (m *MockContractClient) GetUnreadMessages(arg0 context.Context, arg1 types1.AccAddress, arg2 *uint32) ([]coreum.Message, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUnreadMessages", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]coreum.Message)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUnreadMessages indicates an expected call of GetUnreadMessages.
-func (mr *MockContractClientMockRecorder) GetUnreadMessages(arg0, arg1, arg2 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnreadMessages", reflect.TypeOf((*MockContractClient)(nil).GetUnreadMessages), arg0, arg1, arg2)
 }
 
 // IsInitialized mocks base method.
@@ -139,21 +169,6 @@ func (m *MockContractClient) IssueNFTClass(arg0 context.Context, arg1 types1.Acc
 func (mr *MockContractClientMockRecorder) IssueNFTClass(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueNFTClass", reflect.TypeOf((*MockContractClient)(nil).IssueNFTClass), arg0, arg1, arg2, arg3, arg4)
-}
-
-// MarkAsRead mocks base method.
-func (m *MockContractClient) MarkAsRead(arg0 context.Context, arg1 types1.AccAddress, arg2 uint64) (*types1.TxResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAsRead", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*types1.TxResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// MarkAsRead indicates an expected call of MarkAsRead.
-func (mr *MockContractClientMockRecorder) MarkAsRead(arg0, arg1, arg2 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsRead", reflect.TypeOf((*MockContractClient)(nil).MarkAsRead), arg0, arg1, arg2)
 }
 
 // MintNFT mocks base method.
@@ -187,7 +202,7 @@ func (mr *MockContractClientMockRecorder) QueryNFT(arg0, arg1, arg2 any) *gomock
 }
 
 // SendMessage mocks base method.
-func (m *MockContractClient) SendMessage(arg0 context.Context, arg1, arg2 types1.AccAddress, arg3 coreum.NFTInfo) (*types1.TxResponse, error) {
+func (m *MockContractClient) SendMessage(arg0 context.Context, arg1 types1.AccAddress, arg2 string, arg3 coreum.NFTInfo) (*types1.TxResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendMessage", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types1.TxResponse)
@@ -199,26 +214,6 @@ func (m *MockContractClient) SendMessage(arg0 context.Context, arg1, arg2 types1
 func (mr *MockContractClientMockRecorder) SendMessage(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockContractClient)(nil).SendMessage), arg0, arg1, arg2, arg3)
-}
-
-// SendMessages mocks base method.
-func (m *MockContractClient) SendMessages(arg0 context.Context, arg1 types1.AccAddress, arg2 ...coreum.MessageWithDestination) (*types1.TxResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "SendMessages", varargs...)
-	ret0, _ := ret[0].(*types1.TxResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SendMessages indicates an expected call of SendMessages.
-func (mr *MockContractClientMockRecorder) SendMessages(arg0, arg1 any, arg2 ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessages", reflect.TypeOf((*MockContractClient)(nil).SendMessages), varargs...)
 }
 
 // SetContractAddress mocks base method.
@@ -233,6 +228,41 @@ func (m *MockContractClient) SetContractAddress(arg0 types1.AccAddress) error {
 func (mr *MockContractClientMockRecorder) SetContractAddress(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContractAddress", reflect.TypeOf((*MockContractClient)(nil).SetContractAddress), arg0)
+}
+
+// StartSession mocks base method.
+func (m *MockContractClient) StartSession(arg0 context.Context, arg1 types1.AccAddress, arg2 coreum.NFTInfo, arg3 types1.AccAddress, arg4 types1.Coins) (*types1.TxResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartSession", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*types1.TxResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartSession indicates an expected call of StartSession.
+func (mr *MockContractClientMockRecorder) StartSession(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartSession", reflect.TypeOf((*MockContractClient)(nil).StartSession), arg0, arg1, arg2, arg3, arg4)
+}
+
+// StartSessions mocks base method.
+func (m *MockContractClient) StartSessions(arg0 context.Context, arg1 types1.AccAddress, arg2 ...coreum.StartSession) (*types1.TxResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StartSessions", varargs...)
+	ret0, _ := ret[0].(*types1.TxResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartSessions indicates an expected call of StartSessions.
+func (mr *MockContractClientMockRecorder) StartSessions(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartSessions", reflect.TypeOf((*MockContractClient)(nil).StartSessions), varargs...)
 }
 
 // MockAddressBook is a mock of AddressBook interface.

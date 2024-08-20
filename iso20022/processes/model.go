@@ -25,14 +25,20 @@ type ContractClient interface {
 		sender types.AccAddress,
 		messages ...types.Msg,
 	) (*types.TxResponse, error)
+	StartSession(
+		ctx context.Context, sender types.AccAddress, message coreum.NFTInfo, destination types.AccAddress, funds types.Coins,
+	) (*types.TxResponse, error)
+	StartSessions(
+		ctx context.Context, sender types.AccAddress, sessions ...coreum.StartSession,
+	) (*types.TxResponse, error)
 	SendMessage(
-		ctx context.Context, sender, destination types.AccAddress, message coreum.NFTInfo,
+		ctx context.Context, sender types.AccAddress, sessionId string, message coreum.NFTInfo,
 	) (*types.TxResponse, error)
-	SendMessages(
-		ctx context.Context, sender types.AccAddress, messages ...coreum.MessageWithDestination,
+	ConfirmSession(
+		ctx context.Context, sender types.AccAddress, sessionId string,
 	) (*types.TxResponse, error)
-	MarkAsRead(
-		ctx context.Context, sender types.AccAddress, until uint64,
+	CancelSession(
+		ctx context.Context, sender types.AccAddress, sessionId string,
 	) (*types.TxResponse, error)
 	IssueNFTClass(
 		ctx context.Context,
@@ -42,20 +48,23 @@ type ContractClient interface {
 	MintNFT(
 		ctx context.Context,
 		sender types.AccAddress,
-		classId, id string,
+		classId, Id string,
 		data *codectypes.Any,
 	) (*types.TxResponse, error)
-	GetUnreadMessages(
+	GetActiveSessions(
 		ctx context.Context,
 		address types.AccAddress,
+		userType coreum.UserType,
+		startAfterKey *uint64,
 		limit *uint32,
-	) ([]coreum.Message, error)
-	GetReadMessages(
+	) ([]coreum.Session, error)
+	GetClosedSessions(
 		ctx context.Context,
 		address types.AccAddress,
-		startAfterKey string,
+		userType coreum.UserType,
+		startAfterKey *uint64,
 		limit *uint32,
-	) ([]coreum.Message, error)
+	) ([]coreum.Session, error)
 	QueryNFT(
 		ctx context.Context,
 		classId, id string,
