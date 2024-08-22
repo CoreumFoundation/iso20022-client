@@ -17,6 +17,21 @@ import (
 //go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser,MessageQueue,Dtif
 
 type ContractClient interface {
+	DeployAndInstantiate(
+		ctx context.Context,
+		sender types.AccAddress,
+		contractByteCodePath string,
+	) (types.AccAddress, error)
+	DeployContract(
+		ctx context.Context,
+		sender types.AccAddress,
+		contractByteCodePath string,
+	) (*types.TxResponse, uint64, error)
+	MigrateContract(
+		ctx context.Context,
+		sender types.AccAddress,
+		codeID uint64,
+	) (*types.TxResponse, error)
 	SetContractAddress(contractAddress types.AccAddress) error
 	GetContractAddress() types.AccAddress
 	IsInitialized() bool
@@ -26,19 +41,31 @@ type ContractClient interface {
 		messages ...types.Msg,
 	) (*types.TxResponse, error)
 	StartSession(
-		ctx context.Context, sender types.AccAddress, message coreum.NFTInfo, destination types.AccAddress, funds types.Coins,
+		ctx context.Context, eutr string, sender types.AccAddress, message coreum.NFTInfo, destination types.AccAddress, funds types.Coins,
 	) (*types.TxResponse, error)
 	StartSessions(
 		ctx context.Context, sender types.AccAddress, sessions ...coreum.StartSession,
 	) (*types.TxResponse, error)
 	SendMessage(
-		ctx context.Context, sender types.AccAddress, sessionId string, message coreum.NFTInfo,
+		ctx context.Context, sender, destination types.AccAddress, eutr, ID string, message coreum.NFTInfo,
+	) (*types.TxResponse, error)
+	SendMessages(
+		ctx context.Context, sender types.AccAddress, messages ...coreum.SendMessage,
 	) (*types.TxResponse, error)
 	ConfirmSession(
-		ctx context.Context, sender types.AccAddress, sessionId string,
+		ctx context.Context, eutr string, sender, initiator, destination types.AccAddress,
+	) (*types.TxResponse, error)
+	ConfirmSessions(
+		ctx context.Context, sender types.AccAddress, messages ...coreum.ConfirmSession,
 	) (*types.TxResponse, error)
 	CancelSession(
-		ctx context.Context, sender types.AccAddress, sessionId string,
+		ctx context.Context, eutr string, sender, initiator, destination types.AccAddress,
+	) (*types.TxResponse, error)
+	CancelSessions(
+		ctx context.Context, sender types.AccAddress, messages ...coreum.CancelSession,
+	) (*types.TxResponse, error)
+	MarkAsRead(
+		ctx context.Context, sender types.AccAddress, until uint64,
 	) (*types.TxResponse, error)
 	IssueNFTClass(
 		ctx context.Context,
@@ -55,16 +82,27 @@ type ContractClient interface {
 		ctx context.Context,
 		address types.AccAddress,
 		userType coreum.UserType,
-		startAfterKey *uint64,
+		startAfterKey *string,
 		limit *uint32,
 	) ([]coreum.Session, error)
 	GetClosedSessions(
 		ctx context.Context,
 		address types.AccAddress,
 		userType coreum.UserType,
-		startAfterKey *uint64,
+		startAfterKey *string,
 		limit *uint32,
 	) ([]coreum.Session, error)
+	GetNewMessages(
+		ctx context.Context,
+		address types.AccAddress,
+		limit *uint32,
+	) ([]coreum.Message, error)
+	GetMessages(
+		ctx context.Context,
+		address types.AccAddress,
+		startAfterKey string,
+		limit *uint32,
+	) ([]coreum.Message, error)
 	QueryNFT(
 		ctx context.Context,
 		classId, id string,
@@ -86,6 +124,7 @@ type Cryptography interface {
 }
 
 type Metadata struct {
+	Eutr     string
 	ID       string
 	Sender   *addressbook.Party
 	Receiver *addressbook.Party
