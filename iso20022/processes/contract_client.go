@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,6 +118,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 							ctx,
 							"Failed to process the message",
 							zap.Error(err),
+							zap.Any("eutr", message.Eutr),
 							zap.Any("id", message.Id),
 							zap.Any("source", message.Source),
 							zap.Any("destination", message.Destination),
@@ -418,6 +420,9 @@ func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadat
 	// if false {
 	// 	attachedFunds = sdk.NewCoins(sdk.NewCoin(p.cfg.Denom, sdk.NewInt(100)))
 	// }
+
+	// TODO: Remove after extracting actual EUTR
+	metadata.Eutr = strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	return &messageWithMetadata{
 		metadata.Eutr,
