@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,7 +46,6 @@ type ContractClientProcess struct {
 	parser         Parser
 	messageQueue   MessageQueue
 	nftClassId     string
-	offset         *uint64
 }
 
 // NewContractClientProcess returns a new instance of the ContractClientProcess.
@@ -118,6 +118,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 							ctx,
 							"Failed to process the message",
 							zap.Error(err),
+							zap.Any("eutr", message.Eutr),
 							zap.Any("id", message.Id),
 							zap.Any("source", message.Source),
 							zap.Any("destination", message.Destination),
@@ -165,11 +166,9 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 	limit := uint32(10)
 
-	sessions, err := p.contractClient.GetActiveSessions(
+	messages, err := p.contractClient.GetNewMessages(
 		ctx,
 		p.cfg.ClientAddress,
-		coreum.UserTypeDestination,
-		p.offset,
 		&limit,
 	)
 	if err != nil {
@@ -178,81 +177,109 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 
 	lastReadTime := uint64(0)
 
-	for _, session := range sessions {
-		for _, msg := range session.Messages {
-			nft, err := p.contractClient.QueryNFT(ctx, msg.Content.ClassId, msg.Content.Id)
-			if err != nil {
-				p.log.Error(ctx, "could not get the NFT") // TODO
-				continue
-			}
+	confirmSessions := make([]coreum.ConfirmSession, 0, len(messages))
+	cancelSessions := make([]coreum.CancelSession, 0, len(messages))
 
-			var data nfttypes.DataBytes
-
-			err = proto.Unmarshal(nft.Value, &data)
-			if err != nil {
-				return err
-			}
-
-			entry, found := p.addressBook.LookupByAccountAddress(msg.Sender.String())
-			if !found {
-				p.log.Error(ctx, "could not find sender institute in the address book") // TODO
-				continue
-			}
-
-			publicKeyBytes, err := base64.StdEncoding.DecodeString(entry.PublicKey)
-			if err != nil {
-				p.log.Error(ctx, "could not decode the sender public key", zap.Error(err)) // TODO
-				continue
-			}
-
-			sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, publicKeyBytes)
-			if err != nil {
-				p.log.Error(ctx, "could not calculate the shared key", zap.Error(err)) // TODO
-				continue
-			}
-
-			data.Data, err = p.cryptography.DecryptSymmetric(data.Data, sharedKey)
-			if err != nil {
-				p.log.Error(ctx, "could not decrypt the message", zap.Error(err)) // TODO
-				continue
-			}
-
-			data.Data, err = p.compressor.Decompress(data.Data)
-			if err != nil {
-				p.log.Error(ctx, "could not decompress the message", zap.Error(err)) // TODO
-				continue
-			}
-
-			metadata, err := p.parser.ExtractMetadataFromIsoMessage(data.Data)
-			if err != nil {
-				p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
-				continue
-			}
-
-			if msg.Time > lastReadTime {
-				lastReadTime = msg.Time
-			}
-
-			if !metadata.Sender.Equal(entry.Party) {
-				p.log.Error(ctx, "message sender is not verified") // TODO
-				continue
-			}
-
-			p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
-
-			p.messageQueue.PushToReceive(data.Data)
+	for _, msg := range messages {
+		nft, err := p.contractClient.QueryNFT(ctx, msg.Content.ClassId, msg.Content.Id)
+		if err != nil {
+			p.log.Error(ctx, "could not get the NFT") // TODO
+			continue
 		}
+
+		var data nfttypes.DataBytes
+
+		err = proto.Unmarshal(nft.Value, &data)
+		if err != nil {
+			return err
+		}
+
+		entry, found := p.addressBook.LookupByAccountAddress(msg.Sender.String())
+		if !found {
+			p.log.Error(ctx, "could not find sender institute in the address book") // TODO
+			continue
+		}
+
+		publicKeyBytes, err := base64.StdEncoding.DecodeString(entry.PublicKey)
+		if err != nil {
+			p.log.Error(ctx, "could not decode the sender public key", zap.Error(err)) // TODO
+			continue
+		}
+
+		sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, publicKeyBytes)
+		if err != nil {
+			p.log.Error(ctx, "could not calculate the shared key", zap.Error(err)) // TODO
+			continue
+		}
+
+		data.Data, err = p.cryptography.DecryptSymmetric(data.Data, sharedKey)
+		if err != nil {
+			p.log.Error(ctx, "could not decrypt the message", zap.Error(err)) // TODO
+			continue
+		}
+
+		data.Data, err = p.compressor.Decompress(data.Data)
+		if err != nil {
+			p.log.Error(ctx, "could not decompress the message", zap.Error(err)) // TODO
+			continue
+		}
+
+		metadata, err := p.parser.ExtractMetadataFromIsoMessage(data.Data)
+		if err != nil {
+			p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
+			continue
+		}
+
+		if msg.Time > lastReadTime {
+			lastReadTime = msg.Time
+		}
+
+		if !metadata.Sender.Equal(entry.Party) {
+			p.log.Error(ctx, "message sender is not verified") // TODO
+			continue
+		}
+
+		// TODO: Implement finding out when we need to confirm a session
+		if false {
+			confirmSessions = append(confirmSessions, coreum.ConfirmSession{
+				Eutr:        metadata.Eutr,
+				Destination: p.cfg.ClientAddress,
+			})
+		}
+
+		// TODO: Implement finding out when we need to cancel a session
+		if false {
+			cancelSessions = append(cancelSessions, coreum.CancelSession{
+				Eutr:        metadata.Eutr,
+				Destination: p.cfg.ClientAddress,
+			})
+		}
+
+		p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
+
+		p.messageQueue.PushToReceive(data.Data)
 	}
 
 	if lastReadTime > 0 {
-		lastReadTime += 1
-		p.offset = &lastReadTime
-		// TODO: Bring back marking as read
-		//_, err = p.contractClient.MarkAsRead(
-		//	ctx,
-		//	p.cfg.ClientAddress,
-		//	lastReadTime,
-		//)
+		_, err = p.contractClient.MarkAsRead(
+			ctx,
+			p.cfg.ClientAddress,
+			lastReadTime,
+		)
+	}
+
+	if len(cancelSessions) > 0 {
+		_, err = p.contractClient.CancelSessions(ctx, p.cfg.ClientAddress, cancelSessions...)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(confirmSessions) > 0 {
+		_, err = p.contractClient.ConfirmSessions(ctx, p.cfg.ClientAddress, confirmSessions...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return err
@@ -278,6 +305,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 
 	mintMsgs := make([]sdk.Msg, 0, len(messages))
 	startSessions := make([]coreum.StartSession, 0, len(messages))
+	sendMessages := make([]coreum.SendMessage, 0, len(messages))
 
 	for _, message := range messages {
 		sharedKey, err := p.cryptography.GenerateSharedKeyByPrivateKeyName(p.clientContext, p.cfg.ClientKeyName, message.PublicKeyBytes)
@@ -306,10 +334,19 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 			ClassId: strings.ToLower(classId),
 			Id:      id,
 		}
-		startSessions = append(startSessions, coreum.StartSession{
+		if !message.AttachedFunds.IsZero() {
+			startSessions = append(startSessions, coreum.StartSession{
+				Eutr:        message.Eutr,
+				Message:     nft,
+				Destination: message.Destination,
+				Funds:       message.AttachedFunds,
+			})
+		}
+		sendMessages = append(sendMessages, coreum.SendMessage{
+			Eutr:        message.Eutr,
+			ID:          message.Id,
 			Destination: message.Destination,
 			Message:     nft,
-			Funds:       message.AttachedFunds,
 		})
 	}
 
@@ -318,17 +355,27 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		return err
 	}
 
-	_, err = p.contractClient.StartSessions(ctx, p.cfg.ClientAddress, startSessions...)
-	if err != nil {
-		return err
+	if len(startSessions) > 0 {
+		_, err = p.contractClient.StartSessions(ctx, p.cfg.ClientAddress, startSessions...)
+		if err != nil {
+			return err
+		}
 	}
 
-	p.log.Info(ctx, "Messages sent successfully", zap.Int("count", len(messages)))
+	if len(sendMessages) > 0 {
+		_, err = p.contractClient.SendMessages(ctx, p.cfg.ClientAddress, sendMessages...)
+		if err != nil {
+			return err
+		}
+
+		p.log.Info(ctx, "Messages sent successfully", zap.Int("count", len(messages)))
+	}
 
 	return nil
 }
 
 type messageWithMetadata struct {
+	Eutr           string
 	Id             string
 	Source         sdk.AccAddress
 	Destination    sdk.AccAddress
@@ -374,7 +421,11 @@ func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadat
 	// 	attachedFunds = sdk.NewCoins(sdk.NewCoin(p.cfg.Denom, sdk.NewInt(100)))
 	// }
 
+	// TODO: Remove after extracting actual EUTR
+	metadata.Eutr = strconv.FormatInt(time.Now().UnixNano(), 10)
+
 	return &messageWithMetadata{
+		metadata.Eutr,
 		metadata.ID,
 		senderAddress,
 		receiverAddress,

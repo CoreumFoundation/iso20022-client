@@ -207,6 +207,7 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 }
 
 func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metadata, err error) {
+	// TODO: Also extract EUTR
 	headDoc, containedDoc, err := p.parseIsoMessage(msg)
 	if err != nil {
 		return data, err

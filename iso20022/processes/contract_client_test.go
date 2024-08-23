@@ -42,10 +42,11 @@ func TestContractClient_Start(t *testing.T) {
 			contractClientBuilder: func(ctrl *gomock.Controller) processes.ContractClient {
 				contractClientMock := NewMockContractClient(ctrl)
 				contractClientMock.EXPECT().IsInitialized().Return(true)
+				contractClientMock.EXPECT().GetNewMessages(gomock.Any(), gomock.Any(), gomock.Any()).Return([]coreum.Message{}, nil).AnyTimes()
 				contractClientMock.EXPECT().GetActiveSessions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]coreum.Session{}, nil).AnyTimes()
 				contractClientMock.EXPECT().IssueNFTClass(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
 				contractClientMock.EXPECT().BroadcastMessages(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
-				contractClientMock.EXPECT().StartSessions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+				contractClientMock.EXPECT().SendMessages(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
 				return contractClientMock
 			},
 			addressBookBuilder: func(ctrl *gomock.Controller) processes.AddressBook {
