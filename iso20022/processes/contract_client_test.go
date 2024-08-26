@@ -70,7 +70,8 @@ func TestContractClient_Start(t *testing.T) {
 			},
 			parserBuilder: func(ctrl *gomock.Controller) processes.Parser {
 				parserMock := NewMockParser(ctrl)
-				parserMock.EXPECT().ExtractMetadataFromIsoMessage(gomock.Any()).Return(
+				parserMock.EXPECT().ExtractMessageAndMetadataFromIsoMessage(gomock.Any()).Return(
+					nil,
 					processes.Metadata{
 						ID: "abc123",
 						Sender: &addressbook.Party{
@@ -84,6 +85,7 @@ func TestContractClient_Start(t *testing.T) {
 							},
 						},
 					},
+					nil,
 					nil,
 				)
 				return parserMock

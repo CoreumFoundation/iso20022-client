@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -118,7 +117,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 							ctx,
 							"Failed to process the message",
 							zap.Error(err),
-							zap.Any("eutr", message.Eutr),
+							zap.Any("uetr", message.Uetr),
 							zap.Any("id", message.Id),
 							zap.Any("source", message.Source),
 							zap.Any("destination", message.Destination),
@@ -224,7 +223,7 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
-		metadata, err := p.parser.ExtractMetadataFromIsoMessage(data.Data)
+		iso20022Msg, metadata, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(data.Data)
 		if err != nil {
 			p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
 			continue
@@ -239,18 +238,20 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
-		// TODO: Implement finding out when we need to confirm a session
-		if false {
+		switch p.parser.GetTransactionStatus(iso20022Msg) {
+		case TransactionStatusCreditorAcceptedSettlementCompleted, TransactionStatusAcceptedCustomerProfile,
+			TransactionStatusAcceptedSettlementCompleted, TransactionStatusAcceptedSettlementInProcess,
+			TransactionStatusAcceptedTechnicalValidation, TransactionStatusAcceptedWithChange,
+			TransactionStatusAcceptedWithoutPosting, TransactionStatusAcceptedFundsChecked,
+			TransactionStatusPartiallyAcceptedTechnical, TransactionStatusPartiallyAccepted:
 			confirmSessions = append(confirmSessions, coreum.ConfirmSession{
-				Eutr:        metadata.Eutr,
+				Uetr:        metadata.Uetr,
 				Destination: p.cfg.ClientAddress,
 			})
-		}
+		case TransactionStatusCancelled, TransactionStatusRejected:
 
-		// TODO: Implement finding out when we need to cancel a session
-		if false {
 			cancelSessions = append(cancelSessions, coreum.CancelSession{
-				Eutr:        metadata.Eutr,
+				Uetr:        metadata.Uetr,
 				Destination: p.cfg.ClientAddress,
 			})
 		}
@@ -336,14 +337,14 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		}
 		if !message.AttachedFunds.IsZero() {
 			startSessions = append(startSessions, coreum.StartSession{
-				Eutr:        message.Eutr,
+				Uetr:        message.Uetr,
 				Message:     nft,
 				Destination: message.Destination,
 				Funds:       message.AttachedFunds,
 			})
 		}
 		sendMessages = append(sendMessages, coreum.SendMessage{
-			Eutr:        message.Eutr,
+			Uetr:        message.Uetr,
 			ID:          message.Id,
 			Destination: message.Destination,
 			Message:     nft,
@@ -375,7 +376,7 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 }
 
 type messageWithMetadata struct {
-	Eutr           string
+	Uetr           string
 	Id             string
 	Source         sdk.AccAddress
 	Destination    sdk.AccAddress
@@ -385,7 +386,7 @@ type messageWithMetadata struct {
 }
 
 func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadata, error) {
-	metadata, err := p.parser.ExtractMetadataFromIsoMessage(msg)
+	_, metadata, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -421,11 +422,8 @@ func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadat
 	// 	attachedFunds = sdk.NewCoins(sdk.NewCoin(p.cfg.Denom, sdk.NewInt(100)))
 	// }
 
-	// TODO: Remove after extracting actual EUTR
-	metadata.Eutr = strconv.FormatInt(time.Now().UnixNano(), 10)
-
 	return &messageWithMetadata{
-		metadata.Eutr,
+		metadata.Uetr,
 		metadata.ID,
 		senderAddress,
 		receiverAddress,
