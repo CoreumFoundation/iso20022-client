@@ -15,6 +15,7 @@ import (
 	time "time"
 
 	client "github.com/CoreumFoundation/coreum/v4/pkg/client"
+	messages "github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/messages"
 	addressbook "github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	coreum "github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	processes "github.com/CoreumFoundation/iso20022-client/iso20022/processes"
@@ -602,19 +603,35 @@ func (m *MockParser) EXPECT() *MockParserMockRecorder {
 	return m.recorder
 }
 
-// ExtractMetadataFromIsoMessage mocks base method.
-func (m *MockParser) ExtractMetadataFromIsoMessage(arg0 []byte) (processes.Metadata, error) {
+// ExtractMessageAndMetadataFromIsoMessage mocks base method.
+func (m *MockParser) ExtractMessageAndMetadataFromIsoMessage(arg0 []byte) (messages.Iso20022Message, processes.Metadata, *processes.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExtractMetadataFromIsoMessage", arg0)
-	ret0, _ := ret[0].(processes.Metadata)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "ExtractMessageAndMetadataFromIsoMessage", arg0)
+	ret0, _ := ret[0].(messages.Iso20022Message)
+	ret1, _ := ret[1].(processes.Metadata)
+	ret2, _ := ret[2].(*processes.Metadata)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
-// ExtractMetadataFromIsoMessage indicates an expected call of ExtractMetadataFromIsoMessage.
-func (mr *MockParserMockRecorder) ExtractMetadataFromIsoMessage(arg0 any) *gomock.Call {
+// ExtractMessageAndMetadataFromIsoMessage indicates an expected call of ExtractMessageAndMetadataFromIsoMessage.
+func (mr *MockParserMockRecorder) ExtractMessageAndMetadataFromIsoMessage(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtractMetadataFromIsoMessage", reflect.TypeOf((*MockParser)(nil).ExtractMetadataFromIsoMessage), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtractMessageAndMetadataFromIsoMessage", reflect.TypeOf((*MockParser)(nil).ExtractMessageAndMetadataFromIsoMessage), arg0)
+}
+
+// GetTransactionStatus mocks base method.
+func (m *MockParser) GetTransactionStatus(arg0 messages.Iso20022Message) processes.TransactionStatus {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransactionStatus", arg0)
+	ret0, _ := ret[0].(processes.TransactionStatus)
+	return ret0
+}
+
+// GetTransactionStatus indicates an expected call of GetTransactionStatus.
+func (mr *MockParserMockRecorder) GetTransactionStatus(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionStatus", reflect.TypeOf((*MockParser)(nil).GetTransactionStatus), arg0)
 }
 
 // MockMessageQueue is a mock of MessageQueue interface.

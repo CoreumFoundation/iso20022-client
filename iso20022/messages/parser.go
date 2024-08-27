@@ -2,10 +2,14 @@ package messages
 
 import (
 	"bytes"
+	"context"
+	"crypto/md5"
 	"encoding/xml"
 	"reflect"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_01"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/head_001_001_02"
@@ -206,32 +210,27 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 	return envelope.AppHdr, resDoc, nil
 }
 
-func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metadata, err error) {
-	// TODO: Also extract EUTR
+func (p Parser) ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message messages.Iso20022Message, metadata processes.Metadata, references *processes.Metadata, err error) {
 	headDoc, containedDoc, err := p.parseIsoMessage(msg)
 	if err != nil {
-		return data, err
+		return message, metadata, references, err
 	}
 
+	uetr := ""
+	endToEndID := ""
+	txID := ""
 	id := ""
 	sender := new(addressbook.Party)
 	receiver := new(addressbook.Party)
-	emptyParty := new(addressbook.Party)
 
-	if headDoc != nil {
-		switch head := headDoc.(type) {
-		case *head_001_001_01.BusinessApplicationHeaderV01:
-			data.ID = string(head.BizMsgIdr)
-			data.Receiver = p.converter.ConvertFromHead00100101(head.To.FIId).ToParty()
-			data.Sender = p.converter.ConvertFromHead00100101(head.Fr.FIId).ToParty()
-			return data, nil
-		case *head_001_001_02.BusinessApplicationHeaderV02:
-			data.ID = string(head.BizMsgIdr)
-			data.Receiver = p.converter.ConvertFromHead00100102(head.To.FIId).ToParty()
-			data.Sender = p.converter.ConvertFromHead00100102(head.Fr.FIId).ToParty()
-			return data, nil
-		}
-	}
+	origId := ""
+	origUetr := ""
+	origEndToEndID := ""
+	origTxID := ""
+	origSender := new(addressbook.Party)
+	origReceiver := new(addressbook.Party)
+
+	emptyParty := new(addressbook.Party)
 
 	if containedDoc != nil {
 		switch doc := containedDoc.(type) {
@@ -248,6 +247,28 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
 				sender = p.converter.ConvertFromPacs02800104(doc.TxInf[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInf) > 0 {
+				origId = string(doc.OrgnlGrpInf[0].OrgnlMsgId)
+			}
+			if len(doc.TxInf) > 0 {
+				if origId == "" {
+					origId = string(doc.TxInf[0].OrgnlGrpInf.OrgnlMsgId)
+					if origId == "" && doc.TxInf[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInf[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInf[0].OrgnlUETR != nil {
+					origUetr = string(*doc.TxInf[0].OrgnlUETR)
+				}
+				if doc.TxInf[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInf[0].OrgnlEndToEndId)
+				}
+				if doc.TxInf[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInf[0].OrgnlTxId)
+				}
+			}
+			origSender = sender
+			origReceiver = receiver
 		case *pacs_028_001_06.FIToFIPaymentStatusRequestV06:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs02800106(doc.GrpHdr.InstdAgt).ToParty()
@@ -261,6 +282,28 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
 				sender = p.converter.ConvertFromPacs02800106(doc.TxInf[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInf) > 0 {
+				origId = string(doc.OrgnlGrpInf[0].OrgnlMsgId)
+			}
+			if len(doc.TxInf) > 0 {
+				if origId == "" {
+					origId = string(doc.TxInf[0].OrgnlGrpInf.OrgnlMsgId)
+					if origId == "" && doc.TxInf[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInf[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInf[0].OrgnlUETR != nil {
+					origUetr = string(*doc.TxInf[0].OrgnlUETR)
+				}
+				if doc.TxInf[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInf[0].OrgnlEndToEndId)
+				}
+				if doc.TxInf[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInf[0].OrgnlTxId)
+				}
+			}
+			origSender = sender
+			origReceiver = receiver
 		case *pacs_010_001_04.FinancialInstitutionDirectDebitV04:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs01000104(doc.GrpHdr.InstdAgt).ToParty()
@@ -273,6 +316,15 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			}
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtInstr) > 0 {
 				sender = p.converter.ConvertFromPacs01000104(doc.CdtInstr[0].InstgAgt).ToParty()
+			}
+			if len(doc.CdtInstr) > 0 && len(doc.CdtInstr[0].DrctDbtTxInf) > 0 {
+				endToEndID = string(doc.CdtInstr[0].DrctDbtTxInf[0].PmtId.EndToEndId)
+				if doc.CdtInstr[0].DrctDbtTxInf[0].PmtId.UETR != nil {
+					uetr = string(*doc.CdtInstr[0].DrctDbtTxInf[0].PmtId.UETR)
+				}
+				if doc.CdtInstr[0].DrctDbtTxInf[0].PmtId.TxId != nil {
+					txID = string(*doc.CdtInstr[0].DrctDbtTxInf[0].PmtId.TxId)
+				}
 			}
 		case *pacs_008_001_06.FIToFICustomerCreditTransferV06:
 			id = string(doc.GrpHdr.MsgId)
@@ -287,6 +339,12 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				sender = p.converter.ConvertFromPacs00800106(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 			}
+			if len(doc.CdtTrfTxInf) > 0 {
+				endToEndID = string(doc.CdtTrfTxInf[0].PmtId.EndToEndId)
+				if doc.CdtTrfTxInf[0].PmtId.TxId != "" {
+					txID = string(doc.CdtTrfTxInf[0].PmtId.TxId)
+				}
+			}
 		case *pacs_002_001_07.FIToFIPaymentStatusReportV07:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00200107(doc.GrpHdr.InstdAgt).ToParty()
@@ -300,6 +358,27 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				sender = p.converter.ConvertFromPacs00200107(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInfAndSts) > 0 {
+				origId = string(doc.OrgnlGrpInfAndSts[0].OrgnlMsgId)
+			}
+			if len(doc.TxInfAndSts) > 0 {
+				if origId == "" {
+					if doc.TxInfAndSts[0].OrgnlGrpInf != nil {
+						origId = string(doc.TxInfAndSts[0].OrgnlGrpInf.OrgnlMsgId)
+					}
+					if origId == "" && doc.TxInfAndSts[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInfAndSts[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInfAndSts[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInfAndSts[0].OrgnlEndToEndId)
+				}
+				if doc.TxInfAndSts[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInfAndSts[0].OrgnlTxId)
+				}
+			}
+			origSender = receiver
+			origReceiver = sender
 		case *pacs_008_001_08.FIToFICustomerCreditTransferV08:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00800108(doc.GrpHdr.InstdAgt).ToParty()
@@ -312,6 +391,15 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			}
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				sender = p.converter.ConvertFromPacs00800108(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
+			}
+			if len(doc.CdtTrfTxInf) > 0 {
+				endToEndID = string(doc.CdtTrfTxInf[0].PmtId.EndToEndId)
+				if doc.CdtTrfTxInf[0].PmtId.UETR != nil {
+					uetr = string(*doc.CdtTrfTxInf[0].PmtId.UETR)
+				}
+				if doc.CdtTrfTxInf[0].PmtId.TxId != nil {
+					txID = string(*doc.CdtTrfTxInf[0].PmtId.TxId)
+				}
 			}
 		case *pacs_003_001_08.FIToFICustomerDirectDebitV08:
 			id = string(doc.GrpHdr.MsgId)
@@ -326,6 +414,15 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.DrctDbtTxInf) > 0 {
 				sender = p.converter.ConvertFromPacs00300108(doc.DrctDbtTxInf[0].InstgAgt).ToParty()
 			}
+			if len(doc.DrctDbtTxInf) > 0 {
+				endToEndID = string(doc.DrctDbtTxInf[0].PmtId.EndToEndId)
+				if doc.DrctDbtTxInf[0].PmtId.UETR != nil {
+					uetr = string(*doc.DrctDbtTxInf[0].PmtId.UETR)
+				}
+				if doc.DrctDbtTxInf[0].PmtId.TxId != nil {
+					txID = string(*doc.DrctDbtTxInf[0].PmtId.TxId)
+				}
+			}
 		case *pacs_002_001_08.FIToFIPaymentStatusReportV08:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00200108(doc.GrpHdr.InstdAgt).ToParty()
@@ -339,6 +436,27 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				sender = p.converter.ConvertFromPacs00200108(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInfAndSts) > 0 {
+				origId = string(doc.OrgnlGrpInfAndSts[0].OrgnlMsgId)
+			}
+			if len(doc.TxInfAndSts) > 0 {
+				if origId == "" {
+					if doc.TxInfAndSts[0].OrgnlGrpInf != nil {
+						origId = string(doc.TxInfAndSts[0].OrgnlGrpInf.OrgnlMsgId)
+					}
+					if origId == "" && doc.TxInfAndSts[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInfAndSts[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInfAndSts[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInfAndSts[0].OrgnlEndToEndId)
+				}
+				if doc.TxInfAndSts[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInfAndSts[0].OrgnlTxId)
+				}
+			}
+			origSender = receiver
+			origReceiver = sender
 		case *pacs_008_001_09.FIToFICustomerCreditTransferV09:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00800109(doc.GrpHdr.InstdAgt).ToParty()
@@ -354,6 +472,15 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.CdtTrfTxInf) > 0 {
 				if doc.CdtTrfTxInf[0].InstgAgt != nil {
 					sender = p.converter.ConvertFromPacs00800109(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
+				}
+			}
+			if len(doc.CdtTrfTxInf) > 0 {
+				endToEndID = string(doc.CdtTrfTxInf[0].PmtId.EndToEndId)
+				if doc.CdtTrfTxInf[0].PmtId.UETR != nil {
+					uetr = string(*doc.CdtTrfTxInf[0].PmtId.UETR)
+				}
+				if doc.CdtTrfTxInf[0].PmtId.TxId != nil {
+					txID = string(*doc.CdtTrfTxInf[0].PmtId.TxId)
 				}
 			}
 		case *pacs_009_001_09.FinancialInstitutionCreditTransferV09:
@@ -373,6 +500,15 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 					sender = p.converter.ConvertFromPacs00900109(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 				}
 			}
+			if len(doc.CdtTrfTxInf) > 0 {
+				endToEndID = string(doc.CdtTrfTxInf[0].PmtId.EndToEndId)
+				if doc.CdtTrfTxInf[0].PmtId.UETR != nil {
+					uetr = string(*doc.CdtTrfTxInf[0].PmtId.UETR)
+				}
+				if doc.CdtTrfTxInf[0].PmtId.TxId != nil {
+					txID = string(*doc.CdtTrfTxInf[0].PmtId.TxId)
+				}
+			}
 		case *pacs_007_001_10.FIToFIPaymentReversalV10:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00700110(doc.GrpHdr.InstdAgt).ToParty()
@@ -386,6 +522,27 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
 				sender = p.converter.ConvertFromPacs00700110(doc.TxInf[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInf.OrgnlMsgId) > 0 {
+				origId = string(doc.OrgnlGrpInf.OrgnlMsgId)
+			}
+			if len(doc.TxInf) > 0 {
+				if origId == "" {
+					if doc.TxInf[0].OrgnlGrpInf != nil {
+						origId = string(doc.TxInf[0].OrgnlGrpInf.OrgnlMsgId)
+					}
+					if origId == "" && doc.TxInf[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInf[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInf[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInf[0].OrgnlEndToEndId)
+				}
+				if doc.TxInf[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInf[0].OrgnlTxId)
+				}
+			}
+			origSender = receiver
+			origReceiver = sender
 		case *pacs_002_001_10.FIToFIPaymentStatusReportV10:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00200110(doc.GrpHdr.InstdAgt).ToParty()
@@ -399,6 +556,27 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				sender = p.converter.ConvertFromPacs00200110(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInfAndSts) > 0 {
+				origId = string(doc.OrgnlGrpInfAndSts[0].OrgnlMsgId)
+			}
+			if len(doc.TxInfAndSts) > 0 {
+				if origId == "" {
+					if doc.TxInfAndSts[0].OrgnlGrpInf != nil {
+						origId = string(doc.TxInfAndSts[0].OrgnlGrpInf.OrgnlMsgId)
+					}
+					if origId == "" && doc.TxInfAndSts[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInfAndSts[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInfAndSts[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInfAndSts[0].OrgnlEndToEndId)
+				}
+				if doc.TxInfAndSts[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInfAndSts[0].OrgnlTxId)
+				}
+			}
+			origSender = receiver
+			origReceiver = sender
 		case *pacs_004_001_10.PaymentReturnV10:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00400110(doc.GrpHdr.InstdAgt).ToParty()
@@ -412,6 +590,27 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInf) > 0 {
 				sender = p.converter.ConvertFromPacs00400110(doc.TxInf[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInf.OrgnlMsgId) > 0 {
+				origId = string(doc.OrgnlGrpInf.OrgnlMsgId)
+			}
+			if len(doc.TxInf) > 0 {
+				if origId == "" {
+					if doc.TxInf[0].OrgnlGrpInf != nil {
+						origId = string(doc.TxInf[0].OrgnlGrpInf.OrgnlMsgId)
+					}
+					if origId == "" && doc.TxInf[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInf[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInf[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInf[0].OrgnlEndToEndId)
+				}
+				if doc.TxInf[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInf[0].OrgnlTxId)
+				}
+			}
+			origSender = receiver
+			origReceiver = sender
 		case *pacs_002_001_11.FIToFIPaymentStatusReportV11:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00200111(doc.GrpHdr.InstdAgt).ToParty()
@@ -425,6 +624,27 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 			if (sender == nil || reflect.DeepEqual(sender, emptyParty)) && len(doc.TxInfAndSts) > 0 {
 				sender = p.converter.ConvertFromPacs00200111(doc.TxInfAndSts[0].InstgAgt).ToParty()
 			}
+			if len(doc.OrgnlGrpInfAndSts) > 0 {
+				origId = string(doc.OrgnlGrpInfAndSts[0].OrgnlMsgId)
+			}
+			if len(doc.TxInfAndSts) > 0 {
+				if origId == "" {
+					if doc.TxInfAndSts[0].OrgnlGrpInf != nil {
+						origId = string(doc.TxInfAndSts[0].OrgnlGrpInf.OrgnlMsgId)
+					}
+					if origId == "" && doc.TxInfAndSts[0].OrgnlInstrId != nil {
+						origId = string(*doc.TxInfAndSts[0].OrgnlInstrId)
+					}
+				}
+				if doc.TxInfAndSts[0].OrgnlEndToEndId != nil {
+					origEndToEndID = string(*doc.TxInfAndSts[0].OrgnlEndToEndId)
+				}
+				if doc.TxInfAndSts[0].OrgnlTxId != nil {
+					origTxID = string(*doc.TxInfAndSts[0].OrgnlTxId)
+				}
+			}
+			origSender = receiver
+			origReceiver = sender
 		case *pacs_008_001_12.FIToFICustomerCreditTransferV12:
 			id = string(doc.GrpHdr.MsgId)
 			receiver = p.converter.ConvertFromPacs00800112(doc.GrpHdr.InstdAgt).ToParty()
@@ -442,18 +662,122 @@ func (p Parser) ExtractMetadataFromIsoMessage(msg []byte) (data processes.Metada
 					sender = p.converter.ConvertFromPacs00800112(doc.CdtTrfTxInf[0].InstgAgt).ToParty()
 				}
 			}
+			if len(doc.CdtTrfTxInf) > 0 {
+				endToEndID = string(doc.CdtTrfTxInf[0].PmtId.EndToEndId)
+				if doc.CdtTrfTxInf[0].PmtId.UETR != nil {
+					uetr = string(*doc.CdtTrfTxInf[0].PmtId.UETR)
+				}
+				if doc.CdtTrfTxInf[0].PmtId.TxId != nil {
+					txID = string(*doc.CdtTrfTxInf[0].PmtId.TxId)
+				}
+			}
 		default:
-			return data, errors.New("couldn't find receiver from " + reflect.TypeOf(containedDoc).String())
+			return containedDoc, metadata, references, errors.New("couldn't find receiver from " + reflect.TypeOf(containedDoc).String())
+		}
+	}
+
+	if origId != "" {
+		references = &processes.Metadata{
+			Uetr:     MakeUETR(p.log, origUetr, origEndToEndID, origTxID),
+			ID:       origId,
+			Sender:   origSender,
+			Receiver: origReceiver,
 		}
 	}
 
 	if receiver == nil || reflect.DeepEqual(receiver, emptyParty) {
-		return data, errors.New("couldn't find receiver")
+		return containedDoc, metadata, references, errors.New("couldn't find receiver")
 	}
 
-	data.ID = id
-	data.Sender = sender
-	data.Receiver = receiver
+	metadata.Uetr = MakeUETR(p.log, uetr, endToEndID, txID)
+	metadata.ID = id
+	metadata.Sender = sender
+	metadata.Receiver = receiver
 
-	return data, nil
+	if headDoc != nil {
+		switch head := headDoc.(type) {
+		case *head_001_001_01.BusinessApplicationHeaderV01:
+			if metadata.ID != "" {
+				metadata.ID = string(head.BizMsgIdr)
+			}
+			if metadata.Receiver == nil || reflect.DeepEqual(metadata.Receiver, emptyParty) {
+				metadata.Receiver = p.converter.ConvertFromHead00100101(head.To.FIId).ToParty()
+			}
+			if metadata.Sender == nil || reflect.DeepEqual(metadata.Sender, emptyParty) {
+				metadata.Sender = p.converter.ConvertFromHead00100101(head.Fr.FIId).ToParty()
+			}
+			return message, metadata, references, nil
+		case *head_001_001_02.BusinessApplicationHeaderV02:
+			if metadata.ID != "" {
+				metadata.ID = string(head.BizMsgIdr)
+			}
+			if metadata.Receiver == nil || reflect.DeepEqual(metadata.Receiver, emptyParty) {
+				metadata.Receiver = p.converter.ConvertFromHead00100102(head.To.FIId).ToParty()
+			}
+			if metadata.Sender == nil || reflect.DeepEqual(metadata.Sender, emptyParty) {
+				metadata.Sender = p.converter.ConvertFromHead00100102(head.Fr.FIId).ToParty()
+			}
+			return containedDoc, metadata, references, nil
+		}
+	}
+
+	return containedDoc, metadata, references, nil
+}
+
+func (p Parser) GetTransactionStatus(isoMsg messages.Iso20022Message) processes.TransactionStatus {
+	switch msg := isoMsg.(type) {
+	case *pacs_002_001_07.FIToFIPaymentStatusReportV07:
+		if status := msg.TxInfAndSts[0].TxSts; status != nil {
+			return processes.ParseTransactionStatus(string(*status))
+		}
+	case *pacs_002_001_08.FIToFIPaymentStatusReportV08:
+		if status := msg.TxInfAndSts[0].TxSts; status != nil {
+			return processes.ParseTransactionStatus(string(*status))
+		}
+	case *pacs_002_001_10.FIToFIPaymentStatusReportV10:
+		if status := msg.TxInfAndSts[0].TxSts; status != nil {
+			return processes.ParseTransactionStatus(string(*status))
+		}
+	case *pacs_002_001_11.FIToFIPaymentStatusReportV11:
+		if status := msg.TxInfAndSts[0].TxSts; status != nil {
+			return processes.ParseTransactionStatus(string(*status))
+		}
+	}
+	return processes.TransactionStatusNone
+}
+
+func MakeUETR(log logger.Logger, uetr, endToEndID, txID string) string {
+	if uetr != "" {
+		return uetr
+	}
+	if endToEndID != "" {
+		uetr = stringToUUID(log, endToEndID)
+		if uetr != "" {
+			return uetr
+		}
+	}
+	if txID != "" {
+		uetr = stringToUUID(log, txID)
+		if uetr != "" {
+			return uetr
+		}
+	}
+	return ""
+}
+
+func stringToUUID(log logger.Logger, text string) string {
+	h := md5.New()
+	h.Write([]byte(text))
+	md5Hash := h.Sum(nil)
+	e2eUUID, err := uuid.FromBytes(md5Hash)
+	if err != nil {
+		log.Warn(
+			context.TODO(),
+			"could not generate uuid from md5",
+			zap.Binary("md5", md5Hash), zap.Error(err),
+		)
+		return ""
+	} else {
+		return e2eUUID.String()
+	}
 }

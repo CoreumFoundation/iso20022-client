@@ -90,7 +90,7 @@ type Messages struct {
 type instantiateRequest struct{}
 
 type StartSession struct {
-	Eutr        string         `json:"eutr"`
+	Uetr        string         `json:"uetr"`
 	Message     NFTInfo        `json:"message"`
 	Destination sdk.AccAddress `json:"destination"`
 	Funds       sdk.Coins      `json:"funds"`
@@ -98,14 +98,14 @@ type StartSession struct {
 
 type startSessionRequest struct {
 	StartSession struct {
-		Eutr            string         `json:"eutr"`
+		Uetr            string         `json:"uetr"`
 		StartingMessage NFTInfo        `json:"starting_message"`
 		Destination     sdk.AccAddress `json:"destination"`
 	} `json:"start_session"`
 }
 
 type SendMessage struct {
-	Eutr        string         `json:"eutr"`
+	Uetr        string         `json:"uetr"`
 	ID          string         `json:"id"`
 	Destination sdk.AccAddress `json:"destination"`
 	Message     NFTInfo        `json:"message"`
@@ -122,7 +122,7 @@ type markAsReadRequest struct {
 }
 
 type ConfirmSession struct {
-	Eutr        string         `json:"eutr"`
+	Uetr        string         `json:"uetr"`
 	Initiator   sdk.AccAddress `json:"initiator"`
 	Destination sdk.AccAddress `json:"destination"`
 }
@@ -132,7 +132,7 @@ type confirmSessionRequest struct {
 }
 
 type CancelSession struct {
-	Eutr        string         `json:"eutr"`
+	Uetr        string         `json:"uetr"`
 	Initiator   sdk.AccAddress `json:"initiator"`
 	Destination sdk.AccAddress `json:"destination"`
 }
@@ -361,10 +361,10 @@ func (c *ContractClient) BroadcastMessages(
 
 // StartSession executes `start_session` method with transfer action.
 func (c *ContractClient) StartSession(
-	ctx context.Context, eutr string, sender sdk.AccAddress, message NFTInfo, destination sdk.AccAddress, funds sdk.Coins,
+	ctx context.Context, uetr string, sender sdk.AccAddress, message NFTInfo, destination sdk.AccAddress, funds sdk.Coins,
 ) (*sdk.TxResponse, error) {
 	req := startSessionRequest{}
-	req.StartSession.Eutr = eutr
+	req.StartSession.Uetr = uetr
 	req.StartSession.StartingMessage = message
 	req.StartSession.Destination = destination
 
@@ -386,7 +386,7 @@ func (c *ContractClient) StartSessions(
 	reqs := make([]execRequest, 0)
 	for _, session := range sessions {
 		req := startSessionRequest{}
-		req.StartSession.Eutr = session.Eutr
+		req.StartSession.Uetr = session.Uetr
 		req.StartSession.StartingMessage = session.Message
 		req.StartSession.Destination = session.Destination
 		reqs = append(reqs, execRequest{
@@ -405,10 +405,10 @@ func (c *ContractClient) StartSessions(
 
 // SendMessage executes `send_message` method with transfer action.
 func (c *ContractClient) SendMessage(
-	ctx context.Context, sender, destination sdk.AccAddress, eutr, ID string, message NFTInfo,
+	ctx context.Context, sender, destination sdk.AccAddress, uetr, ID string, message NFTInfo,
 ) (*sdk.TxResponse, error) {
 	req := sendMessageRequest{}
-	req.SendMessage.Eutr = eutr
+	req.SendMessage.Uetr = uetr
 	req.SendMessage.ID = ID
 	req.SendMessage.Destination = destination
 	req.SendMessage.Message = message
@@ -446,10 +446,10 @@ func (c *ContractClient) SendMessages(
 
 // ConfirmSession executes `start_session` method with transfer action.
 func (c *ContractClient) ConfirmSession(
-	ctx context.Context, eutr string, sender, initiator, destination sdk.AccAddress,
+	ctx context.Context, uetr string, sender, initiator, destination sdk.AccAddress,
 ) (*sdk.TxResponse, error) {
 	req := confirmSessionRequest{}
-	req.ConfirmSession.Eutr = eutr
+	req.ConfirmSession.Uetr = uetr
 	req.ConfirmSession.Initiator = initiator
 	req.ConfirmSession.Destination = destination
 
@@ -486,10 +486,10 @@ func (c *ContractClient) ConfirmSessions(
 
 // CancelSession executes `cancel_session` method with transfer action.
 func (c *ContractClient) CancelSession(
-	ctx context.Context, eutr string, sender, initiator, destination sdk.AccAddress,
+	ctx context.Context, uetr string, sender, initiator, destination sdk.AccAddress,
 ) (*sdk.TxResponse, error) {
 	req := cancelSessionRequest{}
-	req.CancelSession.Eutr = eutr
+	req.CancelSession.Uetr = uetr
 	req.CancelSession.Initiator = initiator
 	req.CancelSession.Destination = destination
 

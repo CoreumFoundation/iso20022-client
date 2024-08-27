@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/CoreumFoundation/coreum/v4/pkg/client"
+	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/messages"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
@@ -41,25 +42,25 @@ type ContractClient interface {
 		messages ...types.Msg,
 	) (*types.TxResponse, error)
 	StartSession(
-		ctx context.Context, eutr string, sender types.AccAddress, message coreum.NFTInfo, destination types.AccAddress, funds types.Coins,
+		ctx context.Context, uetr string, sender types.AccAddress, message coreum.NFTInfo, destination types.AccAddress, funds types.Coins,
 	) (*types.TxResponse, error)
 	StartSessions(
 		ctx context.Context, sender types.AccAddress, sessions ...coreum.StartSession,
 	) (*types.TxResponse, error)
 	SendMessage(
-		ctx context.Context, sender, destination types.AccAddress, eutr, ID string, message coreum.NFTInfo,
+		ctx context.Context, sender, destination types.AccAddress, uetr, ID string, message coreum.NFTInfo,
 	) (*types.TxResponse, error)
 	SendMessages(
 		ctx context.Context, sender types.AccAddress, messages ...coreum.SendMessage,
 	) (*types.TxResponse, error)
 	ConfirmSession(
-		ctx context.Context, eutr string, sender, initiator, destination types.AccAddress,
+		ctx context.Context, uetr string, sender, initiator, destination types.AccAddress,
 	) (*types.TxResponse, error)
 	ConfirmSessions(
 		ctx context.Context, sender types.AccAddress, messages ...coreum.ConfirmSession,
 	) (*types.TxResponse, error)
 	CancelSession(
-		ctx context.Context, eutr string, sender, initiator, destination types.AccAddress,
+		ctx context.Context, uetr string, sender, initiator, destination types.AccAddress,
 	) (*types.TxResponse, error)
 	CancelSessions(
 		ctx context.Context, sender types.AccAddress, messages ...coreum.CancelSession,
@@ -124,14 +125,110 @@ type Cryptography interface {
 }
 
 type Metadata struct {
-	Eutr     string
+	Uetr     string
 	ID       string
 	Sender   *addressbook.Party
 	Receiver *addressbook.Party
 }
 
+type TransactionStatus string
+
+const (
+	// TransactionStatusNone None
+	TransactionStatusNone TransactionStatus = "NONE"
+	// TransactionStatusCreditorAcceptedSettlementCompleted This status is only applicable for instant payments.
+	// Settlement on the creditor's account has been completed.
+	TransactionStatusCreditorAcceptedSettlementCompleted TransactionStatus = "ACCC"
+	// TransactionStatusAcceptedCustomerProfile Preceding check of technical validation was successful.
+	// Customer profile check was also successful.
+	TransactionStatusAcceptedCustomerProfile TransactionStatus = "ACCP"
+	// TransactionStatusAcceptedSettlementCompleted Settlement on the debtor's account has been completed.
+	// The status ACSC is also applicable when:
+	//
+	// When a recurring payment has passed the end date.
+	// When a recurring payment has been withdrawn.
+	TransactionStatusAcceptedSettlementCompleted TransactionStatus = "ACSC"
+	// TransactionStatusAcceptedSettlementInProcess All preceding checks such as technical validation and customer profile were successful.
+	// The payment initiation was successfully signed.
+	// The payment initiation has been accepted for execution, but before settlement on the debtor’s account.
+	TransactionStatusAcceptedSettlementInProcess TransactionStatus = "ACSP"
+	// TransactionStatusAcceptedTechnicalValidation Authentication and syntactical and semantical validation
+	// (Technical validation) are successful.
+	TransactionStatusAcceptedTechnicalValidation TransactionStatus = "ACTC"
+	// TransactionStatusAcceptedWithChange Instruction is accepted, but a change will be made,
+	// such as date or remittance not sent.
+	TransactionStatusAcceptedWithChange TransactionStatus = "ACWC"
+	// TransactionStatusAcceptedWithoutPosting Payment instruction included in the credit transfer is accepted
+	// without being posted to the creditor customer's account.
+	TransactionStatusAcceptedWithoutPosting TransactionStatus = "ACWP"
+	// TransactionStatusReceived Payment initiation has been received by the receiving agent.
+	// Technical validation has started.
+	TransactionStatusReceived TransactionStatus = "RCVD"
+	// TransactionStatusPending Payment initiation or individual transaction
+	// included in the payment initiation is pending and in progress for signing.
+	// Further checks (and status update) are performed, the payment can still be Rejected or Cancelled if one of the following scenarios occur:
+	//
+	// PSU cancels the payment at login page > ACTC →  The payment is not signed within 30 minutes →  RJCT
+	// PSU closes the web browser at login page > ACTC > The payment is not signed within 30 minutes > RJCT
+	// PSU logs in > PDNG > PSU cancels the payment at Overview page > CANC
+	// PSU logs in > PDNG > PSU cancels the payment at Overview page > PDNG > The payment is not signed within 30 minutes > RJCT
+	// *ACTC - AcceptedTechnicalValidation, RJCT - Rejected, CANC - Cancelled
+	TransactionStatusPending TransactionStatus = "PDNG"
+	// TransactionStatusRejected Payment initiation or individual transaction
+	// included in the payment initiation has been rejected.
+	TransactionStatusRejected TransactionStatus = "RJCT"
+	// TransactionStatusCancelled Payment initiation has been cancelled before execution.
+	// This status is only applicable for future dated payments that have been successfully cancelled.
+	TransactionStatusCancelled TransactionStatus = "CANC"
+	// TransactionStatusAcceptedFundsChecked Preceding check of technical validation and customer profile was successful,
+	// and an automatic funds check was positive.
+	TransactionStatusAcceptedFundsChecked TransactionStatus = "ACFC"
+	// TransactionStatusPartiallyAcceptedTechnical The payment initiation needs multiple authentications,
+	// where some but not yet all have been performed.
+	// Syntactical and semantical validations are successful.
+	TransactionStatusPartiallyAcceptedTechnical TransactionStatus = "PATC"
+	// TransactionStatusPartiallyAccepted A number of transactions have been accepted,
+	// whereas another number of transactions have not yet achieved accepted status.
+	TransactionStatusPartiallyAccepted TransactionStatus = "PART"
+)
+
+func ParseTransactionStatus(status string) TransactionStatus {
+	switch status {
+	case "ACCC":
+		return TransactionStatusCreditorAcceptedSettlementCompleted
+	case "ACCP":
+		return TransactionStatusAcceptedCustomerProfile
+	case "ACSC":
+		return TransactionStatusAcceptedSettlementCompleted
+	case "ACSP":
+		return TransactionStatusAcceptedSettlementInProcess
+	case "ACTC":
+		return TransactionStatusAcceptedTechnicalValidation
+	case "ACWC":
+		return TransactionStatusAcceptedWithChange
+	case "ACWP":
+		return TransactionStatusAcceptedWithoutPosting
+	case "RCVD":
+		return TransactionStatusReceived
+	case "PDNG":
+		return TransactionStatusPending
+	case "RJCT":
+		return TransactionStatusRejected
+	case "CANC":
+		return TransactionStatusCancelled
+	case "ACFC":
+		return TransactionStatusAcceptedFundsChecked
+	case "PATC":
+		return TransactionStatusPartiallyAcceptedTechnical
+	case "PART":
+		return TransactionStatusPartiallyAccepted
+	}
+	return TransactionStatusNone
+}
+
 type Parser interface {
-	ExtractMetadataFromIsoMessage(msg []byte) (data Metadata, err error)
+	ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message messages.Iso20022Message, metadata Metadata, references *Metadata, err error)
+	GetTransactionStatus(isoMsg messages.Iso20022Message) TransactionStatus
 }
 
 type MessageQueue interface {

@@ -1,12 +1,12 @@
 package server
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/CoreumFoundation/iso20022-client/iso20022/docs"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
@@ -44,14 +44,14 @@ func (h *Handler) Send(c *gin.Context) {
 		return
 	}
 
-	metadata, err := h.Parser.ExtractMetadataFromIsoMessage(message)
+	_, metadata, _, err := h.Parser.ExtractMessageAndMetadataFromIsoMessage(message)
 	if err != nil {
 		resp := GetFailResponseFromErrors(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, resp)
 		return
 	}
 
-	fmt.Printf("Got message with ID : %s\n", metadata.ID)
+	h.Logger.Info(c.Request.Context(), "Got a message", zap.String("ID", metadata.ID))
 
 	status := h.MessageQueue.GetStatus(metadata.ID)
 	if status != nil && (*status == queue.StatusSending || *status == queue.StatusSent) {
