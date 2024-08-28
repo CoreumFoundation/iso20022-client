@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		   xmlns="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01"
+		   targetNamespace="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01"
+		   elementFormDefault="qualified"
+		   attributeFormDefault="unqualified">
+
+	<xs:element name="Document" type="Document"/>
+
+	<xs:complexType name="Document">
+		<xs:sequence>
+			<xs:element name="CryptoCurrencyAndAmount" type="CryptoCurrencyAndAmountType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="CryptoCurrencyAndAmount_SimpleType">
+		<xs:restriction base="xs:integer">
+			<xs:totalDigits value="19"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="CryptoCurrencyAndAmountType">
+		<xs:simpleContent>
+			<xs:extension base="CryptoCurrencyAndAmount_SimpleType">
+				<xs:attribute name="Dti" type="DigitalTokenIdentifier"/>
+				<xs:attribute name="Cccy" type="CryptoCurrencyCode"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="DigitalTokenIdentifier">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Z0-9]{9,9}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CryptoCurrencyCode">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="ucore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+"/>
+			<xs:maxLength value="127"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+</xs:schema>

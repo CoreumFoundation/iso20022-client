@@ -50,6 +50,7 @@ import (
 {{ end }}
 {{ range .ExportableComplexTypes }}
 	{{ if eq .GoName "SignatureEnvelope" }}
+	{{ else if eq .GoName "SupplementaryDataEnvelope1" }}
 	{{ else if eq .GoName "HdrAndData" }}
 	{{ else if eq .GoName "HdrAndDataTCH" }}
 	{{ else if eq .GoName "DocumentTCH" }}

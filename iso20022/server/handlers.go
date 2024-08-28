@@ -44,7 +44,7 @@ func (h *Handler) Send(c *gin.Context) {
 		return
 	}
 
-	_, metadata, _, err := h.Parser.ExtractMessageAndMetadataFromIsoMessage(message)
+	_, metadata, _, _, err := h.Parser.ExtractMessageAndMetadataFromIsoMessage(message)
 	if err != nil {
 		resp := GetFailResponseFromErrors(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, resp)

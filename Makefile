@@ -150,7 +150,8 @@ generate-messages:
 		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.03=pacs_028_001_03" \
 		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.04=pacs_028_001_04" \
 		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:pacs.028.001.06=pacs_028_001_06" \
-		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:pacs.029.001.02=pacs_029_001_02"
+		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:pacs.029.001.02=pacs_029_001_02" \
+		--xmlns-override="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01=supl_xxx_001_01"
 	@find ./iso20022-messages/gen -name '*.go' -exec gofmt -w {} \; -exec goimports -w {} \;
 
 generate-swagger-doc:

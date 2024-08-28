@@ -87,6 +87,7 @@ func TestContractClient_Start(t *testing.T) {
 					},
 					nil,
 					nil,
+					nil,
 				)
 				return parserMock
 			},

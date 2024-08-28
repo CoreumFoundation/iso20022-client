@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_008_001_08"
+	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/supl_xxx_001_01"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/messages/generated"
@@ -241,6 +243,25 @@ func TestParseIsoMessage(t *testing.T) {
 				sender: &addressbook.Party{
 					Identification: addressbook.Identification{
 						BusinessIdentifiersCode: "EEEEDEFF",
+					},
+				},
+			},
+			hasError: false,
+		},
+		{
+			name:            "pacs008 - Supplementary Data",
+			messageFilePath: "testdata/pacs008-13.xml",
+			metadata: metadata{
+				uetr: "00000000-0000-4000-8000-000000000000",
+				id:   "P5607186 298",
+				receiver: &addressbook.Party{
+					Identification: addressbook.Identification{
+						BusinessIdentifiersCode: "6P9YGUDF",
+					},
+				},
+				sender: &addressbook.Party{
+					Identification: addressbook.Identification{
+						BusinessIdentifiersCode: "B61NZT4Y",
 					},
 				},
 			},
@@ -884,7 +905,7 @@ func TestParseIsoMessage(t *testing.T) {
 			fileContent, err := os.ReadFile(tt.messageFilePath)
 			requireT.NoError(err)
 
-			msg, md, ref, err := parser.ExtractMessageAndMetadataFromIsoMessage(fileContent)
+			msg, md, ref, _, err := parser.ExtractMessageAndMetadataFromIsoMessage(fileContent)
 			if tt.hasError {
 				requireT.Error(err)
 			} else {
@@ -910,4 +931,33 @@ func TestParseIsoMessage(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseSupplementaryDataFromIsoMessage(t *testing.T) {
+	t.Parallel()
+
+	requireT := require.New(t)
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
+	parser := NewParser(logMock, &generated.ConverterImpl{})
+
+	fileContent, err := os.ReadFile("testdata/pacs008-13.xml")
+	requireT.NoError(err)
+
+	msg, _, _, suplParser, err := parser.ExtractMessageAndMetadataFromIsoMessage(fileContent)
+	requireT.NoError(err)
+
+	message, ok := msg.(*pacs_008_001_08.FIToFICustomerCreditTransferV08)
+	requireT.True(ok)
+	requireT.NotEmpty(message.CdtTrfTxInf)
+
+	supl, err := suplParser.Parse(message.CdtTrfTxInf[0].SplmtryData[0].Envlp.Doc)
+	requireT.NoError(err)
+
+	sup, ok := supl.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
+	requireT.True(ok)
+	requireT.Equal(&supl_xxx_001_01.CryptoCurrencyAndAmountType{
+		Value: 100000,
+		Cccy:  "ABC-testcore1adst6w4e79tddzhcgaru2l2gms8jjep6a4caa7",
+	}, sup)
 }

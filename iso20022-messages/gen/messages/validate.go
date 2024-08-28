@@ -12,6 +12,9 @@ import (
 func (v Message) Validate() error {
 	var errs base.ErrorList = base.ErrorList{}
 	baseName := "Message"
+	if v.CryptoCurrencyAndAmount != nil {
+		iso.AddError(&errs, baseName+".CryptoCurrencyAndAmount", v.CryptoCurrencyAndAmount.Validate())
+	}
 	if v.AppHdr11 != nil {
 		iso.AddError(&errs, baseName+".AppHdr11", v.AppHdr11.Validate())
 	}

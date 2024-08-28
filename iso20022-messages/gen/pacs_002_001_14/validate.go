@@ -1728,14 +1728,6 @@ func (v SupplementaryData1) Validate() error {
 	return errs
 }
 
-func (v SupplementaryDataEnvelope1) Validate() error {
-	var errs base.ErrorList = base.ErrorList{}
-	if errs.Empty() {
-		return nil
-	}
-	return errs
-}
-
 func (v TaxAmount3) Validate() error {
 	var errs base.ErrorList = base.ErrorList{}
 	baseName := "TaxAmount3"

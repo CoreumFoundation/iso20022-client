@@ -15,7 +15,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 )
 
-//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,Parser,MessageQueue,Dtif
+//go:generate mockgen -destination=model_mocks_test.go -package=processes_test . ContractClient,AddressBook,Cryptography,SupplementaryDataParser,Parser,MessageQueue,Dtif
 
 type ContractClient interface {
 	DeployAndInstantiate(
@@ -226,8 +226,12 @@ func ParseTransactionStatus(status string) TransactionStatus {
 	return TransactionStatusNone
 }
 
+type SupplementaryDataParser interface {
+	Parse(msg []byte) (doc messages.Iso20022Message, err error)
+}
+
 type Parser interface {
-	ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message messages.Iso20022Message, metadata Metadata, references *Metadata, err error)
+	ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message messages.Iso20022Message, metadata Metadata, references *Metadata, supplementaryDataParser SupplementaryDataParser, err error)
 	GetTransactionStatus(isoMsg messages.Iso20022Message) TransactionStatus
 }
 

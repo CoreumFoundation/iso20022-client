@@ -34,6 +34,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_04"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_06"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_029_001_02"
+	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/supl_xxx_001_01"
 )
 
 // XSD Elements
@@ -41,6 +42,7 @@ import (
 type Message struct {
 	XMLName                               xml.Name                                      `xml:"Message"`
 	Xmlns                                 []xml.Attr                                    `xml:",attr"`
+	CryptoCurrencyAndAmount               *supl_xxx_001_01.Document                     `xml:"urn:iso CryptoCurrencyAndAmount,omitempty"`
 	AppHdr11                              *head_001_001_01.BusinessApplicationHeaderV01 `xml:"urn:iso AppHdr1_1,omitempty"`
 	AppHdr12                              *head_001_001_02.BusinessApplicationHeaderV02 `xml:"urn:iso AppHdr1_2,omitempty"`
 	AppHdr14                              *head_001_001_04.BusinessApplicationHeaderV04 `xml:"urn:iso AppHdr1_4,omitempty"`
@@ -74,6 +76,7 @@ type Message struct {
 
 var NamespacePrefixMap = map[string]string{
 	"urn:iso:std:iso:20022:tech:xsd:head.001.001.01": "head",
+	"urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01": "supl",
 	"urn:iso:std:iso:20022:tech:xsd:head.001.001.02": "head1_2",
 	"urn:iso:std:iso:20022:tech:xsd:head.001.001.04": "head1_4",
 	"urn:iso:std:iso:20022:tech:xsd:head.002.001.01": "head2_1",
@@ -105,6 +108,9 @@ var NamespacePrefixMap = map[string]string{
 }
 
 func (v *Message) Body() interface{} {
+	if v.CryptoCurrencyAndAmount != nil {
+		return v.CryptoCurrencyAndAmount
+	}
 	if v.AppHdr11 != nil {
 		return v.AppHdr11
 	}

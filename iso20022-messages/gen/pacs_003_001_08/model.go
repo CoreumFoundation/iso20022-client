@@ -563,7 +563,11 @@ type SupplementaryData1 struct {
 }
 
 type SupplementaryDataEnvelope1 struct {
-	Item string `xml:",any"`
+	Doc []byte `xml:",innerxml"`
+}
+
+func (s *SupplementaryDataEnvelope1) Validate() error {
+	return nil
 }
 
 type TaxAmount2 struct {

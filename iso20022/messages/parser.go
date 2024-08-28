@@ -76,12 +76,29 @@ func (doc Envelope) NameSpace() string {
 	return ""
 }
 
-func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Message, err error) {
+func (p Parser) parseIsoMessage(msg []byte) (supl processes.SupplementaryDataParser, header, doc messages.Iso20022Message, err error) {
 	dummyDoc := new(documentDummy)
+	attrs := make(map[string]string)
 
 	err = xml.Unmarshal(msg, dummyDoc)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
+	}
+
+	if dummyDoc.XMLName.Space != "" {
+		if ns, ok := attrs[dummyDoc.XMLName.Space]; ok {
+			constructor := messageConstructor[ns]
+			actualDoc := &Iso20022DocumentObject{
+				Message: constructor(),
+			}
+			err = xml.Unmarshal(msg, actualDoc)
+			return nil, nil, actualDoc.Message, err
+		}
+	}
+
+	for _, attr := range dummyDoc.Attrs {
+		attrs[attr.Name.Local] = attr.Value
+		supl = newSupplementaryDataParser(attrs)
 	}
 
 	if dummyDoc.XMLName.Local != "" {
@@ -110,7 +127,7 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 		}
 
 		err = xml.Unmarshal(msg, actualDoc)
-		return nil, actualDoc.Message, err
+		return supl, nil, actualDoc.Message, err
 	}
 
 	var headerConstructor func() messages.Iso20022Message
@@ -122,22 +139,19 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 			innerDoc := new(elementDummy)
 			err = xml.Unmarshal(dummyDoc.AppHdr.Rest, innerDoc)
 			if err != nil {
-				return nil, nil, err
+				return supl, nil, nil, err
 			}
-			for _, attr := range dummyDoc.Attrs {
-				if attr.Name.Local == innerDoc.XMLName.Space {
-					headerNamespace = attr.Value
-					break
-				}
+			if ns, ok := attrs[innerDoc.XMLName.Space]; ok {
+				headerNamespace = ns
 			}
 			if headerNamespace == "" {
-				return nil, nil, errors.New("The namespace of document is omitted")
+				return supl, nil, nil, errors.New("The namespace of document is omitted")
 			}
 		}
 
 		headerConstructor = messageConstructor[headerNamespace]
 		if headerConstructor == nil {
-			return nil, nil, errors.New("The namespace of document is unsupported")
+			return supl, nil, nil, errors.New("The namespace of document is unsupported")
 		}
 	} else {
 		headerConstructor = func() messages.Iso20022Message {
@@ -151,26 +165,23 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 		innerDoc := new(elementDummy)
 		err = xml.Unmarshal(dummyDoc.Document.Rest, innerDoc)
 		if err != nil {
-			return nil, nil, err
+			return supl, nil, nil, err
 		}
-		for _, attr := range dummyDoc.Attrs {
-			if attr.Name.Local == innerDoc.XMLName.Space {
-				documentNamespace = attr.Value
-				break
-			}
+		if ns, ok := attrs[innerDoc.XMLName.Space]; ok {
+			documentNamespace = ns
 		}
 		if documentNamespace == "" {
-			return nil, nil, errors.New("The namespace of document is omitted")
+			return supl, nil, nil, errors.New("The namespace of document is omitted")
 		}
 		documentConstructor := messageConstructor[documentNamespace]
 		if documentConstructor == nil {
-			return nil, nil, errors.New("The namespace of document is unsupported")
+			return supl, nil, nil, errors.New("The namespace of document is unsupported")
 		}
 		containedDoc = documentConstructor()
 	} else {
 		constructor = messageConstructor[documentNamespace]
 		if constructor == nil {
-			return nil, nil, errors.New("The namespace of document is unsupported")
+			return supl, nil, nil, errors.New("The namespace of document is unsupported")
 		}
 
 		containedDoc = &Iso20022DocumentObject{
@@ -185,13 +196,13 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 
 	err = xml.Unmarshal(msg, envelope)
 	if err != nil {
-		return nil, nil, err
+		return supl, nil, nil, err
 	}
 
 	if envelope.AppHdr != nil {
 		err = envelope.AppHdr.Validate()
 		if err != nil {
-			return nil, nil, err
+			return supl, nil, nil, err
 		}
 	}
 
@@ -200,20 +211,53 @@ func (p Parser) parseIsoMessage(msg []byte) (header, doc messages.Iso20022Messag
 	if innerDoc, ok := envelope.Document.(*Iso20022DocumentObject); ok {
 		err = innerDoc.Message.Validate()
 		if err != nil {
-			return nil, nil, err
+			return supl, nil, nil, err
 		}
 		resDoc = innerDoc.Message
 	} else {
 		resDoc = envelope.Document
 	}
 
-	return envelope.AppHdr, resDoc, nil
+	return supl, envelope.AppHdr, resDoc, nil
 }
 
-func (p Parser) ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message messages.Iso20022Message, metadata processes.Metadata, references *processes.Metadata, err error) {
-	headDoc, containedDoc, err := p.parseIsoMessage(msg)
+type SupplementaryDataParser struct {
+	attrs map[string]string
+}
+
+func newSupplementaryDataParser(attrs map[string]string) processes.SupplementaryDataParser {
+	return &SupplementaryDataParser{
+		attrs: attrs,
+	}
+}
+
+func (s *SupplementaryDataParser) Parse(msg []byte) (doc messages.Iso20022Message, err error) {
+	dummyDoc := new(documentDummy)
+
+	err = xml.Unmarshal(msg, dummyDoc)
 	if err != nil {
-		return message, metadata, references, err
+		return nil, err
+	}
+
+	if dummyDoc.XMLName.Space != "" {
+		if ns, ok := s.attrs[dummyDoc.XMLName.Space]; ok {
+			constructor := messageConstructor[ns]
+			if constructor != nil {
+				actualDoc := &Iso20022DocumentObject{
+					Message: constructor(),
+				}
+				err = xml.Unmarshal(msg, actualDoc)
+				return actualDoc.Message, err
+			}
+		}
+	}
+	return nil, errors.New("could not extract the supplementary data")
+}
+
+func (p Parser) ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message messages.Iso20022Message, metadata processes.Metadata, references *processes.Metadata, supplementaryDataParser processes.SupplementaryDataParser, err error) {
+	supplementaryDataParser, headDoc, containedDoc, err := p.parseIsoMessage(msg)
+	if err != nil {
+		return message, metadata, references, supplementaryDataParser, err
 	}
 
 	uetr := ""
@@ -672,7 +716,7 @@ func (p Parser) ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message mes
 				}
 			}
 		default:
-			return containedDoc, metadata, references, errors.New("couldn't find receiver from " + reflect.TypeOf(containedDoc).String())
+			return containedDoc, metadata, references, supplementaryDataParser, errors.New("couldn't find receiver from " + reflect.TypeOf(containedDoc).String())
 		}
 	}
 
@@ -686,7 +730,7 @@ func (p Parser) ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message mes
 	}
 
 	if receiver == nil || reflect.DeepEqual(receiver, emptyParty) {
-		return containedDoc, metadata, references, errors.New("couldn't find receiver")
+		return containedDoc, metadata, references, supplementaryDataParser, errors.New("couldn't find receiver")
 	}
 
 	metadata.Uetr = MakeUETR(p.log, uetr, endToEndID, txID)
@@ -706,7 +750,7 @@ func (p Parser) ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message mes
 			if metadata.Sender == nil || reflect.DeepEqual(metadata.Sender, emptyParty) {
 				metadata.Sender = p.converter.ConvertFromHead00100101(head.Fr.FIId).ToParty()
 			}
-			return message, metadata, references, nil
+			return message, metadata, references, supplementaryDataParser, nil
 		case *head_001_001_02.BusinessApplicationHeaderV02:
 			if metadata.ID != "" {
 				metadata.ID = string(head.BizMsgIdr)
@@ -717,11 +761,11 @@ func (p Parser) ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message mes
 			if metadata.Sender == nil || reflect.DeepEqual(metadata.Sender, emptyParty) {
 				metadata.Sender = p.converter.ConvertFromHead00100102(head.Fr.FIId).ToParty()
 			}
-			return containedDoc, metadata, references, nil
+			return containedDoc, metadata, references, supplementaryDataParser, nil
 		}
 	}
 
-	return containedDoc, metadata, references, nil
+	return containedDoc, metadata, references, supplementaryDataParser, nil
 }
 
 func (p Parser) GetTransactionStatus(isoMsg messages.Iso20022Message) processes.TransactionStatus {

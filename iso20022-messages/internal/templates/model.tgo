@@ -62,6 +62,8 @@ import (
 {{ range .ExportableComplexTypes }}
 	{{ if eq .GoName "SignatureEnvelope" }}
 		{{ template "SignatureEnvelope" . }}
+	{{ else if eq .GoName "SupplementaryDataEnvelope1" }}
+		{{ template "SupplementaryDataEnvelope" . }}
 	{{ else if eq .GoName "HdrAndData" }}
 	{{ else if eq .GoName "HdrAndDataTCH" }}
 	{{ else if eq .GoName "DocumentTCH" }}
@@ -138,5 +140,15 @@ import (
 
 	type Sgntr struct {
 		Signature *xmldsig.Signature `xml:"http://www.w3.org/2000/09/xmldsig# Signature"`
+	}
+{{ end }}
+
+{{ define "SupplementaryDataEnvelope" }}
+
+	type SupplementaryDataEnvelope1 struct {
+	    Doc []byte`xml:",innerxml"`
+	}
+	func (s *SupplementaryDataEnvelope1) Validate() error {
+        return nil
 	}
 {{ end }}
