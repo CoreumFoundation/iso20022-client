@@ -2,6 +2,7 @@
 <xs:schema xmlns="urn:iso"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.01"
+    xmlns:supl="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01"
     xmlns:head1_2="urn:iso:std:iso:20022:tech:xsd:head.001.001.02"
     xmlns:head1_4="urn:iso:std:iso:20022:tech:xsd:head.001.001.04"
     xmlns:head2_1="urn:iso:std:iso:20022:tech:xsd:head.002.001.01"
@@ -34,6 +35,7 @@
     targetNamespace="urn:iso"
     elementFormDefault="qualified"
     attributeFormDefault="qualified">
+  <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_supl_xxx_001_01.xsd"/>
   <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:head.001.001.01" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_head_001_001_01.xsd"/>
   <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:head.001.001.02" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_head_001_001_02.xsd"/>
   <xs:import namespace="urn:iso:std:iso:20022:tech:xsd:head.001.001.04" schemaLocation="messages_urn_iso_std_iso_20022_tech_xsd_head_001_001_04.xsd"/>
@@ -72,6 +74,9 @@
       <xs:documentation gefeg:label="ChangeNote">change of namespace and schemaLocation for admn.007 and admn.008</xs:documentation>
     </xs:annotation>
     <xs:sequence>
+      <xs:choice>
+        <xs:element name="CryptoCurrencyAndAmount" type="supl:Document"/>
+      </xs:choice>
       <xs:choice>
         <xs:element name="AppHdr1_1" type="head:BusinessApplicationHeaderV01"/>
         <xs:element name="AppHdr1_2" type="head1_2:BusinessApplicationHeaderV02"/>

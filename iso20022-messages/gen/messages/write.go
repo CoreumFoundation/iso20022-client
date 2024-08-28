@@ -32,6 +32,7 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_04"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_028_001_06"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/pacs_029_001_02"
+	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/supl_xxx_001_01"
 )
 
 // Element interface for ISO 20022
@@ -51,6 +52,18 @@ func GetMessageConstructors() (map[string]ConstructorFunc, map[string][]Construc
 	var exists bool
 	urnMap := make(map[string]ConstructorFunc)
 	messagesMap := make(map[string][]ConstructorWithUrn)
+
+	urn = "urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01"
+	urnMap[urn] = func() Iso20022Message { return &supl_xxx_001_01.CryptoCurrencyAndAmountType{} }
+	list, exists = messagesMap["CryptoCurrencyAndAmount"]
+	if !exists {
+		list = make([]ConstructorWithUrn, 0)
+	}
+	list = append(list, ConstructorWithUrn{
+		Constructor: func() Iso20022Message { return &supl_xxx_001_01.CryptoCurrencyAndAmountType{} },
+		Urn:         urn,
+	})
+	messagesMap["CryptoCurrencyAndAmount"] = list
 
 	urn = "urn:iso:std:iso:20022:tech:xsd:head.001.001.01"
 	urnMap[urn] = func() Iso20022Message { return &head_001_001_01.BusinessApplicationHeaderV01{} }

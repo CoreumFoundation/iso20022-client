@@ -627,14 +627,6 @@ func (v SupplementaryData1) Validate() error {
 	return errs
 }
 
-func (v SupplementaryDataEnvelope1) Validate() error {
-	var errs base.ErrorList = base.ErrorList{}
-	if errs.Empty() {
-		return nil
-	}
-	return errs
-}
-
 // XSD SimpleType validations
 
 func (v ActiveCurrencyCode) Validate() error {

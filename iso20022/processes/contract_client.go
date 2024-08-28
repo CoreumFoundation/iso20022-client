@@ -223,7 +223,7 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
-		iso20022Msg, metadata, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(data.Data)
+		iso20022Msg, metadata, _, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(data.Data)
 		if err != nil {
 			p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
 			continue
@@ -386,7 +386,7 @@ type messageWithMetadata struct {
 }
 
 func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadata, error) {
-	_, metadata, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(msg)
+	_, metadata, _, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(msg)
 	if err != nil {
 		return nil, err
 	}
