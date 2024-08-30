@@ -103,6 +103,7 @@ func NewRunner(components Components, cfg Config) (*Runner, error) {
 		components.Cryptography,
 		components.Parser,
 		components.MessageQueue,
+		components.Dtif,
 	)
 	if err != nil {
 		return nil, err

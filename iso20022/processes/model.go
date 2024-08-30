@@ -233,6 +233,7 @@ type SupplementaryDataParser interface {
 type Parser interface {
 	ExtractMessageAndMetadataFromIsoMessage(msg []byte) (message messages.Iso20022Message, metadata Metadata, references *Metadata, supplementaryDataParser SupplementaryDataParser, err error)
 	GetTransactionStatus(isoMsg messages.Iso20022Message) TransactionStatus
+	GetSupplementaryDataWithCorrectClearingSystem(message messages.Iso20022Message, clearingSystem string) ([]byte, bool)
 }
 
 type MessageQueue interface {

@@ -268,7 +268,7 @@ type ActiveCurrencyAndAmountSimpleType iso.Amount
 
 type ActiveCurrencyCode string
 
-type ActiveOrHistoricCurrencyCode string
+type ActiveOrHistoricCurrencyCode iso.Currency
 
 type AddressType2Code string
 

@@ -112,7 +112,7 @@ type PaymentTransaction113TCH struct {
 
 type ActiveOrHistoricCurrencyAndAmountSimpleType iso.Amount
 
-type ActiveOrHistoricCurrencyCode string
+type ActiveOrHistoricCurrencyCode iso.Currency
 
 const ActiveOrHistoricCurrencyCodeUsd ActiveOrHistoricCurrencyCode = "USD"
 

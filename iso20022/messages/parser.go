@@ -790,6 +790,57 @@ func (p Parser) GetTransactionStatus(isoMsg messages.Iso20022Message) processes.
 	return processes.TransactionStatusNone
 }
 
+func (p Parser) GetSupplementaryDataWithCorrectClearingSystem(message messages.Iso20022Message, clearingSystem string) ([]byte, bool) {
+	switch msg := message.(type) {
+	case *pacs_008_001_06.FIToFICustomerCreditTransferV06:
+		if msg.GrpHdr.SttlmInf.SttlmMtd == pacs_008_001_06.SettlementMethod1CodeClrg &&
+			msg.GrpHdr.SttlmInf.ClrSys != nil &&
+			msg.GrpHdr.SttlmInf.ClrSys.Prtry != nil &&
+			string(*msg.GrpHdr.SttlmInf.ClrSys.Prtry) == clearingSystem {
+			if len(msg.CdtTrfTxInf) == 0 && len(msg.CdtTrfTxInf[0].SplmtryData) == 0 {
+				if msg.CdtTrfTxInf[0].IntrBkSttlmAmt.Value == 0 {
+					return msg.CdtTrfTxInf[0].SplmtryData[0].Envlp.Doc, true
+				}
+			}
+		}
+	case *pacs_008_001_08.FIToFICustomerCreditTransferV08:
+		if msg.GrpHdr.SttlmInf.SttlmMtd == pacs_008_001_08.SettlementMethod1CodeClrg &&
+			msg.GrpHdr.SttlmInf.ClrSys != nil &&
+			msg.GrpHdr.SttlmInf.ClrSys.Prtry != nil &&
+			string(*msg.GrpHdr.SttlmInf.ClrSys.Prtry) == clearingSystem {
+			if len(msg.CdtTrfTxInf) == 0 && len(msg.CdtTrfTxInf[0].SplmtryData) == 0 {
+				if msg.CdtTrfTxInf[0].IntrBkSttlmAmt.Ccy == "USD" && msg.CdtTrfTxInf[0].IntrBkSttlmAmt.Value == 0 {
+					return msg.CdtTrfTxInf[0].SplmtryData[0].Envlp.Doc, true
+				}
+			}
+		}
+	case *pacs_008_001_09.FIToFICustomerCreditTransferV09:
+		if msg.GrpHdr.SttlmInf.SttlmMtd == pacs_008_001_09.SettlementMethod1CodeClrg &&
+			msg.GrpHdr.SttlmInf.ClrSys != nil &&
+			msg.GrpHdr.SttlmInf.ClrSys.Prtry != nil &&
+			string(*msg.GrpHdr.SttlmInf.ClrSys.Prtry) == clearingSystem {
+			if len(msg.CdtTrfTxInf) == 0 && len(msg.CdtTrfTxInf[0].SplmtryData) == 0 {
+				if msg.CdtTrfTxInf[0].IntrBkSttlmAmt.Ccy == "USD" && msg.CdtTrfTxInf[0].IntrBkSttlmAmt.Value == 0 {
+					return msg.CdtTrfTxInf[0].SplmtryData[0].Envlp.Doc, true
+				}
+			}
+		}
+	case *pacs_008_001_12.FIToFICustomerCreditTransferV12:
+		if msg.GrpHdr.SttlmInf.SttlmMtd == pacs_008_001_12.SettlementMethod1CodeClrg &&
+			msg.GrpHdr.SttlmInf.ClrSys != nil &&
+			msg.GrpHdr.SttlmInf.ClrSys.Prtry != nil &&
+			string(*msg.GrpHdr.SttlmInf.ClrSys.Prtry) == clearingSystem {
+			if len(msg.CdtTrfTxInf) > 0 && len(msg.CdtTrfTxInf[0].SplmtryData) > 0 {
+				if msg.CdtTrfTxInf[0].IntrBkSttlmAmt.Ccy == "USD" && msg.CdtTrfTxInf[0].IntrBkSttlmAmt.Value == 0 {
+					return msg.CdtTrfTxInf[0].SplmtryData[0].Envlp.Doc, true
+				}
+			}
+		}
+	}
+
+	return nil, false
+}
+
 func MakeUETR(log logger.Logger, uetr, endToEndID, txID string) string {
 	if uetr != "" {
 		return uetr
