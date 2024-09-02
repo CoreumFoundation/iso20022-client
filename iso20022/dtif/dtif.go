@@ -192,6 +192,8 @@ func (d *Dtif) Update(ctx context.Context) error {
 
 // LookupByDTI tries to find a specific token denom using its DTI
 func (d *Dtif) LookupByDTI(dti string) (string, bool) {
+	// It is also possible to get information of a token from:
+	// https://download.dtif.org/Tokens/{dti}/Record/{dti}.json
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	denom, found := d.dtiToDenom[dti]
