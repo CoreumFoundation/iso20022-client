@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+
+	"github.com/samber/lo"
 )
 
 // NativeDigitalTokenOtherJson Native Digital token with non-blockchain distributed ledger technology protocol
@@ -443,6 +445,5 @@ func (j *NativeDigitalTokenOtherJson) DTI() string {
 
 // Denom returns token denom.
 func (j *NativeDigitalTokenOtherJson) Denom() *string {
-	// TODO: Make sure this is the right field to extract denom from
-	return j.Informative.LongName
+	return lo.ToPtr("")
 }

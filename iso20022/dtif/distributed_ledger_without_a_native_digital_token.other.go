@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+
+	"github.com/samber/lo"
 )
 
 // DistributedLedgerWithoutANativeDigitalTokenOtherJson Distributed
@@ -270,6 +272,5 @@ func (j *DistributedLedgerWithoutANativeDigitalTokenOtherJson) DTI() string {
 
 // Denom returns token denom.
 func (j *DistributedLedgerWithoutANativeDigitalTokenOtherJson) Denom() *string {
-	// TODO: Make sure this is the right field to extract denom from
-	return j.Informative.LongName
+	return lo.ToPtr("")
 }

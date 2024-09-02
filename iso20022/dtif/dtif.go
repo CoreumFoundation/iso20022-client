@@ -17,12 +17,13 @@ import (
 )
 
 type Dtif struct {
-	log           logger.Logger
-	sourceAddress string
-	dtiToDenom    map[string]string
-	denomToDti    map[string]string
-	lastVersion   string
-	lock          sync.RWMutex
+	log               logger.Logger
+	distributedLedger string
+	sourceAddress     string
+	dtiToDenom        map[string]string
+	denomToDti        map[string]string
+	lastVersion       string
+	lock              sync.RWMutex
 }
 
 type DigitalToken interface {
@@ -42,14 +43,15 @@ var (
 )
 
 // New creates a new DTIF instance
-func New(log logger.Logger) *Dtif {
-	return NewWithSourceAddress(log, "https://download.dtif.org/data.json")
+func New(log logger.Logger, distributedLedger string) *Dtif {
+	return NewWithSourceAddress(log, distributedLedger, "https://download.dtif.org/data.json")
 }
 
 // NewWithSourceAddress creates a new DTIF instance from the requested source address
-func NewWithSourceAddress(log logger.Logger, sourceAddress string) *Dtif {
+func NewWithSourceAddress(log logger.Logger, distributedLedger, sourceAddress string) *Dtif {
 	return &Dtif{
 		log,
+		distributedLedger,
 		sourceAddress,
 		make(map[string]string),
 		make(map[string]string),
@@ -159,6 +161,17 @@ func (d *Dtif) Update(ctx context.Context) error {
 		err = json.Unmarshal(item, record)
 		if err != nil {
 			return err
+		}
+
+		token, ok := record.(*AuxiliaryDigitalTokenJson)
+		if !ok {
+			// we are only interested in AuxiliaryDigitalTokens
+			continue
+		}
+
+		if token.Normative.AuxiliaryDistributedLedger == nil || *token.Normative.AuxiliaryDistributedLedger != d.distributedLedger {
+			// we are only interested in Coreum tokens
+			continue
 		}
 
 		denom := record.Denom()

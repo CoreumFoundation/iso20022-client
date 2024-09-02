@@ -2,6 +2,7 @@ package processes_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -17,7 +18,11 @@ import (
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/crypto"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/dtif"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/messages"
+	"github.com/CoreumFoundation/iso20022-client/iso20022/messages/generated"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/processes"
 	isoqueue "github.com/CoreumFoundation/iso20022-client/iso20022/queue"
 )
@@ -122,6 +127,7 @@ func TestContractClient_Start(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 
 			ctrl := gomock.NewController(t)
+			requireT := require.New(t)
 			logMock := logger.NewAnyLogMock(ctrl)
 
 			var contractClient processes.ContractClient
@@ -153,7 +159,7 @@ func TestContractClient_Start(t *testing.T) {
 			go func() {
 				go func() {
 					runRrr := tt.run(messageQueue)
-					require.NoError(t, runRrr)
+					requireT.NoError(runRrr)
 				}()
 				<-ctx.Done()
 				messageQueue.Close()
@@ -166,15 +172,89 @@ func TestContractClient_Start(t *testing.T) {
 				PollInterval:          time.Second,
 			}
 			comp, err := compress.New()
-			require.NoError(t, err)
+			requireT.NoError(err)
 
 			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClient, cryptography, parser, messageQueue, dtif)
-			require.NoError(t, err)
+			requireT.NoError(err)
 
 			err = client.Start(ctx)
 			if err == nil || !errors.Is(err, context.DeadlineExceeded) {
-				require.NoError(t, err)
+				requireT.NoError(err)
 			}
+		})
+	}
+}
+
+func TestContractClient_ExtractMetadata(t *testing.T) {
+	tests := []struct {
+		name               string
+		messageFilePath    string
+		attachedFunds      string
+		addressBookBuilder func(ctrl *gomock.Controller) processes.AddressBook
+	}{
+		{
+			name:            "extracting_with_dti",
+			messageFilePath: "../messages/testdata/pacs008-15.xml",
+			attachedFunds:   "499250ibc/71F11BC0AF8E526B80E44172EBA9D3F0A8E03950BB882325435691EBC9450B1D",
+			addressBookBuilder: func(ctrl *gomock.Controller) processes.AddressBook {
+				addressBookMock := NewMockAddressBook(ctrl)
+				addressBookMock.EXPECT().Lookup(gomock.Any()).Return(&addressbook.Address{
+					Bech32EncodedAddress: "devcore1kdujjkp8u0j9lww3n7qs7r5fwkljelvecsq43d",
+					PublicKey:            "A2nYC1ZLFxVLL3kyGUGF4Hjlpwsd+FS7jmxIWahM0P5V",
+					Party: addressbook.Party{
+						Identification: addressbook.Identification{
+							BusinessIdentifiersCode: "6P9YGUDF",
+						},
+					},
+				}, true).Times(2)
+				return addressBookMock
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			requireT := require.New(t)
+
+			logMock := logger.NewAnyLogMock(ctrl)
+
+			contractClientMock := NewMockContractClient(ctrl)
+			contractClientMock.EXPECT().IsInitialized().Return(true)
+
+			var addressBook processes.AddressBook
+			if tt.addressBookBuilder != nil {
+				addressBook = tt.addressBookBuilder(ctrl)
+			}
+
+			cryptography := &crypto.Cryptography{}
+
+			parser := messages.NewParser(logMock, &generated.ConverterImpl{})
+
+			cfg := processes.ContractClientProcessConfig{
+				CoreumContractAddress: genAccount(),
+				ClientAddress:         genAccount(),
+				ClientKeyName:         "abc",
+				PollInterval:          time.Second,
+			}
+
+			comp, err := compress.New()
+			requireT.NoError(err)
+
+			dti := dtif.NewWithSourceAddress(logMock, "S87NJRT7T", "file://../dtif/testdata/data.json")
+			requireT.NoError(dti.Update(context.Background()))
+
+			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClientMock, cryptography, parser, nil, dti)
+			requireT.NoError(err)
+
+			message, err := os.ReadFile(tt.messageFilePath)
+			requireT.NoError(err)
+
+			metadata, err := client.ExtractMetadata(message)
+			requireT.NoError(err)
+
+			requireT.Equal(tt.attachedFunds, metadata.AttachedFunds.String())
 		})
 	}
 }

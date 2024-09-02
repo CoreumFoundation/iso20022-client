@@ -77,6 +77,7 @@ type AddressBookConfig struct {
 // DtifConfig is the dtif config.
 type DtifConfig struct {
 	UpdateInterval      time.Duration `yaml:"update_interval"`
+	DistributedLedger   string        `yaml:"distributed_ledger"`
 	CustomSourceAddress string        `yaml:"custom_source_address"`
 }
 
@@ -151,7 +152,8 @@ func DefaultConfig() Config {
 				UpdateInterval: 60 * time.Second,
 			},
 			Dtif: DtifConfig{
-				UpdateInterval: 60 * time.Second,
+				UpdateInterval:    60 * time.Second,
+				DistributedLedger: "S87NJRT7T", // TODO: Replace after registering Coreum in DTIF
 			},
 			Queue: Queue{
 				Size:                50,

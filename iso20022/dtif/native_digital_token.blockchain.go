@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+
+	"github.com/samber/lo"
 )
 
 // NativeDigitalTokenBlockchainJson Digital token with a privileged
@@ -570,6 +572,5 @@ func (j *NativeDigitalTokenBlockchainJson) DTI() string {
 
 // Denom returns token denom.
 func (j *NativeDigitalTokenBlockchainJson) Denom() *string {
-	// TODO: Make sure this is the right field to extract denom from
-	return j.Informative.LongName
+	return lo.ToPtr("")
 }
