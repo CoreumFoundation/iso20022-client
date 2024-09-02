@@ -659,6 +659,21 @@ func (mr *MockParserMockRecorder) ExtractMessageAndMetadataFromIsoMessage(arg0 a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtractMessageAndMetadataFromIsoMessage", reflect.TypeOf((*MockParser)(nil).ExtractMessageAndMetadataFromIsoMessage), arg0)
 }
 
+// GetSupplementaryDataWithCorrectClearingSystem mocks base method.
+func (m *MockParser) GetSupplementaryDataWithCorrectClearingSystem(arg0 messages.Iso20022Message, arg1 string) ([]byte, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSupplementaryDataWithCorrectClearingSystem", arg0, arg1)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
+}
+
+// GetSupplementaryDataWithCorrectClearingSystem indicates an expected call of GetSupplementaryDataWithCorrectClearingSystem.
+func (mr *MockParserMockRecorder) GetSupplementaryDataWithCorrectClearingSystem(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupplementaryDataWithCorrectClearingSystem", reflect.TypeOf((*MockParser)(nil).GetSupplementaryDataWithCorrectClearingSystem), arg0, arg1)
+}
+
 // GetTransactionStatus mocks base method.
 func (m *MockParser) GetTransactionStatus(arg0 messages.Iso20022Message) processes.TransactionStatus {
 	m.ctrl.T.Helper()

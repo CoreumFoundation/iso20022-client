@@ -54,7 +54,7 @@ func (v DigitalTokenIdentifier) Validate() error {
 }
 
 func (v CryptoCurrencyCode) Validate() error {
-	if err := iso.ValidatePattern(string(v), `ucore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+`); err != nil {
+	if err := iso.ValidatePattern(string(v), `ucore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}`); err != nil {
 		return err
 	}
 	if err := iso.ValidateMaxLength(string(v), 127); err != nil {

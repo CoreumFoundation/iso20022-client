@@ -961,3 +961,32 @@ func TestParseSupplementaryDataFromIsoMessage(t *testing.T) {
 		Cccy:  "ABC-testcore1adst6w4e79tddzhcgaru2l2gms8jjep6a4caa7",
 	}, sup)
 }
+
+func TestGetSupplementaryDataWithCorrectClearingSystem(t *testing.T) {
+	t.Parallel()
+
+	requireT := require.New(t)
+	ctrl := gomock.NewController(t)
+	logMock := logger.NewAnyLogMock(ctrl)
+	parser := NewParser(logMock, &generated.ConverterImpl{})
+
+	fileContent, err := os.ReadFile("testdata/pacs008-14.xml")
+	requireT.NoError(err)
+
+	msg, _, _, suplParser, err := parser.ExtractMessageAndMetadataFromIsoMessage(fileContent)
+	requireT.NoError(err)
+
+	suplData, found := parser.GetSupplementaryDataWithCorrectClearingSystem(msg, "COREUM")
+	requireT.True(found)
+	requireT.NotEmpty(suplData)
+
+	supl, err := suplParser.Parse(suplData)
+	requireT.NoError(err)
+
+	sup, ok := supl.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
+	requireT.True(ok)
+	requireT.Equal(&supl_xxx_001_01.CryptoCurrencyAndAmountType{
+		Value: 499250,
+		Cccy:  "ibc/E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D",
+	}, sup)
+}

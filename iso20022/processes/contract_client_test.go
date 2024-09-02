@@ -35,6 +35,7 @@ func TestContractClient_Start(t *testing.T) {
 		cryptographyBuilder   func(ctrl *gomock.Controller) processes.Cryptography
 		parserBuilder         func(ctrl *gomock.Controller) processes.Parser
 		messageQueueBuilder   func(ctrl *gomock.Controller, queue chan [][]byte) processes.MessageQueue
+		dtifBuilder           func(ctrl *gomock.Controller) processes.Dtif
 		run                   func(messageQueue processes.MessageQueue) error
 	}{
 		{
@@ -89,6 +90,7 @@ func TestContractClient_Start(t *testing.T) {
 					nil,
 					nil,
 				)
+				parserMock.EXPECT().GetSupplementaryDataWithCorrectClearingSystem(gomock.Any(), gomock.Any()).Return(nil, false)
 				return parserMock
 			},
 			messageQueueBuilder: func(ctrl *gomock.Controller, queue chan [][]byte) processes.MessageQueue {
@@ -143,6 +145,10 @@ func TestContractClient_Start(t *testing.T) {
 				queue := make(chan [][]byte, 1)
 				messageQueue = tt.messageQueueBuilder(ctrl, queue)
 			}
+			var dtif processes.Dtif
+			if tt.dtifBuilder != nil {
+				dtif = tt.dtifBuilder(ctrl)
+			}
 			t.Cleanup(cancel)
 			go func() {
 				go func() {
@@ -162,7 +168,7 @@ func TestContractClient_Start(t *testing.T) {
 			comp, err := compress.New()
 			require.NoError(t, err)
 
-			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClient, cryptography, parser, messageQueue)
+			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClient, cryptography, parser, messageQueue, dtif)
 			require.NoError(t, err)
 
 			err = client.Start(ctx)

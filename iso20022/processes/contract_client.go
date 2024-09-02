@@ -16,6 +16,7 @@ import (
 	"github.com/CoreumFoundation/coreum-tools/pkg/parallel"
 	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
 	nfttypes "github.com/CoreumFoundation/coreum/v4/x/asset/nft/types"
+	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/supl_xxx_001_01"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
@@ -44,11 +45,12 @@ type ContractClientProcess struct {
 	cryptography   Cryptography
 	parser         Parser
 	messageQueue   MessageQueue
+	dtif           Dtif
 	nftClassId     string
 }
 
 // NewContractClientProcess returns a new instance of the ContractClientProcess.
-func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger, compressor *compress.Compressor, clientContext coreumchainclient.Context, addressBook AddressBook, contractClient ContractClient, cryptography Cryptography, parser Parser, messageQueue MessageQueue) (*ContractClientProcess, error) {
+func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger, compressor *compress.Compressor, clientContext coreumchainclient.Context, addressBook AddressBook, contractClient ContractClient, cryptography Cryptography, parser Parser, messageQueue MessageQueue, dtif Dtif) (*ContractClientProcess, error) {
 	if cfg.CoreumContractAddress.Empty() {
 		return nil, errors.Errorf("failed to init the process, the contract address is nil or empty")
 	}
@@ -66,6 +68,7 @@ func NewContractClientProcess(cfg ContractClientProcessConfig, log logger.Logger
 		cryptography:   cryptography,
 		parser:         parser,
 		messageQueue:   messageQueue,
+		dtif:           dtif,
 	}, nil
 }
 
@@ -385,8 +388,8 @@ type messageWithMetadata struct {
 	AttachedFunds  sdk.Coins
 }
 
-func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadata, error) {
-	_, metadata, _, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(msg)
+func (p *ContractClientProcess) extractMetadata(rawMessage []byte) (*messageWithMetadata, error) {
+	message, metadata, _, suplParser, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(rawMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -417,10 +420,24 @@ func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadat
 	}
 
 	attachedFunds := sdk.NewCoins()
-	// TODO
-	// if false {
-	// 	attachedFunds = sdk.NewCoins(sdk.NewCoin(p.cfg.Denom, sdk.NewInt(100)))
-	// }
+	suplData, found := p.parser.GetSupplementaryDataWithCorrectClearingSystem(message, "COREUM")
+	if found {
+		suplMsg, err := suplParser.Parse(suplData)
+		if err != nil {
+			return nil, err
+		}
+		supl, ok := suplMsg.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
+		if ok {
+			if supl.Cccy != "" {
+				attachedFunds.Add(sdk.NewCoin(string(supl.Cccy), sdk.NewInt(int64(supl.Value))))
+			} else if supl.Dti != "" {
+				denom, found := p.dtif.LookupByDTI(string(supl.Dti))
+				if found {
+					attachedFunds.Add(sdk.NewCoin(denom, sdk.NewInt(int64(supl.Value))))
+				}
+			}
+		}
+	}
 
 	return &messageWithMetadata{
 		metadata.Uetr,
@@ -428,7 +445,7 @@ func (p *ContractClientProcess) extractMetadata(msg []byte) (*messageWithMetadat
 		senderAddress,
 		receiverAddress,
 		publicKeyBytes,
-		msg,
+		rawMessage,
 		attachedFunds,
 	}, nil
 }

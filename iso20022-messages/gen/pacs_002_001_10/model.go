@@ -639,7 +639,7 @@ type TaxRecordDetails2 struct {
 
 type ActiveOrHistoricCurrencyAndAmountSimpleType iso.Amount
 
-type ActiveOrHistoricCurrencyCode string
+type ActiveOrHistoricCurrencyCode iso.Currency
 
 type AddressType2Code string
 
