@@ -568,6 +568,5 @@ func (j *AuxiliaryDigitalTokenJson) DTI() string {
 
 // Denom returns token denom.
 func (j *AuxiliaryDigitalTokenJson) Denom() *string {
-	// TODO: Make sure this is the right field to extract denom from
-	return j.Informative.LongName
+	return j.Normative.AuxiliaryTechnicalReference
 }

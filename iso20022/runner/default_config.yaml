@@ -27,6 +27,7 @@ processes:
         custom_repo_address: ""
     dtif:
         update_interval: 1m0s
+        distributed_ledger: S87NJRT7T
         custom_source_address: ""
     queue:
         size: 50

@@ -970,23 +970,56 @@ func TestGetSupplementaryDataWithCorrectClearingSystem(t *testing.T) {
 	logMock := logger.NewAnyLogMock(ctrl)
 	parser := NewParser(logMock, &generated.ConverterImpl{})
 
-	fileContent, err := os.ReadFile("testdata/pacs008-14.xml")
-	requireT.NoError(err)
+	tests := []struct {
+		name              string
+		messageFilePath   string
+		currencyAndAmount *supl_xxx_001_01.CryptoCurrencyAndAmountType
+		hasError          bool
+	}{
+		{
+			name:            "with_cryptocurrency_attribute",
+			messageFilePath: "testdata/pacs008-14.xml",
+			currencyAndAmount: &supl_xxx_001_01.CryptoCurrencyAndAmountType{
+				Value: 499250,
+				Cccy:  "ibc/E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D",
+			},
+			hasError: false,
+		},
+		{
+			name:            "with_dti_attribute",
+			messageFilePath: "testdata/pacs008-15.xml",
+			currencyAndAmount: &supl_xxx_001_01.CryptoCurrencyAndAmountType{
+				Value: 499250,
+				Dti:   "KNNT25FGR",
+			},
+			hasError: false,
+		},
+	}
 
-	msg, _, _, suplParser, err := parser.ExtractMessageAndMetadataFromIsoMessage(fileContent)
-	requireT.NoError(err)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			fileContent, err := os.ReadFile(tt.messageFilePath)
+			requireT.NoError(err)
 
-	suplData, found := parser.GetSupplementaryDataWithCorrectClearingSystem(msg, "COREUM")
-	requireT.True(found)
-	requireT.NotEmpty(suplData)
+			msg, _, _, suplParser, err := parser.ExtractMessageAndMetadataFromIsoMessage(fileContent)
+			requireT.NoError(err)
 
-	supl, err := suplParser.Parse(suplData)
-	requireT.NoError(err)
+			suplData, found := parser.GetSupplementaryDataWithCorrectClearingSystem(msg, "COREUM")
+			requireT.True(found)
+			requireT.NotEmpty(suplData)
 
-	sup, ok := supl.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
-	requireT.True(ok)
-	requireT.Equal(&supl_xxx_001_01.CryptoCurrencyAndAmountType{
-		Value: 499250,
-		Cccy:  "ibc/E1E3674A0E4E1EF9C69646F9AF8D9497173821826074622D831BAB73CCB99A2D",
-	}, sup)
+			supl, err := suplParser.Parse(suplData)
+			if tt.hasError {
+				requireT.Error(err)
+			} else {
+				requireT.NoError(err)
+			}
+
+			sup, ok := supl.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
+			requireT.True(ok)
+			requireT.Equal(tt.currencyAndAmount, sup)
+		})
+	}
 }

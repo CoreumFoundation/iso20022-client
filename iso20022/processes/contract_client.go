@@ -113,7 +113,7 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 
 				messages := make([]*messageWithMetadata, 0, len(msgs))
 				for _, msg := range msgs {
-					message, err := p.extractMetadata(msg)
+					message, err := p.ExtractMetadata(msg)
 					if err != nil {
 						p.messageQueue.SetStatus(message.Id, queue.StatusError)
 						p.log.Error(
@@ -388,7 +388,7 @@ type messageWithMetadata struct {
 	AttachedFunds  sdk.Coins
 }
 
-func (p *ContractClientProcess) extractMetadata(rawMessage []byte) (*messageWithMetadata, error) {
+func (p *ContractClientProcess) ExtractMetadata(rawMessage []byte) (*messageWithMetadata, error) {
 	message, metadata, _, suplParser, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(rawMessage)
 	if err != nil {
 		return nil, err
@@ -429,11 +429,11 @@ func (p *ContractClientProcess) extractMetadata(rawMessage []byte) (*messageWith
 		supl, ok := suplMsg.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
 		if ok {
 			if supl.Cccy != "" {
-				attachedFunds.Add(sdk.NewCoin(string(supl.Cccy), sdk.NewInt(int64(supl.Value))))
+				attachedFunds = attachedFunds.Add(sdk.NewCoin(string(supl.Cccy), sdk.NewInt(int64(supl.Value))))
 			} else if supl.Dti != "" {
 				denom, found := p.dtif.LookupByDTI(string(supl.Dti))
 				if found {
-					attachedFunds.Add(sdk.NewCoin(denom, sdk.NewInt(int64(supl.Value))))
+					attachedFunds = attachedFunds.Add(sdk.NewCoin(denom, sdk.NewInt(int64(supl.Value))))
 				}
 			}
 		}
