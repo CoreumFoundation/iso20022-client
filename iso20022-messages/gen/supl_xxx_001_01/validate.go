@@ -40,7 +40,10 @@ func (v CryptoCurrencyAndAmountType) Validate() error {
 // XSD SimpleType validations
 
 func (v CryptoCurrencyAndAmountSimpleType) Validate() error {
-	if err := iso.ValidateTotalDigits(fmt.Sprintf("%v", v), 19); err != nil {
+	if err := iso.ValidateFractionDigits(fmt.Sprintf("%v", v), 18); err != nil {
+		return err
+	}
+	if err := iso.ValidateTotalDigits(fmt.Sprintf("%v", v), 40); err != nil {
 		return err
 	}
 	return nil
@@ -54,7 +57,7 @@ func (v DigitalTokenIdentifier) Validate() error {
 }
 
 func (v CryptoCurrencyCode) Validate() error {
-	if err := iso.ValidatePattern(string(v), `ucore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}`); err != nil {
+	if err := iso.ValidatePattern(string(v), `ucore|utestcore|udevcore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}`); err != nil {
 		return err
 	}
 	if err := iso.ValidateMaxLength(string(v), 127); err != nil {

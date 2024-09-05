@@ -570,3 +570,8 @@ func (j *AuxiliaryDigitalTokenJson) DTI() string {
 func (j *AuxiliaryDigitalTokenJson) Denom() *string {
 	return j.Normative.AuxiliaryTechnicalReference
 }
+
+// PriceMultiplier returns token price multiplier.
+func (j *AuxiliaryDigitalTokenJson) PriceMultiplier() *big.Int {
+	return j.Informative.UnitMultiplier
+}

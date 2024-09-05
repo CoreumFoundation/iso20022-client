@@ -3,6 +3,7 @@ package dtif
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 
 	"github.com/samber/lo"
@@ -396,4 +397,9 @@ func (j *DistributedLedgerWithoutANativeDigitalTokenBlockchainJson) DTI() string
 // Denom returns token denom.
 func (j *DistributedLedgerWithoutANativeDigitalTokenBlockchainJson) Denom() *string {
 	return lo.ToPtr("")
+}
+
+// PriceMultiplier returns token price multiplier.
+func (j *DistributedLedgerWithoutANativeDigitalTokenBlockchainJson) PriceMultiplier() *big.Int {
+	return big.NewInt(1)
 }

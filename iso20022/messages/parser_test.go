@@ -989,7 +989,7 @@ func TestGetSupplementaryDataWithCorrectClearingSystem(t *testing.T) {
 			name:            "with_dti_attribute",
 			messageFilePath: "testdata/pacs008-15.xml",
 			currencyAndAmount: &supl_xxx_001_01.CryptoCurrencyAndAmountType{
-				Value: 499250,
+				Value: 0.000000000000499250,
 				Dti:   "KNNT25FGR",
 			},
 			hasError: false,

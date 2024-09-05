@@ -23,7 +23,7 @@ type CryptoCurrencyAndAmountType struct {
 
 // XSD SimpleType declarations
 
-type CryptoCurrencyAndAmountSimpleType int64
+type CryptoCurrencyAndAmountSimpleType float64
 
 type DigitalTokenIdentifier string
 

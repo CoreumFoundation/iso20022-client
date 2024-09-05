@@ -131,7 +131,7 @@ func DefaultConfig() Config {
 			},
 			Contract: CoreumContractConfig{
 				// TODO: Change to the contract address on mainnet before release
-				ContractAddress:       "testcore1kpdyk46vmscujsv77jzdjkxmnpgff5jmdmyjrrvljnewcujr6cvqlak0zj",
+				ContractAddress:       "testcore1eyky8vfdyz77zkh50zkrdw3mc9guyrfy45pd5ak9jpqgtgwgfvfqd8lkmc",
 				GasAdjustment:         defaultCoreumContactConfig.GasAdjustment,
 				GasPriceAdjustment:    defaultCoreumContactConfig.GasPriceAdjustment.MustFloat64(),
 				PageLimit:             defaultCoreumContactConfig.PageLimit,

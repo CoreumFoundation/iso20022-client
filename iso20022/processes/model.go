@@ -2,6 +2,7 @@ package processes
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -122,6 +123,18 @@ type Cryptography interface {
 	GenerateSharedKey(privateKey cryptotypes.PrivKey, publicKeyBytes []byte) ([]byte, error)
 	EncryptSymmetric(plaintext []byte, secret []byte) (ciphertext []byte)
 	DecryptSymmetric(ciphertext []byte, secret []byte) (plaintext []byte, err error)
+}
+
+type MessageWithMetadata struct {
+	Uetr           string
+	Id             string
+	Source         types.AccAddress
+	Destination    types.AccAddress
+	PublicKeyBytes []byte
+	Message        []byte
+	ParsedMessage  messages.Iso20022Message
+	references     *Metadata
+	AttachedFunds  types.Coins
 }
 
 type Metadata struct {
@@ -249,6 +262,6 @@ type MessageQueue interface {
 
 type Dtif interface {
 	Update(ctx context.Context) error
-	LookupByDTI(dti string) (string, bool)
+	LookupByDTI(dti string) (string, *big.Int, bool)
 	LookupByDenom(denom string) (string, bool)
 }

@@ -19,7 +19,7 @@ func TestSendQueue(t *testing.T) {
 	requireT := require.New(t)
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
-	cacheDir := path.Join(os.TempDir(), "iso20022-test")
+	cacheDir := path.Join(os.TempDir(), "iso20022-test1")
 
 	q := New(logMock, cacheDir)
 	go func() {
@@ -58,7 +58,7 @@ func TestReceiveQueue(t *testing.T) {
 	requireT := require.New(t)
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
-	cacheDir := path.Join(os.TempDir(), "iso20022-test")
+	cacheDir := path.Join(os.TempDir(), "iso20022-test2")
 
 	q := New(logMock, cacheDir)
 	go func() {
@@ -96,7 +96,7 @@ func TestReceiveQueue(t *testing.T) {
 func TestClose(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
-	cacheDir := path.Join(os.TempDir(), "iso20022-test")
+	cacheDir := path.Join(os.TempDir(), "iso20022-test3")
 
 	q := New(logMock, cacheDir)
 	go func() {

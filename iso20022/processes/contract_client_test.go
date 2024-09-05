@@ -95,6 +95,7 @@ func TestContractClient_Start(t *testing.T) {
 					nil,
 					nil,
 				)
+				parserMock.EXPECT().GetTransactionStatus(gomock.Any()).Return(processes.TransactionStatusNone)
 				parserMock.EXPECT().GetSupplementaryDataWithCorrectClearingSystem(gomock.Any(), gomock.Any()).Return(nil, false)
 				return parserMock
 			},

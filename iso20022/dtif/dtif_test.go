@@ -15,7 +15,7 @@ func TestEmptyDtif(t *testing.T) {
 	logMock := logger.NewAnyLogMock(ctrl)
 	d := NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/data.json")
 
-	denom, ok := d.LookupByDTI("KNNT25FGR")
+	denom, _, ok := d.LookupByDTI("KNNT25FGR")
 	require.False(t, ok)
 	require.Empty(t, denom)
 }
@@ -29,7 +29,7 @@ func TestLookup(t *testing.T) {
 
 	require.NoError(t, d.Update(ctx))
 
-	denom, ok := d.LookupByDTI("KNNT25FGR")
+	denom, _, ok := d.LookupByDTI("KNNT25FGR")
 	require.True(t, ok)
 	require.Equal(t, "ibc/71F11BC0AF8E526B80E44172EBA9D3F0A8E03950BB882325435691EBC9450B1D", denom)
 }
