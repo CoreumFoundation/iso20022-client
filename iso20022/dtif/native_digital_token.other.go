@@ -447,3 +447,8 @@ func (j *NativeDigitalTokenOtherJson) DTI() string {
 func (j *NativeDigitalTokenOtherJson) Denom() *string {
 	return lo.ToPtr("")
 }
+
+// PriceMultiplier returns token price multiplier.
+func (j *NativeDigitalTokenOtherJson) PriceMultiplier() *big.Int {
+	return j.Informative.UnitMultiplier
+}

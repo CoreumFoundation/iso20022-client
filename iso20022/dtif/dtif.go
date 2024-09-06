@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,18 +18,20 @@ import (
 )
 
 type Dtif struct {
-	log               logger.Logger
-	distributedLedger string
-	sourceAddress     string
-	dtiToDenom        map[string]string
-	denomToDti        map[string]string
-	lastVersion       string
-	lock              sync.RWMutex
+	log                  logger.Logger
+	distributedLedger    string
+	sourceAddress        string
+	dtiToDenom           map[string]string
+	dtiToPriceMultiplier map[string]*big.Int
+	denomToDti           map[string]string
+	lastVersion          string
+	lock                 sync.RWMutex
 }
 
 type DigitalToken interface {
 	DTI() string
 	Denom() *string
+	PriceMultiplier() *big.Int
 }
 
 type DigitalTokenType [2]int
@@ -54,6 +57,7 @@ func NewWithSourceAddress(log logger.Logger, distributedLedger, sourceAddress st
 		distributedLedger,
 		sourceAddress,
 		make(map[string]string),
+		make(map[string]*big.Int),
 		make(map[string]string),
 		"",
 		sync.RWMutex{},
@@ -132,6 +136,7 @@ func (d *Dtif) Update(ctx context.Context) error {
 	}
 
 	dtiToDenom := make(map[string]string)
+	dtiToPriceMultiplier := make(map[string]*big.Int)
 	denomToDti := make(map[string]string)
 
 	for _, item := range data["records"] {
@@ -180,24 +185,29 @@ func (d *Dtif) Update(ctx context.Context) error {
 		}
 
 		dtiToDenom[record.DTI()] = *denom
+		dtiToPriceMultiplier[record.DTI()] = record.PriceMultiplier()
 		denomToDti[*denom] = record.DTI()
 	}
 
 	d.lock.Lock()
 	d.dtiToDenom = dtiToDenom
+	d.dtiToPriceMultiplier = dtiToPriceMultiplier
 	d.denomToDti = denomToDti
 	d.lock.Unlock()
 	return nil
 }
 
-// LookupByDTI tries to find a specific token denom using its DTI
-func (d *Dtif) LookupByDTI(dti string) (string, bool) {
+// LookupByDTI tries to find a specific token denom and price multiplier using its DTI
+func (d *Dtif) LookupByDTI(dti string) (string, *big.Int, bool) {
 	// It is also possible to get information of a token from:
 	// https://download.dtif.org/Tokens/{dti}/Record/{dti}.json
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	denom, found := d.dtiToDenom[dti]
-	return denom, found
+	if found {
+		return denom, d.dtiToPriceMultiplier[dti], true
+	}
+	return denom, nil, found
 }
 
 // LookupByDenom tries to find a specific token DTI using its denom

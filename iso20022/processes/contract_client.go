@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -111,51 +113,62 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 					return errors.WithStack(ctx.Err())
 				}
 
-				messages := make([]*messageWithMetadata, 0, len(msgs))
+				messages := make([]*MessageWithMetadata, 0, len(msgs))
 				for _, msg := range msgs {
 					message, err := p.ExtractMetadata(msg)
 					if err != nil {
-						p.messageQueue.SetStatus(message.Id, queue.StatusError)
-						p.log.Error(
-							ctx,
-							"Failed to process the message",
-							zap.Error(err),
-							zap.Any("uetr", message.Uetr),
-							zap.Any("id", message.Id),
-							zap.Any("source", message.Source),
-							zap.Any("destination", message.Destination),
-							zap.Any("msg", msg),
-						)
+						if message != nil {
+							p.messageQueue.SetStatus(message.Id, queue.StatusError)
+							p.log.Error(
+								ctx,
+								"Failed to process the message",
+								zap.Error(err),
+								zap.Any("uetr", message.Uetr),
+								zap.Any("id", message.Id),
+								zap.Any("source", message.Source),
+								zap.Any("destination", message.Destination),
+								zap.Any("msg", msg),
+							)
+						} else {
+							p.log.Error(
+								ctx,
+								"Failed to process the message",
+								zap.Error(err),
+								zap.Any("msg", msg),
+							)
+						}
 						continue
 					}
 					messages = append(messages, message)
 				}
 
-				if err := p.sendMessages(ctx, messages); err != nil {
-					if errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "context canceled") {
-						p.log.Warn(
-							ctx,
-							"Context canceled during the message processing",
-							zap.String("error", err.Error()),
-						)
-						return nil
+				if len(messages) > 0 {
+					if err := p.sendMessages(ctx, messages); err != nil {
+						if errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "context canceled") {
+							p.log.Warn(
+								ctx,
+								"Context canceled during the message processing",
+								zap.String("error", err.Error()),
+							)
+							return nil
+						} else {
+							for _, message := range messages {
+								p.messageQueue.SetStatus(message.Id, queue.StatusError)
+								p.log.Error(
+									ctx,
+									"Failed to send the message",
+									zap.Error(err),
+									zap.Any("id", message.Id),
+									zap.Any("destination", message.Destination),
+									zap.Any("msg", message.Message),
+								)
+							}
+							continue
+						}
 					} else {
 						for _, message := range messages {
-							p.messageQueue.SetStatus(message.Id, queue.StatusError)
-							p.log.Error(
-								ctx,
-								"Failed to send the message",
-								zap.Error(err),
-								zap.Any("id", message.Id),
-								zap.Any("destination", message.Destination),
-								zap.Any("msg", message.Message),
-							)
+							p.messageQueue.SetStatus(message.Id, queue.StatusSent)
 						}
-						continue
-					}
-				} else {
-					for _, message := range messages {
-						p.messageQueue.SetStatus(message.Id, queue.StatusSent)
 					}
 				}
 			}
@@ -178,9 +191,6 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 	}
 
 	lastReadTime := uint64(0)
-
-	confirmSessions := make([]coreum.ConfirmSession, 0, len(messages))
-	cancelSessions := make([]coreum.CancelSession, 0, len(messages))
 
 	for _, msg := range messages {
 		nft, err := p.contractClient.QueryNFT(ctx, msg.Content.ClassId, msg.Content.Id)
@@ -226,7 +236,7 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 			continue
 		}
 
-		iso20022Msg, metadata, _, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(data.Data)
+		_, metadata, _, _, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(data.Data)
 		if err != nil {
 			p.log.Error(ctx, "could not extract metadata the message", zap.Error(err)) // TODO
 			continue
@@ -239,24 +249,6 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 		if !metadata.Sender.Equal(entry.Party) {
 			p.log.Error(ctx, "message sender is not verified") // TODO
 			continue
-		}
-
-		switch p.parser.GetTransactionStatus(iso20022Msg) {
-		case TransactionStatusCreditorAcceptedSettlementCompleted, TransactionStatusAcceptedCustomerProfile,
-			TransactionStatusAcceptedSettlementCompleted, TransactionStatusAcceptedSettlementInProcess,
-			TransactionStatusAcceptedTechnicalValidation, TransactionStatusAcceptedWithChange,
-			TransactionStatusAcceptedWithoutPosting, TransactionStatusAcceptedFundsChecked,
-			TransactionStatusPartiallyAcceptedTechnical, TransactionStatusPartiallyAccepted:
-			confirmSessions = append(confirmSessions, coreum.ConfirmSession{
-				Uetr:        metadata.Uetr,
-				Destination: p.cfg.ClientAddress,
-			})
-		case TransactionStatusCancelled, TransactionStatusRejected:
-
-			cancelSessions = append(cancelSessions, coreum.CancelSession{
-				Uetr:        metadata.Uetr,
-				Destination: p.cfg.ClientAddress,
-			})
 		}
 
 		p.log.Info(ctx, "Message received successfully", zap.String("sender", msg.Sender.String()))
@@ -272,24 +264,10 @@ func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {
 		)
 	}
 
-	if len(cancelSessions) > 0 {
-		_, err = p.contractClient.CancelSessions(ctx, p.cfg.ClientAddress, cancelSessions...)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(confirmSessions) > 0 {
-		_, err = p.contractClient.ConfirmSessions(ctx, p.cfg.ClientAddress, confirmSessions...)
-		if err != nil {
-			return err
-		}
-	}
-
 	return err
 }
 
-func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*messageWithMetadata) error {
+func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*MessageWithMetadata) error {
 	classId, id := p.generateNftId()
 
 	if p.nftClassId == "" {
@@ -309,6 +287,8 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 
 	mintMsgs := make([]sdk.Msg, 0, len(messages))
 	startSessions := make([]coreum.StartSession, 0, len(messages))
+	confirmSessions := make([]coreum.ConfirmSession, 0, len(messages))
+	cancelSessions := make([]coreum.CancelSession, 0, len(messages))
 	sendMessages := make([]coreum.SendMessage, 0, len(messages))
 
 	for _, message := range messages {
@@ -346,6 +326,76 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 				Funds:       message.AttachedFunds,
 			})
 		}
+
+		switch p.parser.GetTransactionStatus(message.ParsedMessage) {
+		case TransactionStatusCreditorAcceptedSettlementCompleted, TransactionStatusAcceptedCustomerProfile,
+			TransactionStatusAcceptedSettlementCompleted, TransactionStatusAcceptedSettlementInProcess,
+			TransactionStatusAcceptedTechnicalValidation, TransactionStatusAcceptedWithChange,
+			TransactionStatusAcceptedWithoutPosting, TransactionStatusAcceptedFundsChecked,
+			TransactionStatusPartiallyAcceptedTechnical, TransactionStatusPartiallyAccepted:
+			if message.references == nil {
+				return errors.New("Could not find the referenced message")
+			}
+			if message.references.Receiver == nil {
+				return errors.New("Could not find the original receiver")
+			}
+			origReceiverParty, ok := p.addressBook.Lookup(*message.references.Receiver)
+			if !ok {
+				return errors.New("Could not find the original receiver")
+			}
+			origReceiver, err := sdk.AccAddressFromBech32(origReceiverParty.Bech32EncodedAddress)
+			if err != nil {
+				return errors.Wrap(err, "Could not find the original receiver")
+			}
+			if message.references.Sender == nil {
+				return errors.New("Could not find the original sender")
+			}
+			origSenderParty, ok := p.addressBook.Lookup(*message.references.Sender)
+			if !ok {
+				return errors.New("Could not find the original sender")
+			}
+			origSender, err := sdk.AccAddressFromBech32(origSenderParty.Bech32EncodedAddress)
+			if err != nil {
+				return errors.Wrap(err, "Could not find the original sender")
+			}
+			confirmSessions = append(confirmSessions, coreum.ConfirmSession{
+				Uetr:        message.references.Uetr,
+				Initiator:   origReceiver,
+				Destination: origSender,
+			})
+		case TransactionStatusCancelled, TransactionStatusRejected:
+			if message.references == nil {
+				return errors.New("Could not find the referenced message")
+			}
+			if message.references.Receiver == nil {
+				return errors.New("Could not find the original receiver")
+			}
+			origReceiverParty, ok := p.addressBook.Lookup(*message.references.Receiver)
+			if !ok {
+				return errors.New("Could not find the original receiver")
+			}
+			origReceiver, err := sdk.AccAddressFromBech32(origReceiverParty.Bech32EncodedAddress)
+			if err != nil {
+				return errors.Wrap(err, "Could not find the original receiver")
+			}
+			if message.references.Sender == nil {
+				return errors.New("Could not find the original sender")
+			}
+			origSenderParty, ok := p.addressBook.Lookup(*message.references.Sender)
+			if !ok {
+				return errors.New("Could not find the original sender")
+			}
+			origSender, err := sdk.AccAddressFromBech32(origSenderParty.Bech32EncodedAddress)
+			if err != nil {
+				return errors.Wrap(err, "Could not find the original sender")
+			}
+			cancelSessions = append(cancelSessions, coreum.CancelSession{
+				Uetr:        message.references.Uetr,
+				Initiator:   origReceiver,
+				Destination: origSender,
+			})
+		}
+
 		sendMessages = append(sendMessages, coreum.SendMessage{
 			Uetr:        message.Uetr,
 			ID:          message.Id,
@@ -366,6 +416,20 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 		}
 	}
 
+	if len(cancelSessions) > 0 {
+		_, err = p.contractClient.CancelSessions(ctx, p.cfg.ClientAddress, cancelSessions...)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(confirmSessions) > 0 {
+		_, err = p.contractClient.ConfirmSessions(ctx, p.cfg.ClientAddress, confirmSessions...)
+		if err != nil {
+			return err
+		}
+	}
+
 	if len(sendMessages) > 0 {
 		_, err = p.contractClient.SendMessages(ctx, p.cfg.ClientAddress, sendMessages...)
 		if err != nil {
@@ -378,45 +442,45 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*me
 	return nil
 }
 
-type messageWithMetadata struct {
-	Uetr           string
-	Id             string
-	Source         sdk.AccAddress
-	Destination    sdk.AccAddress
-	PublicKeyBytes []byte
-	Message        []byte
-	AttachedFunds  sdk.Coins
-}
-
-func (p *ContractClientProcess) ExtractMetadata(rawMessage []byte) (*messageWithMetadata, error) {
-	message, metadata, _, suplParser, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(rawMessage)
+func (p *ContractClientProcess) ExtractMetadata(rawMessage []byte) (*MessageWithMetadata, error) {
+	message, metadata, references, suplParser, err := p.parser.ExtractMessageAndMetadataFromIsoMessage(rawMessage)
 	if err != nil {
 		return nil, err
+	}
+
+	result := MessageWithMetadata{
+		metadata.Uetr,
+		metadata.ID,
+		nil,
+		nil,
+		nil,
+		rawMessage,
+		message,
+		references,
+		nil,
 	}
 
 	receiver, found := p.addressBook.Lookup(*metadata.Receiver)
 	if !found {
-		return nil, errors.New("could not find the receiver party in the address book")
+		return &result, errors.New("could not find the receiver party in the address book")
 	}
 
-	receiverAddress, err := sdk.AccAddressFromBech32(receiver.Bech32EncodedAddress)
+	result.Destination, err = sdk.AccAddressFromBech32(receiver.Bech32EncodedAddress)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
-
-	var senderAddress = sdk.AccAddress{}
 
 	sender, found := p.addressBook.Lookup(*metadata.Receiver)
 	if found {
-		senderAddress, err = sdk.AccAddressFromBech32(sender.Bech32EncodedAddress)
+		result.Source, err = sdk.AccAddressFromBech32(sender.Bech32EncodedAddress)
 		if err != nil {
-			return nil, err
+			return &result, err
 		}
 	}
 
-	publicKeyBytes, err := base64.StdEncoding.DecodeString(receiver.PublicKey)
+	result.PublicKeyBytes, err = base64.StdEncoding.DecodeString(receiver.PublicKey)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	attachedFunds := sdk.NewCoins()
@@ -424,30 +488,34 @@ func (p *ContractClientProcess) ExtractMetadata(rawMessage []byte) (*messageWith
 	if found {
 		suplMsg, err := suplParser.Parse(suplData)
 		if err != nil {
-			return nil, err
+			return &result, err
 		}
 		supl, ok := suplMsg.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
 		if ok {
 			if supl.Cccy != "" {
 				attachedFunds = attachedFunds.Add(sdk.NewCoin(string(supl.Cccy), sdk.NewInt(int64(supl.Value))))
 			} else if supl.Dti != "" {
-				denom, found := p.dtif.LookupByDTI(string(supl.Dti))
+				denom, priceMultiplier, found := p.dtif.LookupByDTI(string(supl.Dti))
 				if found {
-					attachedFunds = attachedFunds.Add(sdk.NewCoin(denom, sdk.NewInt(int64(supl.Value))))
+					if priceMultiplier == nil {
+						priceMultiplier = big.NewInt(1)
+					}
+					value := sdk.MustNewDecFromStr(strconv.FormatFloat(float64(supl.Value), 'f', -1, 64)).
+						Mul(sdk.NewDecFromBigInt(priceMultiplier))
+					if !value.IsInteger() {
+						return nil, errors.New("The amount needs more precision than what the token supports")
+					}
+					attachedFunds = attachedFunds.Add(
+						sdk.NewCoin(denom, value.TruncateInt()),
+					)
 				}
 			}
 		}
 	}
 
-	return &messageWithMetadata{
-		metadata.Uetr,
-		metadata.ID,
-		senderAddress,
-		receiverAddress,
-		publicKeyBytes,
-		rawMessage,
-		attachedFunds,
-	}, nil
+	result.AttachedFunds = attachedFunds
+
+	return &result, nil
 }
 
 func (p *ContractClientProcess) generateNftId() (string, string) {

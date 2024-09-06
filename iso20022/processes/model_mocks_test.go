@@ -11,6 +11,7 @@ package processes_test
 
 import (
 	context "context"
+	big "math/big"
 	reflect "reflect"
 	time "time"
 
@@ -842,12 +843,13 @@ func (m *MockDtif) EXPECT() *MockDtifMockRecorder {
 }
 
 // LookupByDTI mocks base method.
-func (m *MockDtif) LookupByDTI(arg0 string) (string, bool) {
+func (m *MockDtif) LookupByDTI(arg0 string) (string, *big.Int, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupByDTI", arg0)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(bool)
-	return ret0, ret1
+	ret1, _ := ret[1].(*big.Int)
+	ret2, _ := ret[2].(bool)
+	return ret0, ret1, ret2
 }
 
 // LookupByDTI indicates an expected call of LookupByDTI.

@@ -13,8 +13,9 @@
 		</xs:sequence>
 	</xs:complexType>
 	<xs:simpleType name="CryptoCurrencyAndAmount_SimpleType">
-		<xs:restriction base="xs:integer">
-			<xs:totalDigits value="19"/>
+		<xs:restriction base="xs:decimal">
+			<xs:fractionDigits value="18"/>
+			<xs:totalDigits value="40"/>
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:complexType name="CryptoCurrencyAndAmountType">
@@ -32,7 +33,7 @@
 	</xs:simpleType>
 	<xs:simpleType name="CryptoCurrencyCode">
 		<xs:restriction base="xs:string">
-			<xs:pattern value="ucore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}"/>
+			<xs:pattern value="ucore|utestcore|udevcore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}"/>
 			<xs:maxLength value="127"/>
 		</xs:restriction>
 	</xs:simpleType>

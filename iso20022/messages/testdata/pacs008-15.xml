@@ -119,7 +119,7 @@
 				<PlcAndNm>CryptoCurrencyAndAmountInfo</PlcAndNm>
 				<Envlp>
 					<s:Document>
-						<s:CryptoCurrencyAndAmount Dti="KNNT25FGR">499250</s:CryptoCurrencyAndAmount>
+						<s:CryptoCurrencyAndAmount Dti="KNNT25FGR">0.000000000000499250</s:CryptoCurrencyAndAmount>
 					</s:Document>
 				</Envlp>
 			</SplmtryData>
