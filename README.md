@@ -81,6 +81,235 @@ It will receive,
 decrypt and decompress it and then the Creditor Agent can process the request and send a report to the Creditor using
 `CAMT.053` (BankToCustomerStatement under Cash Management) which is also outside of scope of this project.
 
+### Real-Time Gross Settlement (RTGS)
+
+In the example above, we only handle the messaging part of the settlement, but the actual transfer of the funds is on
+the two parties to handle. We also provide an option to do the actual transfer of the funds using our chain.
+If a party sends a `PACS.008` (FIToFICustomerCreditTransfer under Payments Clearing and Settlement) with settlement
+method set to `CLRG` (Clearing system) and the clearing system proprietary set to `COREUM`, the client application
+will take care of the RTGS.
+```xml
+<SttlmInf>
+    <SttlmMtd>CLRG</SttlmMtd>
+    <ClrSys>
+        <Prtry>COREUM</Prtry>
+    </ClrSys>
+</SttlmInf>
+```
+
+When Coreum in charge of the settlement, the client will send an additional message to the smart contract, to send the
+funds to an escrow account and then continue normally and deliver the message to the other party.
+If the other party sends a `PACS.002` (FIToFIPaymentStatusReport under Payments Clearing and Settlement) message back to
+the first party, accepting the message, the funds will be sent from the escrow account to the account of the send party.
+And if instead the other party decides to reject the payment, it will send the `PACS.002` message with rejected status
+and the first party will be refunded.
+
+### Currencies
+
+ISO20022 is designed for traditional banking and as of now, it only supports ISO4217 currencies (like USD, EUR, ...).
+To provide RTGS support while being ISO20022-compliance, we define 3 rules:
+1. The amount (`Amt`) should be set to `0`
+2. The currency (`Ccy`) should be set to `USD`
+3. The actual amount and currency (actually cryptocurrency) should be provided as `SplmtryData`
+
+The supplementary data would be as simple as this:
+```xml
+<SplmtryData>
+    <PlcAndNm>CryptoCurrencyAndAmountInfo</PlcAndNm>
+    <Envlp>
+        <s:Document>
+            <s:CryptoCurrencyAndAmount Dti="6G5C9N3LG">0.001</s:CryptoCurrencyAndAmount>
+        </s:Document>
+    </Envlp>
+</SplmtryData>
+```
+
+<details>
+  <summary>Supplementary Data XSD</summary>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		   xmlns="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01"
+		   targetNamespace="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01"
+		   elementFormDefault="qualified"
+		   attributeFormDefault="unqualified">
+
+	<xs:element name="Document" type="Document"/>
+
+	<xs:complexType name="Document">
+		<xs:sequence>
+			<xs:element name="CryptoCurrencyAndAmount" type="CryptoCurrencyAndAmountType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="CryptoCurrencyAndAmount_SimpleType">
+		<xs:restriction base="xs:decimal">
+			<xs:fractionDigits value="18"/>
+			<xs:totalDigits value="40"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="CryptoCurrencyAndAmountType">
+		<xs:simpleContent>
+			<xs:extension base="CryptoCurrencyAndAmount_SimpleType">
+				<xs:attribute name="Cccy" type="CryptoCurrencyCode"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="CryptoCurrencyCode">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}"/>
+			<xs:maxLength value="127"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+</xs:schema>
+```
+</details>
+
+**TODO: Replace all values before launch**
+
+For the currency, we are using [DTIF](https://dtif.org/) (Digital Token Identifiers Foundation) website as a reference.
+The list of available tokens can be found in their [registry](https://dtif.org/token-registry-search/).  
+You can send any token listed there which its Auxiliary Digital Token Distributed Ledger is `S87NJRT7T` (Coreum).  
+For now, the only supported token is TESTCORE with token identifier `6G5C9N3LG`.
+
+So, in the example above, 0.001 of 6G5C9N3LG token will be converted to 1000utestcore.
+
+<details>
+  <summary>Example PACS.008 message with supplementary data</summary>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Document
+		xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.12" xmlns:s="urn:iso:std:iso:20022:tech:xsd:supl.xxx.001.01">
+	<FIToFICstmrCdtTrf>
+		<GrpHdr>
+			<MsgId>EEEE-150929-EUR-057-12</MsgId>
+			<CreDtTm>2015-09-29T09:00:00</CreDtTm>
+			<NbOfTxs>1</NbOfTxs>
+			<SttlmInf>
+				<SttlmMtd>CLRG</SttlmMtd>
+				<ClrSys>
+					<Prtry>COREUM</Prtry>
+				</ClrSys>
+			</SttlmInf>
+			<InstgAgt>
+				<FinInstnId>
+					<BICFI>B61NZT4Y</BICFI>
+				</FinInstnId>
+			</InstgAgt>
+			<InstdAgt>
+				<FinInstnId>
+					<BICFI>6P9YGUDF</BICFI>
+				</FinInstnId>
+			</InstdAgt>
+		</GrpHdr>
+		<CdtTrfTxInf>
+			<PmtId>
+				<InstrId>EEEE-150929-EUR-057-12</InstrId>
+				<EndToEndId>AABC-ABC-13679-2015-09-132</EndToEndId>
+				<TxId>BBBB-150928-CCT-EUR-911-1</TxId>
+			</PmtId>
+			<PmtTpInf>
+				<InstrPrty>NORM</InstrPrty>
+			</PmtTpInf>
+			<IntrBkSttlmAmt Ccy="USD">0</IntrBkSttlmAmt>
+			<IntrBkSttlmDt>2015-09-29</IntrBkSttlmDt>
+			<InstdAmt Ccy="EUR">500000</InstdAmt>
+			<ChrgBr>CRED</ChrgBr>
+			<ChrgsInf>
+				<Amt Ccy="EUR">500</Amt>
+				<Agt>
+					<FinInstnId>
+						<BICFI>BBBBUS33</BICFI>
+					</FinInstnId>
+				</Agt>
+			</ChrgsInf>
+			<ChrgsInf>
+				<Amt Ccy="EUR">250</Amt>
+				<Agt>
+					<FinInstnId>
+						<BICFI>EEEEDEFF</BICFI>
+					</FinInstnId>
+				</Agt>
+			</ChrgsInf>
+			<Dbtr>
+				<Nm>ABC Corporation</Nm>
+				<PstlAdr>
+					<StrtNm>Times Square</StrtNm>
+					<BldgNb>7</BldgNb>
+					<PstCd>NY 10036</PstCd>
+					<TwnNm>New York</TwnNm>
+					<Ctry>US</Ctry>
+				</PstlAdr>
+			</Dbtr>
+			<DbtrAcct>
+				<Id>
+					<Othr>
+						<Id>00125574999</Id>
+					</Othr>
+				</Id>
+			</DbtrAcct>
+			<DbtrAgt>
+				<FinInstnId>
+					<BICFI>BBBBUS33</BICFI>
+				</FinInstnId>
+			</DbtrAgt>
+			<CdtrAgt>
+				<FinInstnId>
+					<BICFI>DDDDBEBB</BICFI>
+				</FinInstnId>
+			</CdtrAgt>
+			<Cdtr>
+				<Nm>GHI Semiconductors</Nm>
+				<PstlAdr>
+					<StrtNm>Avenue Brugmann</StrtNm>
+					<BldgNb>415</BldgNb>
+					<PstCd>1180</PstCd>
+					<TwnNm>Brussels</TwnNm>
+					<Ctry>BE</Ctry>
+				</PstlAdr>
+			</Cdtr>
+			<CdtrAcct>
+				<Id>
+					<IBAN>BE30001216371411</IBAN>
+				</Id>
+			</CdtrAcct>
+			<Purp>
+				<Cd>GDDS</Cd>
+			</Purp>
+			<RmtInf>
+				<Strd>
+					<RfrdDocInf>
+						<Tp>
+							<CdOrPrtry>
+								<Cd>CINV</Cd>
+							</CdOrPrtry>
+						</Tp>
+						<Nb>ABC-13679</Nb>
+						<RltdDt>
+							<Tp>
+								<Cd>INDA</Cd>
+							</Tp>
+							<Dt>2015-09-08</Dt>
+						</RltdDt>
+					</RfrdDocInf>
+				</Strd>
+			</RmtInf>
+			<SplmtryData>
+				<PlcAndNm>CryptoCurrencyAndAmountInfo</PlcAndNm>
+				<Envlp>
+					<s:Document>
+						<s:CryptoCurrencyAndAmount Dti="6G5C9N3LG">0.001</s:CryptoCurrencyAndAmount>
+					</s:Document>
+				</Envlp>
+			</SplmtryData>
+		</CdtTrfTxInf>
+	</FIToFICstmrCdtTrf>
+</Document>
+```
+</details>
+
 ## Quick Start
 
 If you want to get started quickly and learn how to interact with the application
@@ -122,7 +351,7 @@ But you have the option to configure it otherwise.
 For example, if you want to connect to testnet instead of mainnet, you can run:
 
 ```bash
-iso20022-client init --chain-id=coreum-testnet-1 --coreum-contract-address=testcore19a3m5sqm4s4mjfkpj3r7mg2q0gamjeh24zqlqqg6ezncv6l95q9qahxn93 --coreum-grpc-url=https://full-node.testnet-1.coreum.dev:9090
+iso20022-client init --chain-id=coreum-testnet-1 --coreum-contract-address=testcore1eyky8vfdyz77zkh50zkrdw3mc9guyrfy45pd5ak9jpqgtgwgfvfqd8lkmc --coreum-grpc-url=https://full-node.testnet-1.coreum.dev:9090
 ```
 
 ### Add Key
@@ -169,27 +398,8 @@ After adding your key to the application in the previous step, it will show you 
 * The ISO20022 Financial Institution Identity information is how you are identified in ISO20022 messages,
   which usually is using a Business Identification Code (BIC).
 
-Now you need
-to create a pull request on [Address Book](https://github.com/CoreumFoundation/iso20022-addressbook)
-and add your information to it and wait for someone to validate your change and merge it.
-
-For the example above, you need an entry like this to `addresses`:
-
-```json
-{
-    "bech32_encoded_address": "core1tagmslrz9xqfyjdddt6nu3q97us3ejck6475n8",
-    "public_key": "AqV7ob5PTCKOaiOp6iD6tQvjGorS6xLJiGQaVRBvQzM+",
-    "party": {
-        "identification": {
-            "bic": "DDDDBEBB"
-        }
-    }
-}
-```
-
-_TODO: Replace with Google Form when we have it._
-
-Once your PR is merged, you can continue and start the application and interact with it.
+Now you need fill [this form](https://forms.gle/ovM689bAaeZM1WPs9) with the information about your institution.
+Once your request is processes, you can continue and start the application and interact with it.
 
 _Note: You are not obligated to use our Address Book.
 You can use our binary
@@ -250,11 +460,6 @@ iso20022-client message receive /path/to/write/response.xml
 
 For the first PoC version, the only supported Business Area (BA) is Payments Clearing and
 Settlement (PACS).
-
-## What's Next
-
-After the first PoC, we will implement an RTGS system that does the settlement between financial institutions using
-digital tokens instead of fiat money.
 
 ## TODO
 
