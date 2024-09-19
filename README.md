@@ -88,12 +88,14 @@ the two parties to handle. We also provide an option to do the actual transfer o
 If a party sends a `PACS.008` (FIToFICustomerCreditTransfer under Payments Clearing and Settlement) with settlement
 method set to `CLRG` (Clearing system) and the clearing system proprietary set to `COREUM`, the client application
 will take care of the RTGS.
+
 ```xml
+
 <SttlmInf>
-    <SttlmMtd>CLRG</SttlmMtd>
-    <ClrSys>
-        <Prtry>COREUM</Prtry>
-    </ClrSys>
+	<SttlmMtd>CLRG</SttlmMtd>
+	<ClrSys>
+		<Prtry>COREUM</Prtry>
+	</ClrSys>
 </SttlmInf>
 ```
 
@@ -108,19 +110,22 @@ and the first party will be refunded.
 
 ISO20022 is designed for traditional banking and as of now, it only supports ISO4217 currencies (like USD, EUR, ...).
 To provide RTGS support while being ISO20022-compliance, we define 3 rules:
-1. The amount (`Amt`) should be set to `0`
+
+1. The amount (`IntrBkSttlmAmt`) should be set to `0`
 2. The currency (`Ccy`) should be set to `USD`
 3. The actual amount and currency (actually cryptocurrency) should be provided as `SplmtryData`
 
 The supplementary data would be as simple as this:
+
 ```xml
+
 <SplmtryData>
-    <PlcAndNm>CryptoCurrencyAndAmountInfo</PlcAndNm>
-    <Envlp>
-        <s:Document>
-            <s:CryptoCurrencyAndAmount Dti="6G5C9N3LG">0.001</s:CryptoCurrencyAndAmount>
-        </s:Document>
-    </Envlp>
+	<PlcAndNm>CryptoCurrencyAndAmountInfo</PlcAndNm>
+	<Envlp>
+		<s:Document>
+			<s:CryptoCurrencyAndAmount Dti="6G5C9N3LG">0.001</s:CryptoCurrencyAndAmount>
+		</s:Document>
+	</Envlp>
 </SplmtryData>
 ```
 
@@ -151,22 +156,28 @@ The supplementary data would be as simple as this:
 	<xs:complexType name="CryptoCurrencyAndAmountType">
 		<xs:simpleContent>
 			<xs:extension base="CryptoCurrencyAndAmount_SimpleType">
+				<xs:attribute name="Dti" type="DigitalTokenIdentifier"/>
 				<xs:attribute name="Cccy" type="CryptoCurrencyCode"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
+	<xs:simpleType name="DigitalTokenIdentifier">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Z0-9]{9,9}"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:simpleType name="CryptoCurrencyCode">
 		<xs:restriction base="xs:string">
-			<xs:pattern value="[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}"/>
+			<xs:pattern
+					value="ucore|utestcore|udevcore|[a-zA-Z][a-zA-Z0-9/:._]{0,50}-[a-z02-9]+1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+|ibc/[A-Z0-9]{64,64}"/>
 			<xs:maxLength value="127"/>
 		</xs:restriction>
 	</xs:simpleType>
 
 </xs:schema>
 ```
-</details>
 
-**TODO: Replace all values before launch**
+</details>
 
 For the currency, we are using [DTIF](https://dtif.org/) (Digital Token Identifiers Foundation) website as a reference.
 The list of available tokens can be found in their [registry](https://dtif.org/token-registry-search/).  
@@ -174,6 +185,28 @@ You can send any token listed there which its Auxiliary Digital Token Distribute
 For now, the only supported token is TESTCORE with token identifier `6G5C9N3LG`.
 
 So, in the example above, 0.001 of 6G5C9N3LG token will be converted to 1000utestcore.
+
+_NOTE: We are in process of allocating DTIs to our tokens and the DTIs used above are temporary and should not be used
+in production. This document will be updated as soon as we are done with the process. For now, please use the `Cccy`._
+
+The alternative way is providing the whole denom for the token. It will only support the native token of the chain
+(`ucore` for mainnet, `utestcore` for testnet and `udevcore` for the devnet), Smart FT tokens (like
+`SUBUNIT-testcore1adst6w4e79tddzhcgaru2l2gms8jjep6a4caa7`) and IBC coins (like
+`ibc/927661F31AA9C5801D58104292A35053097B393CFFA0D9B6CB450A3D66D747FA`).
+
+```xml
+
+<SplmtryData>
+	<PlcAndNm>CryptoCurrencyAndAmountInfo</PlcAndNm>
+	<Envlp>
+		<s:Document>
+			<s:CryptoCurrencyAndAmount Cccy="utestcore">1000</s:CryptoCurrencyAndAmount>
+		</s:Document>
+	</Envlp>
+</SplmtryData>
+```
+
+Preferred method is the DTI and Cccy is only there as an alternative.
 
 <details>
   <summary>Example PACS.008 message with supplementary data</summary>
@@ -308,6 +341,7 @@ So, in the example above, 0.001 of 6G5C9N3LG token will be converted to 1000utes
 	</FIToFICstmrCdtTrf>
 </Document>
 ```
+
 </details>
 
 ## Quick Start
@@ -405,8 +439,6 @@ _Note: You are not obligated to use our Address Book.
 You can use our binary
 to send message between nodes in a community you want which uses another address book
 and change the address in the config file._
-
-_TODO: Instruction for validation using company's domain._
 
 ### Start The Application
 
