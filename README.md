@@ -385,7 +385,7 @@ But you have the option to configure it otherwise.
 For example, if you want to connect to testnet instead of mainnet, you can run:
 
 ```bash
-iso20022-client init --chain-id=coreum-testnet-1 --coreum-contract-address=testcore1eyky8vfdyz77zkh50zkrdw3mc9guyrfy45pd5ak9jpqgtgwgfvfqd8lkmc --coreum-grpc-url=https://full-node.testnet-1.coreum.dev:9090
+iso20022-client init --chain-id=coreum-testnet-1 --coreum-contract-address=testcore1sx8h66ehjcj999t5apz5993y9n6nxwdr5jcd06mzrquxdkful4tqpugwh8 --coreum-grpc-url=https://full-node.testnet-1.coreum.dev:9090
 ```
 
 ### Add Key
