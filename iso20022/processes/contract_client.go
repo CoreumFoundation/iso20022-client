@@ -209,7 +209,7 @@ func (p *ContractClientProcess) cancelExpiredSessions(ctx context.Context) error
 	cancelSessions := make([]coreum.CancelSession, 0)
 
 	for _, session := range sessions {
-		if session.ConfirmedByDestination == false && session.ConfirmedByInitiator == false && session.StartTime < expireTime {
+		if !session.ConfirmedByDestination && !session.ConfirmedByInitiator && session.StartTime < expireTime {
 			cancelSessions = append(cancelSessions, coreum.CancelSession{
 				Uetr:        session.Uetr,
 				Initiator:   session.Initiator,
