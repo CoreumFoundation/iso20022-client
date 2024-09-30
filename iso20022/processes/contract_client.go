@@ -79,10 +79,21 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 	p.log.Info(ctx, "Starting the contract client process")
 	return parallel.Run(ctx, func(ctx context.Context, spawn parallel.SpawnFn) error {
 		spawn("msg-receiver", parallel.Continue, func(ctx context.Context) error {
-			ticker := time.NewTicker(p.cfg.PollInterval)
+			expiredSessionsTicker := time.NewTicker(time.Hour)
+			messagesTicker := time.NewTicker(p.cfg.PollInterval)
 			for {
 				select {
-				case <-ticker.C:
+				case <-expiredSessionsTicker.C:
+					err := p.cancelExpiredSessions(ctx)
+					if err != nil {
+						p.log.Error(
+							ctx,
+							"Failed to cancel expired sessions",
+							zap.Error(err),
+						)
+						continue
+					}
+				case <-messagesTicker.C:
 					err := p.receiveMessages(ctx)
 					if err != nil {
 						if errors.Is(err, context.Canceled) {
@@ -101,7 +112,8 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 						}
 					}
 				case <-ctx.Done():
-					ticker.Stop()
+					messagesTicker.Stop()
+					expiredSessionsTicker.Stop()
 					return errors.WithStack(ctx.Err())
 				}
 			}
@@ -176,6 +188,44 @@ func (p *ContractClientProcess) Start(ctx context.Context) error {
 
 		return nil
 	})
+}
+
+func (p *ContractClientProcess) cancelExpiredSessions(ctx context.Context) error {
+	limit := uint32(100)
+
+	sessions, err := p.contractClient.GetActiveSessions(
+		ctx,
+		p.cfg.ClientAddress,
+		coreum.UserTypeInitiator,
+		nil,
+		&limit,
+	)
+	if err != nil {
+		return err
+	}
+
+	expireTime := uint64(time.Now().Add(-24 * time.Hour).UnixNano())
+
+	cancelSessions := make([]coreum.CancelSession, 0)
+
+	for _, session := range sessions {
+		if !session.ConfirmedByDestination && !session.ConfirmedByInitiator && session.StartTime < expireTime {
+			cancelSessions = append(cancelSessions, coreum.CancelSession{
+				Uetr:        session.Uetr,
+				Initiator:   session.Initiator,
+				Destination: session.Destination,
+			})
+		}
+	}
+
+	if len(cancelSessions) > 0 {
+		_, err = p.contractClient.CancelSessions(ctx, p.cfg.ClientAddress, cancelSessions...)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p *ContractClientProcess) receiveMessages(ctx context.Context) error {

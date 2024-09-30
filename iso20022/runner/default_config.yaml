@@ -10,7 +10,7 @@ coreum:
         chain_id: coreum-testnet-1
         denom: utestcore
     contract:
-        contract_address: testcore1eyky8vfdyz77zkh50zkrdw3mc9guyrfy45pd5ak9jpqgtgwgfvfqd8lkmc
+        contract_address: testcore1sx8h66ehjcj999t5apz5993y9n6nxwdr5jcd06mzrquxdkful4tqpugwh8
         gas_adjustment: 1.4
         gas_price_adjustment: 1.2
         page_limit: 50

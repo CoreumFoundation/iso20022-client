@@ -68,6 +68,8 @@ type Session struct {
 	Destination            sdk.AccAddress `json:"destination"`
 	Messages               []string       `json:"messages"`
 	FundsInEscrow          []sdk.Coin     `json:"funds_in_escrow"`
+	StartTime              uint64         `json:"start_time"`
+	Uetr                   string         `json:"uetr"`
 	ConfirmedByInitiator   bool           `json:"confirmed_by_initiator"`
 	ConfirmedByDestination bool           `json:"confirmed_by_destination"`
 }
