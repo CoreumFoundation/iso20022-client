@@ -3,43 +3,42 @@
 </div>
 
 <div style="text-align: center">
-    <img src="static/diagram.png" height="500px" width="500px" alt="ISO20022 Network Diagram"/>
+    <img src="static/client-network-diagram.png" height="500px" width="500px" alt="ISO20022 Network Diagram"/>
 </div>
 
 ## Definitions
 
-* **ISO20022**: As defined in [ISO20022 website](https://www.iso20022.org/):
+- **ISO20022**: As defined in [ISO20022 website](https://www.iso20022.org/):
 
 > ISO20022 is a single standardization approach (methodology, process, repository)
 > to be used by all financial standards initiatives.
 
-* **ISO20022 messaging system**: A decentralized messenger connecting financial institutions,
+- **ISO20022 messaging system**: A decentralized messenger connecting financial institutions,
   so they can pass their ISO20022 messages securely between each other,
   like [SWIFT](https://swift.com) in traditional banks.
-  This system consists of a smart token deployed in a blockchain and a client application
+  This system consists of a smart contract deployed on the Coreum blockchain and a client application
   distributed between financial institutions to connect to the smart contract.
 
-* **ISO20022 Client**: The application running on financial institutions'
+- **ISO20022 Client**: The application running on financial institutions'
   infrastructure that abstracts away all the complexities related to blockchain
   and acts as an HTTP server,
   so other applications in the institution can send and receive ISO20022 messages to or from it.
 
-* **ISO20022 Message**: An XML file generated using financial applications (like accounting apps) using the ISO20022
+- **ISO20022 Message**: An XML file generated using financial applications (like accounting apps) using the ISO20022
   standard describing a financial operation like transferring credits.
 
 ## How It Works
 
 ### The Flow
 
-The process of sending an ISO20022 message consists of 5 steps:
+The process of sending an ISO20022 message consists of 4 steps:
 
 1. Reading and parsing the XML file of the message and extracting the Financial Institution Identity information of the
    recipient from each message
 2. Finding the wallet address and public key of the recipient from the address book
 3. Compressing the XML file and encrypting it with a symmetric key generated from the public key of the receiver and the
    private key of the sender using diffie-hellman key exchange method
-4. Minting a NFT from the encrypted data
-5. Sending the NFT information to the smart contract, so it can store it with sender and recipient address
+4. Minting a NFT from the encrypted data & sending it to the smart contract
 
 The process of receiving an ISO20022 message consists of 7 steps:
 
@@ -56,7 +55,7 @@ The process of receiving an ISO20022 message consists of 7 steps:
 ### Example
 
 <div style="text-align: center">
-    <img src="static/example.png" width="500px" alt="PACS.008 Message Example"/>
+    <img src="static/client-flow-diagram-high-level.png" width="500px" alt="PACS.008 Message Example"/>
 </div>
 
 As a simple example, let's say one person (Debtor) has an account in one financial institution (Debtor Agent)
@@ -82,6 +81,10 @@ decrypt and decompress it and then the Creditor Agent can process the request an
 `CAMT.053` (BankToCustomerStatement under Cash Management) which is also outside of scope of this project.
 
 ### Real-Time Gross Settlement (RTGS)
+
+  <div style="text-align: center">
+    <img src="static/client-flow-diagram-detailed.png" height="600px" width="500px" alt="ISO20022 Network Diagram"/>
+</div>
 
 In the example above, we only handle the messaging part of the settlement, but the actual transfer of the funds is on
 the two parties to handle. We also provide an option to do the actual transfer of the funds using our chain.
@@ -421,15 +424,15 @@ the wallet address and your public key.
 After adding your key to the application in the previous step, it will show you an output like this:
 
 ```yaml
--   address: core1tagmslrz9xqfyjdddt6nu3q97us3ejck6475n8
-    name: iso20022-client
-    pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AqV7ob5PTCKOaiOp6iD6tQvjGorS6xLJiGQaVRBvQzM+"}'
-    type: local
+- address: core1tagmslrz9xqfyjdddt6nu3q97us3ejck6475n8
+  name: iso20022-client
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AqV7ob5PTCKOaiOp6iD6tQvjGorS6xLJiGQaVRBvQzM+"}'
+  type: local
 ```
 
-* The address written after the `address:` in the output is your wallet address.
-* The `key` part of the `pubkey` is your public key.
-* The ISO20022 Financial Institution Identity information is how you are identified in ISO20022 messages,
+- The address written after the `address:` in the output is your wallet address.
+- The `key` part of the `pubkey` is your public key.
+- The ISO20022 Financial Institution Identity information is how you are identified in ISO20022 messages,
   which usually is using a Business Identification Code (BIC).
 
 Now you need fill [this form](https://forms.gle/ovM689bAaeZM1WPs9) with the information about your institution.
@@ -497,4 +500,4 @@ Settlement (PACS).
 
 - [ ] Add new messages from [ISO20022 message definitions](https://www.iso20022.org/iso-20022-message-definitions).
 - [ ] Add old messages
-  from [ISO20022 message archive](https://www.iso20022.org/catalogue-messages/iso-20022-messages-archive).
+      from [ISO20022 message archive](https://www.iso20022.org/catalogue-messages/iso-20022-messages-archive).
