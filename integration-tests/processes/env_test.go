@@ -253,7 +253,7 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) (server.MessageStatusRes
 	}
 
 	if res.StatusCode == http.StatusBadRequest {
-		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
+		return server.MessageStatusResponse{}, errors.New(response.Message)
 	}
 
 	statusResponse, ok := response.Data.(*server.MessageStatusResponse)
@@ -326,7 +326,7 @@ func (r *RunnerEnv) MessageStatus(messageID string) (server.MessageStatusRespons
 	}
 
 	if res.StatusCode == http.StatusBadRequest {
-		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
+		return server.MessageStatusResponse{}, errors.New(response.Message)
 	}
 
 	statusResponse, ok := response.Data.(*server.MessageStatusResponse)

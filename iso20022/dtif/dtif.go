@@ -220,8 +220,8 @@ func (d *Dtif) LookupByDenom(denom string) (string, bool) {
 	return dti, found
 }
 
-var embeddedConfigPattern = regexp.MustCompile("atob\\('([^']+)'\\)")
-var formFieldsPattern = regexp.MustCompile("name=\"([^\"]+)\"\\s+value=\"([^\"]+)\"")
+var embeddedConfigPattern = regexp.MustCompile(`atob\('([^']+)'\)`)
+var formFieldsPattern = regexp.MustCompile(`name="([^"]+)"\s+value="([^"]+)"`)
 
 func (d *Dtif) Login(ctx context.Context, username, password string) (string, error) {
 	jar, err := cookiejar.New(nil)

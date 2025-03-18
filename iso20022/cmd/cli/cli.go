@@ -479,7 +479,7 @@ func SendMessageCmd() *cobra.Command {
 			}
 
 			if res.StatusCode == http.StatusBadRequest {
-				return errors.Errorf(response.Message)
+				return errors.New(response.Message)
 			}
 
 			statusResponse, ok := response.Data.(*server.MessageStatusResponse)
@@ -612,7 +612,7 @@ func MessageStatusCmd() *cobra.Command {
 			}
 
 			if res.StatusCode == http.StatusBadRequest {
-				return errors.Errorf(response.Message)
+				return errors.New(response.Message)
 			}
 
 			statusResponse, ok := response.Data.(*server.MessageStatusResponse)
