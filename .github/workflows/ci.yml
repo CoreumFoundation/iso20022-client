@@ -96,11 +96,15 @@ jobs:
           key: ${{ runner.os }}-docker-v3-scribemd-${{ steps.get-year-week.outputs.date }} # year-week key
       - name: Prepare dependencies
         run: |
-          coreum-builder build/me
-          coreum-builder build
-          coreum-builder znet remove
+          echo "building crust"
+          crust build/me
+          echo "building znet"
+          crust build/znet
+          crust znet remove
+          echo "building coreum builder"
           coreum-builder build/me
           cd $(pwd)/iso20022-client
+          echo "getting dependencies"
           make deps
       - name: Run ${{ matrix.ci_step }}
         working-directory: ./iso20022-client
