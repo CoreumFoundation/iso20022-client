@@ -79,6 +79,8 @@ type DtifConfig struct {
 	UpdateInterval      time.Duration `yaml:"update_interval"`
 	DistributedLedger   string        `yaml:"distributed_ledger"`
 	CustomSourceAddress string        `yaml:"custom_source_address"`
+	Username            string        `yaml:"username"`
+	Password            string        `yaml:"password"`
 }
 
 // Queue is the message queue config.

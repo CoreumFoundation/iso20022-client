@@ -245,9 +245,9 @@ func NewComponents(
 
 	var dti *dtif.Dtif
 	if cfg.Processes.Dtif.CustomSourceAddress == "" {
-		dti = dtif.New(log, cfg.Processes.Dtif.DistributedLedger)
+		dti = dtif.New(log, cfg.Processes.Dtif.DistributedLedger, cfg.Processes.Dtif.Username, cfg.Processes.Dtif.Password)
 	} else {
-		dti = dtif.NewWithSourceAddress(log, cfg.Processes.Dtif.DistributedLedger, cfg.Processes.Dtif.CustomSourceAddress)
+		dti = dtif.NewWithSourceAddress(log, cfg.Processes.Dtif.DistributedLedger, cfg.Processes.Dtif.CustomSourceAddress, cfg.Processes.Dtif.Username, cfg.Processes.Dtif.Password)
 	}
 
 	compressor, err := compress.New()

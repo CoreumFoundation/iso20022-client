@@ -13,7 +13,7 @@ import (
 func TestEmptyDtif(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
-	d := NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/data.json")
+	d := NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/data.json", "", "")
 
 	denom, _, ok := d.LookupByDTI("KNNT25FGR")
 	require.False(t, ok)
@@ -25,7 +25,7 @@ func TestLookup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
 
-	d := NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/data.json")
+	d := NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/data.json", "", "")
 
 	require.NoError(t, d.Update(ctx))
 
@@ -39,7 +39,7 @@ func TestLookupByDenom(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	logMock := logger.NewAnyLogMock(ctrl)
 
-	d := NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/data.json")
+	d := NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/data.json", "", "")
 
 	require.NoError(t, d.Update(ctx))
 
@@ -61,7 +61,7 @@ func TestUpdate(t *testing.T) {
 	}{
 		{
 			name: "wrong path",
-			d:    NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/non-existing.json"),
+			d:    NewWithSourceAddress(logMock, "S87NJRT7T", "file://./testdata/non-existing.json", "", ""),
 			err:  true,
 		},
 	}
@@ -93,7 +93,7 @@ func TestCache(t *testing.T) {
 				logMock := logger.NewMockLogger(ctrl)
 				logMock.EXPECT().Debug(gomock.Any(), "DTIF data updated")
 				logMock.EXPECT().Debug(gomock.Any(), "DTIF data is not changed, no need update")
-				return New(logMock, "S87NJRT7T")
+				return New(logMock, "S87NJRT7T", "user", "pass")
 			},
 		},
 		{
@@ -106,6 +106,7 @@ func TestCache(t *testing.T) {
 					logMock,
 					"S87NJRT7T",
 					"file://./testdata/data.json",
+					"", "",
 				)
 			},
 		},
