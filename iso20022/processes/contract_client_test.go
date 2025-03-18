@@ -243,7 +243,7 @@ func TestContractClient_ExtractMetadata(t *testing.T) {
 			comp, err := compress.New()
 			requireT.NoError(err)
 
-			dti := dtif.NewWithSourceAddress(logMock, "S87NJRT7T", "file://../dtif/testdata/data.json")
+			dti := dtif.NewWithSourceAddress(logMock, "S87NJRT7T", "file://../dtif/testdata/data.json", "", "")
 			requireT.NoError(dti.Update(context.Background()))
 
 			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClientMock, cryptography, parser, nil, dti)
