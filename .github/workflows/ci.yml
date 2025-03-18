@@ -47,6 +47,12 @@ jobs:
         with:
           persist-credentials: false
           path: iso20022-client
+      - name: Checkout crust
+        uses: actions/checkout@v4
+        with:
+          repository: CoreumFoundation/crust
+          path: crust
+          ref: abf86cf392b5e8b37f6471e87472f55275d1e478
       - name: Checkout coreum
         uses: actions/checkout@v4
         with:
@@ -57,6 +63,7 @@ jobs:
         run: |
           echo "$(pwd)/iso20022-client/bin" >> $GITHUB_PATH
           echo "$(pwd)/coreum/bin" >> $GITHUB_PATH
+          echo "$(pwd)/crust/bin" >> $GITHUB_PATH
           cd $(pwd)/iso20022-client
           make build
       - name: Retrieve go version
