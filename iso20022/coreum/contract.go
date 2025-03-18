@@ -94,15 +94,17 @@ type instantiateRequest struct{}
 type StartSession struct {
 	Uetr        string         `json:"uetr"`
 	Message     NFTInfo        `json:"message"`
+	MessageID   string         `json:"message_id"`
 	Destination sdk.AccAddress `json:"destination"`
 	Funds       sdk.Coins      `json:"funds"`
 }
 
 type startSessionRequest struct {
 	StartSession struct {
-		Uetr            string         `json:"uetr"`
-		StartingMessage NFTInfo        `json:"starting_message"`
-		Destination     sdk.AccAddress `json:"destination"`
+		Uetr              string         `json:"uetr"`
+		StartingMessage   NFTInfo        `json:"starting_message"`
+		StartingMessageID string         `json:"starting_message_id"`
+		Destination       sdk.AccAddress `json:"destination"`
 	} `json:"start_session"`
 }
 
@@ -390,6 +392,7 @@ func (c *ContractClient) StartSessions(
 		req := startSessionRequest{}
 		req.StartSession.Uetr = session.Uetr
 		req.StartSession.StartingMessage = session.Message
+		req.StartSession.StartingMessageID = session.MessageID
 		req.StartSession.Destination = session.Destination
 		reqs = append(reqs, execRequest{
 			Body:  req,

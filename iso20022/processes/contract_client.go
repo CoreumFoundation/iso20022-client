@@ -364,19 +364,6 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*Me
 			Recipient: p.cfg.CoreumContractAddress.String(),
 		})
 
-		nft := coreum.NFTInfo{
-			ClassId: strings.ToLower(classId),
-			Id:      id,
-		}
-		if !message.AttachedFunds.IsZero() {
-			startSessions = append(startSessions, coreum.StartSession{
-				Uetr:        message.Uetr,
-				Message:     nft,
-				Destination: message.Destination,
-				Funds:       message.AttachedFunds,
-			})
-		}
-
 		switch p.parser.GetTransactionStatus(message.ParsedMessage) {
 		case TransactionStatusCreditorAcceptedSettlementCompleted, TransactionStatusAcceptedCustomerProfile,
 			TransactionStatusAcceptedSettlementCompleted, TransactionStatusAcceptedSettlementInProcess,
@@ -446,12 +433,26 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*Me
 			})
 		}
 
-		sendMessages = append(sendMessages, coreum.SendMessage{
-			Uetr:        message.Uetr,
-			ID:          message.Id,
-			Destination: message.Destination,
-			Message:     nft,
-		})
+		nft := coreum.NFTInfo{
+			ClassId: strings.ToLower(classId),
+			Id:      id,
+		}
+		if !message.AttachedFunds.IsZero() {
+			startSessions = append(startSessions, coreum.StartSession{
+				Uetr:        message.Uetr,
+				Message:     nft,
+				MessageID:   message.Id,
+				Destination: message.Destination,
+				Funds:       message.AttachedFunds,
+			})
+		} else {
+			sendMessages = append(sendMessages, coreum.SendMessage{
+				Uetr:        message.Uetr,
+				ID:          message.Id,
+				Destination: message.Destination,
+				Message:     nft,
+			})
+		}
 	}
 
 	_, err := p.contractClient.BroadcastMessages(ctx, p.cfg.ClientAddress, mintMsgs...)
