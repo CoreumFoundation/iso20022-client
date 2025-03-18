@@ -10,7 +10,7 @@ import (
 	secp256k1v4 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/pkg/errors"
 
-	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
+	coreumchainclient "github.com/CoreumFoundation/coreum/v5/pkg/client"
 )
 
 type Cryptography struct{}

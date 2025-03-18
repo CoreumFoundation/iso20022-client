@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum/v4/app"
-	"github.com/CoreumFoundation/coreum/v4/pkg/client"
-	"github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
-	"github.com/CoreumFoundation/coreum/v4/testutil/integration"
-	feemodeltypes "github.com/CoreumFoundation/coreum/v4/x/feemodel/types"
+	"github.com/CoreumFoundation/coreum/v5/pkg/client"
+	"github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
+	"github.com/CoreumFoundation/coreum/v5/testutil/integration"
+	feemodeltypes "github.com/CoreumFoundation/coreum/v5/x/feemodel/types"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 )
 
@@ -44,7 +44,8 @@ func NewCoreumChain(cfg CoreumChainConfig) (CoreumChain, error) {
 	}
 	coreumSettings := integration.QueryChainSettings(queryCtx, coreumGRPCClient)
 
-	coreumClientCtx := client.NewContext(getTestContextConfig(), app.ModuleBasics).
+	modules := auth.AppModuleBasic{}
+	coreumClientCtx := client.NewContext(getTestContextConfig(), modules).
 		WithGRPCClient(coreumGRPCClient)
 
 	coreumFeemodelParamsRes, err := feemodeltypes.

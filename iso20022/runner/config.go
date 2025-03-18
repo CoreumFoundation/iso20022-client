@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
-	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
+	coreumchainclient "github.com/CoreumFoundation/coreum/v5/pkg/client"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )

@@ -13,8 +13,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	coreumlogger "github.com/CoreumFoundation/coreum-tools/pkg/logger"
-	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
-	coreumchainconstant "github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
+	coreumchainclient "github.com/CoreumFoundation/coreum/v5/pkg/client"
+	coreumchainconstant "github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
