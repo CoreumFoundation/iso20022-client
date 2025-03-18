@@ -30,8 +30,8 @@ jobs:
             codecov-name: iso20022-cover.out
           - ci_step: "integration tests"
             command: |
-              coreum-builder build images
-              coreum-builder  znet start --profiles=1cored --timeout-commit 0.5s
+              coreum-builder build images/cored
+              coreum-builder znet start --profiles=1cored --timeout-commit 0.5s
               make integration-test
             linter-cache: false
             docker-cache: true
