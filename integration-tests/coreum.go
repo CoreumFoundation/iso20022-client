@@ -66,7 +66,6 @@ func NewCoreumChain(cfg CoreumChainConfig) (CoreumChain, error) {
 		panic(errors.WithStack(err))
 	}
 	app.ChosenNetwork = network
-	network.SetSDKConfig()
 
 	coreum.SetSDKConfig(coreumSettings.AddressPrefix)
 
