@@ -19,7 +19,7 @@ require (
 	cosmossdk.io/math v1.5.0
 	cosmossdk.io/x/nft v0.1.1
 	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20230627094203-821c6a4eebab
-	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250317192105-b5126c1cc7a6
+	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250324062602-c80efd7b172a
 	github.com/CoreumFoundation/iso20022-client/iso20022-messages v0.0.0-00010101000000-000000000000
 	github.com/CosmWasm/wasmd v0.54.0
 	github.com/cosmos/cosmos-sdk v0.50.13
@@ -30,7 +30,6 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.2.0
 	github.com/klauspost/compress v1.17.11
 	github.com/pkg/errors v0.9.1
-	github.com/samber/lo v1.39.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
@@ -184,6 +183,7 @@ require (
 	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/samber/lo v1.39.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.5 // indirect
 	github.com/shamaton/msgpack/v2 v2.2.2 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
