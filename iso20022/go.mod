@@ -21,7 +21,7 @@ require (
 	cosmossdk.io/math v1.5.0
 	cosmossdk.io/x/nft v0.1.1
 	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20230627094203-821c6a4eebab
-	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250324062602-c80efd7b172a
+	github.com/CoreumFoundation/coreum/v5 v5.0.0-20250324082509-211204c9ad21
 	github.com/CoreumFoundation/iso20022-client/iso20022-messages v0.0.0-00010101000000-000000000000
 	github.com/CosmWasm/wasmd v0.54.0
 	github.com/cosmos/cosmos-sdk v0.50.13

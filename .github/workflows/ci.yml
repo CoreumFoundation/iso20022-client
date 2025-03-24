@@ -52,7 +52,7 @@ jobs:
         with:
           repository: CoreumFoundation/coreum
           path: coreum
-          ref: c80efd7b172a91db0eec098cb668024387f554ad
+          ref: 211204c9ad218e4d0ad4a6f9a4007df6c0d006ff
       - name: Set up build system
         run: |
           echo "$(pwd)/iso20022-client/bin" >> $GITHUB_PATH

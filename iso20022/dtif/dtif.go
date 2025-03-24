@@ -104,8 +104,12 @@ func (d *Dtif) Update(ctx context.Context) error {
 		d.lastVersion = stat.ModTime().String()
 		d.log.Debug(ctx, "DTIF data updated")
 	} else {
-		accessToken, err := d.Login(ctx, "masih@coreum.com", "B$cw12AV%O3NS4w$")
+		accessToken, err := d.Login(ctx, d.username, d.password)
 		if err != nil {
+			// FIXME: DTIF needs authentication. ignore for now
+			if strings.Contains(err.Error(), "dtif status 403") {
+				return nil
+			}
 			return err
 		}
 
