@@ -107,7 +107,7 @@ func (d *Dtif) Update(ctx context.Context) error {
 		accessToken, err := d.Login(ctx, d.username, d.password)
 		if err != nil {
 			// FIXME: DTIF needs authentication. ignore for now
-			if strings.Contains(err.Error(), "dtif status 403") {
+			if strings.Contains(err.Error(), "dtif status 40") {
 				return nil
 			}
 			return err
