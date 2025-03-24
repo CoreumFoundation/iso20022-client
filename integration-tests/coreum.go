@@ -4,10 +4,13 @@ import (
 	"context"
 	"time"
 
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/pkg/errors"
 
+	"github.com/CoreumFoundation/coreum/v5/app"
 	"github.com/CoreumFoundation/coreum/v5/pkg/client"
+	"github.com/CoreumFoundation/coreum/v5/pkg/config"
 	"github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
 	"github.com/CoreumFoundation/coreum/v5/testutil/integration"
 	feemodeltypes "github.com/CoreumFoundation/coreum/v5/x/feemodel/types"
@@ -17,6 +20,7 @@ import (
 // CoreumChainConfig represents coreum chain config.
 type CoreumChainConfig struct {
 	GRPCAddress            string
+	RPCAddress             string
 	FundingMnemonic        string
 	ContractPath           string
 	AddressBookRepoAddress string
@@ -56,14 +60,26 @@ func NewCoreumChain(cfg CoreumChainConfig) (CoreumChain, error) {
 	}
 	coreumSettings.GasPrice = coreumFeemodelParamsRes.Params.Model.InitialGasPrice
 	coreumSettings.CoinType = constant.CoinType
+	coreumSettings.RPCAddress = cfg.RPCAddress
+	network, err := config.NetworkConfigByChainID(constant.ChainID(coreumSettings.ChainID))
+	if err != nil {
+		panic(errors.WithStack(err))
+	}
+	app.ChosenNetwork = network
+	network.SetSDKConfig()
 
 	coreum.SetSDKConfig(coreumSettings.AddressPrefix)
+
+	coreumRPCClient, err := sdkclient.NewClientFromNode(cfg.RPCAddress)
+	if err != nil {
+		panic(errors.WithStack(err))
+	}
 
 	return CoreumChain{
 		cfg: coreumCfg,
 		CoreumChain: integration.NewCoreumChain(integration.NewChain(
 			coreumGRPCClient,
-			nil,
+			coreumRPCClient,
 			coreumSettings,
 			cfg.FundingMnemonic),
 			[]string{},
