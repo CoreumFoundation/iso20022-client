@@ -38,7 +38,7 @@ jobs:
             codecov: false
             codecov-name: integration-cover.out
 
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     steps:
       - name: Go version used to build builder
         run: go version
@@ -70,13 +70,13 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ steps.goversion.outputs.GO_VERSION }}
+          key: iso20022-${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ steps.goversion.outputs.GO_VERSION }}
       - name: Setup linter cache
         uses: actions/cache@v3
         if: ${{ matrix.linter-cache }}
         with:
           path: ~/.cache/golangci-lint
-          key: ${{ runner.os }}-linter-cache-2-${{ steps.goversion.outputs.GO_VERSION }}
+          key: iso20022-${{ runner.os }}-linter-cache-2-${{ steps.goversion.outputs.GO_VERSION }}
       - name: Get Date
         id: get-year-week
         run: |
@@ -86,7 +86,7 @@ jobs:
         uses: ScribeMD/docker-cache@0.5.0
         if: ${{ matrix.docker-cache }}
         with:
-          key: ${{ runner.os }}-docker-v3-scribemd-${{ steps.get-year-week.outputs.date }} # year-week key
+          key: iso20022-${{ runner.os }}-docker-v3-scribemd-${{ steps.get-year-week.outputs.date }} # year-week key
       - name: Prepare dependencies
         run: |
           coreum-builder build/me
