@@ -47,12 +47,6 @@ jobs:
         with:
           persist-credentials: false
           path: iso20022-client
-      - name: Checkout crust
-        uses: actions/checkout@v4
-        with:
-          repository: CoreumFoundation/crust
-          path: crust
-          ref: abf86cf392b5e8b37f6471e87472f55275d1e478
       - name: Checkout coreum
         uses: actions/checkout@v4
         with:
@@ -63,7 +57,6 @@ jobs:
         run: |
           echo "$(pwd)/iso20022-client/bin" >> $GITHUB_PATH
           echo "$(pwd)/coreum/bin" >> $GITHUB_PATH
-          echo "$(pwd)/crust/bin" >> $GITHUB_PATH
           cd $(pwd)/iso20022-client
           make build
       - name: Retrieve go version
@@ -96,15 +89,10 @@ jobs:
           key: ${{ runner.os }}-docker-v3-scribemd-${{ steps.get-year-week.outputs.date }} # year-week key
       - name: Prepare dependencies
         run: |
-          echo "building crust"
-          crust build/me
-          echo "building znet"
-          crust build/znet
-          crust znet remove
-          echo "building coreum builder"
           coreum-builder build/me
+          coreum-builder build/znet
+          coreum-builder znet remove
           cd $(pwd)/iso20022-client
-          echo "getting dependencies"
           make deps
       - name: Run ${{ matrix.ci_step }}
         working-directory: ./iso20022-client
