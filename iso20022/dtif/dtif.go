@@ -1,14 +1,19 @@
 package dtif
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"math/big"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -21,6 +26,8 @@ type Dtif struct {
 	log                  logger.Logger
 	distributedLedger    string
 	sourceAddress        string
+	username             string
+	password             string
 	dtiToDenom           map[string]string
 	dtiToPriceMultiplier map[string]*big.Int
 	denomToDti           map[string]string
@@ -46,16 +53,18 @@ var (
 )
 
 // New creates a new DTIF instance
-func New(log logger.Logger, distributedLedger string) *Dtif {
-	return NewWithSourceAddress(log, distributedLedger, "https://download.dtif.org/data.json")
+func New(log logger.Logger, distributedLedger, username, password string) *Dtif {
+	return NewWithSourceAddress(log, distributedLedger, "https://download.dtif.org/data.json", username, password)
 }
 
 // NewWithSourceAddress creates a new DTIF instance from the requested source address
-func NewWithSourceAddress(log logger.Logger, distributedLedger, sourceAddress string) *Dtif {
+func NewWithSourceAddress(log logger.Logger, distributedLedger, sourceAddress, username, password string) *Dtif {
 	return &Dtif{
 		log,
 		distributedLedger,
 		sourceAddress,
+		username,
+		password,
 		make(map[string]string),
 		make(map[string]*big.Int),
 		make(map[string]string),
@@ -95,10 +104,20 @@ func (d *Dtif) Update(ctx context.Context) error {
 		d.lastVersion = stat.ModTime().String()
 		d.log.Debug(ctx, "DTIF data updated")
 	} else {
+		accessToken, err := d.Login(ctx, d.username, d.password)
+		if err != nil {
+			// FIXME: DTIF needs authentication. ignore for now
+			if strings.Contains(err.Error(), "dtif status 40") {
+				return nil
+			}
+			return err
+		}
+
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.sourceAddress, nil)
 		if err != nil {
 			return err
 		}
+		req.Header.Set("authorization", "Bearer "+accessToken)
 		req.Header.Set("If-None-Match", d.lastVersion)
 
 		res, err := http.DefaultClient.Do(req)
@@ -145,24 +164,11 @@ func (d *Dtif) Update(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		ty := [2]int{temp.Header.DTIType, temp.Header.DLTType}
-		var record DigitalToken
-		switch ty {
-		case AuxiliaryDigitalToken:
-			record = new(AuxiliaryDigitalTokenJson)
-		case NativeDigitalTokenBlockchain:
-			record = new(NativeDigitalTokenBlockchainJson)
-		case NativeDigitalTokenOther:
-			record = new(NativeDigitalTokenOtherJson)
-		case DistributedLedgerWithoutANativeDigitalTokenBlockchain:
-			record = new(DistributedLedgerWithoutANativeDigitalTokenBlockchainJson)
-		case DistributedLedgerWithoutANativeDigitalTokenOther:
-			record = new(DistributedLedgerWithoutANativeDigitalTokenOtherJson)
-		case FunctionallyFungibleGroupOfDigitalTokens:
-			record = new(FunctionallyFungibleGroupOfDigitalTokensJson)
-		default:
-			return errors.New("unsupported token type") // TODO
+		if temp.Header.DTIType != 0 || temp.Header.DLTType != 0 {
+			continue
 		}
+
+		var record DigitalToken = new(AuxiliaryDigitalTokenJson)
 		err = json.Unmarshal(item, record)
 		if err != nil {
 			return err
@@ -174,7 +180,7 @@ func (d *Dtif) Update(ctx context.Context) error {
 			continue
 		}
 
-		if token.Normative.AuxiliaryDistributedLedger == nil || *token.Normative.AuxiliaryDistributedLedger != d.distributedLedger {
+		if token.Normative.AuxiliaryDistributedLedger == "<locked>" || token.Normative.AuxiliaryDistributedLedger != d.distributedLedger {
 			// we are only interested in Coreum tokens
 			continue
 		}
@@ -216,4 +222,127 @@ func (d *Dtif) LookupByDenom(denom string) (string, bool) {
 	defer d.lock.RUnlock()
 	dti, found := d.denomToDti[denom]
 	return dti, found
+}
+
+var embeddedConfigPattern = regexp.MustCompile(`atob\('([^']+)'\)`)
+var formFieldsPattern = regexp.MustCompile(`name="([^"]+)"\s+value="([^"]+)"`)
+
+func (d *Dtif) Login(ctx context.Context, username, password string) (string, error) {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{
+		Transport: http.DefaultTransport,
+		Jar:       jar,
+	}
+
+	res, err := client.Get("https://auth.dtif.org/authorize?response_type=code&client_id=eaYmwHhnZUgMhPUBuhC9GV867aqKDqon&connection=DB-DTIF&redirect_uri=https://dtif.org/wp-login.php?redirect_to=https%3A%2F%2Fdtif.org%2F&reauth=1")
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode >= 400 {
+		return "", fmt.Errorf("dtif status %d", res.StatusCode)
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	parts := embeddedConfigPattern.FindStringSubmatch(string(body))
+
+	if len(parts) < 2 {
+		return "", errors.New("DTIF implementation changed")
+	}
+
+	jsonBytes, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", err
+	}
+
+	var loginConfig LoginConfig
+	err = json.Unmarshal(jsonBytes, &loginConfig)
+	if err != nil {
+		return "", err
+	}
+
+	payloadData := LoginPayload{
+		ClientId:     loginConfig.ClientID,
+		RedirectUri:  loginConfig.CallbackURL,
+		Tenant:       loginConfig.Auth0Tenant,
+		ResponseType: "token id_token",
+		Csrf:         loginConfig.InternalOptions.Csrf,
+		State:        loginConfig.InternalOptions.State,
+		Intstate:     loginConfig.InternalOptions.Intstate,
+		Username:     username,
+		Password:     password,
+		Nonce:        "rC8xYDMd1ncElGwXCSRKzbvRvV52V1n9",
+		Connection:   loginConfig.Connection,
+	}
+
+	payload, err := json.Marshal(payloadData)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://auth.dtif.org/usernamepassword/login", bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("auth0-client", "eyJuYW1lIjoiYXV0aDAuanMtdWxwIiwidmVyc2lvbiI6IjkuMTEuMiJ9")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+
+	res, err = client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode >= 400 {
+		return "", fmt.Errorf("dtif status %d", res.StatusCode)
+	}
+
+	defer res.Body.Close()
+	body, err = io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	fields := formFieldsPattern.FindAllStringSubmatch(string(body), -1)
+
+	formPayload := url.Values{}
+	for _, field := range fields {
+		formPayload.Set(field[1], html.UnescapeString(field[2]))
+	}
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, "https://auth.dtif.org/login/callback", strings.NewReader(formPayload.Encode()))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+
+	res, err = client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode >= 400 {
+		return "", fmt.Errorf("dtif status %d", res.StatusCode)
+	}
+
+	defer res.Body.Close()
+	cookies := res.Request.Cookies()
+	accessToken := ""
+	for _, cookie := range cookies {
+		if cookie.Name == "access_token" {
+			accessToken = cookie.Value
+		}
+	}
+
+	return accessToken, nil
 }

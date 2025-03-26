@@ -10,21 +10,22 @@ import (
 	"sync"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/x/nft"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdktxtypes "github.com/cosmos/cosmos-sdk/types/tx"
-	"github.com/cosmos/cosmos-sdk/x/nft"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
-	"github.com/CoreumFoundation/coreum/v4/pkg/client"
-	"github.com/CoreumFoundation/coreum/v4/testutil/event"
-	assetfttypes "github.com/CoreumFoundation/coreum/v4/x/asset/ft/types"
-	nfttypes "github.com/CoreumFoundation/coreum/v4/x/asset/nft/types"
+	"github.com/CoreumFoundation/coreum/v5/pkg/client"
+	"github.com/CoreumFoundation/coreum/v5/testutil/event"
+	assetfttypes "github.com/CoreumFoundation/coreum/v5/x/asset/ft/types"
+	nfttypes "github.com/CoreumFoundation/coreum/v5/x/asset/nft/types"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
 
@@ -94,15 +95,17 @@ type instantiateRequest struct{}
 type StartSession struct {
 	Uetr        string         `json:"uetr"`
 	Message     NFTInfo        `json:"message"`
+	MessageID   string         `json:"message_id"`
 	Destination sdk.AccAddress `json:"destination"`
 	Funds       sdk.Coins      `json:"funds"`
 }
 
 type startSessionRequest struct {
 	StartSession struct {
-		Uetr            string         `json:"uetr"`
-		StartingMessage NFTInfo        `json:"starting_message"`
-		Destination     sdk.AccAddress `json:"destination"`
+		Uetr              string         `json:"uetr"`
+		StartingMessage   NFTInfo        `json:"starting_message"`
+		StartingMessageID string         `json:"starting_message_id"`
+		Destination       sdk.AccAddress `json:"destination"`
 	} `json:"start_session"`
 }
 
@@ -172,7 +175,7 @@ type execRequest struct {
 type ContractClientConfig struct {
 	ContractAddress       sdk.AccAddress
 	GasAdjustment         float64
-	GasPriceAdjustment    sdk.Dec
+	GasPriceAdjustment    sdkmath.LegacyDec
 	PageLimit             uint32
 	OutOfGasRetryDelay    time.Duration
 	OutOfGasRetryAttempts uint32
@@ -184,7 +187,7 @@ func DefaultContractClientConfig(contractAddress sdk.AccAddress) ContractClientC
 	return ContractClientConfig{
 		ContractAddress:       contractAddress,
 		GasAdjustment:         1.4,
-		GasPriceAdjustment:    sdk.MustNewDecFromStr("1.2"),
+		GasPriceAdjustment:    sdkmath.LegacyMustNewDecFromStr("1.2"),
 		PageLimit:             50,
 		OutOfGasRetryDelay:    500 * time.Millisecond,
 		OutOfGasRetryAttempts: 5,
@@ -390,6 +393,7 @@ func (c *ContractClient) StartSessions(
 		req := startSessionRequest{}
 		req.StartSession.Uetr = session.Uetr
 		req.StartSession.StartingMessage = session.Message
+		req.StartSession.StartingMessageID = session.MessageID
 		req.StartSession.Destination = session.Destination
 		reqs = append(reqs, execRequest{
 			Body:  req,
@@ -554,7 +558,7 @@ func (c *ContractClient) IssueNFTClass(
 		Symbol:      symbol,
 		Name:        name,
 		Description: description,
-		RoyaltyRate: sdk.ZeroDec(),
+		RoyaltyRate: sdkmath.LegacyZeroDec(),
 	}
 
 	txRes, err := client.BroadcastTx(ctx, c.clientCtx.WithFromAddress(sender), c.getTxFactory(), msgIssueClass)

@@ -6,20 +6,21 @@ import (
 	"fmt"
 	"net/url"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/parallel"
-	coreumapp "github.com/CoreumFoundation/coreum/v4/app"
-	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
-	coreumchainconfig "github.com/CoreumFoundation/coreum/v4/pkg/config"
-	coreumchainconstant "github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
+	coreumchainclient "github.com/CoreumFoundation/coreum/v5/pkg/client"
+	coreumchainconfig "github.com/CoreumFoundation/coreum/v5/pkg/config"
+	coreumchainconstant "github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
@@ -184,7 +185,8 @@ func NewComponents(
 	coreumClientContextCfg.TimeoutConfig.TxTimeout = cfg.Coreum.Contract.TxTimeout
 	coreumClientContextCfg.TimeoutConfig.TxStatusPollInterval = cfg.Coreum.Contract.TxStatusPollInterval
 
-	coreumClientCtx := coreumchainclient.NewContext(coreumClientContextCfg, coreumapp.ModuleBasics).
+	modules := auth.AppModuleBasic{}
+	coreumClientCtx := coreumchainclient.NewContext(coreumClientContextCfg, modules).
 		WithKeyring(coreumSDKClientCtx.Keyring).
 		WithGenerateOnly(coreumSDKClientCtx.GenerateOnly).
 		WithFromAddress(coreumSDKClientCtx.FromAddress)
@@ -219,7 +221,7 @@ func NewComponents(
 	}
 	contractClientCfg := coreum.DefaultContractClientConfig(contractAddress)
 	contractClientCfg.GasAdjustment = cfg.Coreum.Contract.GasAdjustment
-	contractClientCfg.GasPriceAdjustment = sdk.MustNewDecFromStr(fmt.Sprintf("%f", cfg.Coreum.Contract.GasPriceAdjustment))
+	contractClientCfg.GasPriceAdjustment = sdkmath.LegacyMustNewDecFromStr(fmt.Sprintf("%f", cfg.Coreum.Contract.GasPriceAdjustment))
 	contractClientCfg.PageLimit = cfg.Coreum.Contract.PageLimit
 	contractClientCfg.OutOfGasRetryDelay = cfg.Coreum.Contract.OutOfGasRetryDelay
 	contractClientCfg.OutOfGasRetryAttempts = cfg.Coreum.Contract.OutOfGasRetryAttempts
@@ -243,9 +245,9 @@ func NewComponents(
 
 	var dti *dtif.Dtif
 	if cfg.Processes.Dtif.CustomSourceAddress == "" {
-		dti = dtif.New(log, cfg.Processes.Dtif.DistributedLedger)
+		dti = dtif.New(log, cfg.Processes.Dtif.DistributedLedger, cfg.Processes.Dtif.Username, cfg.Processes.Dtif.Password)
 	} else {
-		dti = dtif.NewWithSourceAddress(log, cfg.Processes.Dtif.DistributedLedger, cfg.Processes.Dtif.CustomSourceAddress)
+		dti = dtif.NewWithSourceAddress(log, cfg.Processes.Dtif.DistributedLedger, cfg.Processes.Dtif.CustomSourceAddress, cfg.Processes.Dtif.Username, cfg.Processes.Dtif.Password)
 	}
 
 	compressor, err := compress.New()
@@ -301,7 +303,8 @@ func getGRPCClientConn(grpcURL string) (*grpc.ClientConn, error) {
 		return nil, errors.Wrap(err, "failed to parse grpc URL")
 	}
 
-	encodingConfig := coreumchainconfig.NewEncodingConfig(coreumapp.ModuleBasics)
+	modules := auth.AppModuleBasic{}
+	encodingConfig := coreumchainconfig.NewEncodingConfig(modules)
 	pc, ok := encodingConfig.Codec.(codec.GRPCCodecProvider)
 	if !ok {
 		return nil, errors.New("failed to cast codec to codec.GRPCCodecProvider")

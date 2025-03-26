@@ -8,6 +8,7 @@ on:
 
 jobs:
   ci:
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -30,8 +31,8 @@ jobs:
             codecov-name: iso20022-cover.out
           - ci_step: "integration tests"
             command: |
-              coreum-builder build images
-              crust znet start --profiles=1cored --timeout-commit 0.5s
+              coreum-builder build images/cored
+              coreum-builder znet start --profiles=1cored --timeout-commit 0.5s
               make integration-test
             linter-cache: false
             docker-cache: true
@@ -47,23 +48,16 @@ jobs:
         with:
           persist-credentials: false
           path: iso20022-client
-      - name: Checkout crust
-        uses: actions/checkout@v4
-        with:
-          repository: CoreumFoundation/crust
-          path: crust
-          ref: 66e0a14ecac37fe053780b6d814231bd98eb2240
       - name: Checkout coreum
         uses: actions/checkout@v4
         with:
           repository: CoreumFoundation/coreum
           path: coreum
-          ref: 4e06879add40dc0a64c48a87f4b293c08b88f4d9
+          ref: 211204c9ad218e4d0ad4a6f9a4007df6c0d006ff
       - name: Set up build system
         run: |
           echo "$(pwd)/iso20022-client/bin" >> $GITHUB_PATH
           echo "$(pwd)/coreum/bin" >> $GITHUB_PATH
-          echo "$(pwd)/crust/bin" >> $GITHUB_PATH
           cd $(pwd)/iso20022-client
           make build
       - name: Retrieve go version
@@ -77,13 +71,13 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ steps.goversion.outputs.GO_VERSION }}
+          key: iso20022-${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ steps.goversion.outputs.GO_VERSION }}
       - name: Setup linter cache
         uses: actions/cache@v3
         if: ${{ matrix.linter-cache }}
         with:
           path: ~/.cache/golangci-lint
-          key: ${{ runner.os }}-linter-cache-2-${{ steps.goversion.outputs.GO_VERSION }}
+          key: iso20022-${{ runner.os }}-linter-cache-2-${{ steps.goversion.outputs.GO_VERSION }}
       - name: Get Date
         id: get-year-week
         run: |
@@ -93,13 +87,12 @@ jobs:
         uses: ScribeMD/docker-cache@0.5.0
         if: ${{ matrix.docker-cache }}
         with:
-          key: ${{ runner.os }}-docker-v3-scribemd-${{ steps.get-year-week.outputs.date }} # year-week key
+          key: iso20022-${{ runner.os }}-docker-v3-scribemd-${{ steps.get-year-week.outputs.date }} # year-week key
       - name: Prepare dependencies
         run: |
-          crust build/me
-          crust build
-          crust znet remove
           coreum-builder build/me
+          coreum-builder build/znet
+          coreum-builder znet remove
           cd $(pwd)/iso20022-client
           make deps
       - name: Run ${{ matrix.ci_step }}

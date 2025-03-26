@@ -15,7 +15,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	client "github.com/CoreumFoundation/coreum/v4/pkg/client"
+	client "github.com/CoreumFoundation/coreum/v5/pkg/client"
 	messages "github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/messages"
 	addressbook "github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	coreum "github.com/CoreumFoundation/iso20022-client/iso20022/coreum"

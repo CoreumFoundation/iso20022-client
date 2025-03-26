@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/parallel"
-	coreumintegration "github.com/CoreumFoundation/coreum/v4/testutil/integration"
+	coreumintegration "github.com/CoreumFoundation/coreum/v5/testutil/integration"
 	integrationtests "github.com/CoreumFoundation/iso20022-client/integration-tests"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
@@ -253,7 +253,7 @@ func (r *RunnerEnv) SendMessage(messageFilePath string) (server.MessageStatusRes
 	}
 
 	if res.StatusCode == http.StatusBadRequest {
-		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
+		return server.MessageStatusResponse{}, errors.New(response.Message)
 	}
 
 	statusResponse, ok := response.Data.(*server.MessageStatusResponse)
@@ -326,7 +326,7 @@ func (r *RunnerEnv) MessageStatus(messageID string) (server.MessageStatusRespons
 	}
 
 	if res.StatusCode == http.StatusBadRequest {
-		return server.MessageStatusResponse{}, errors.Errorf(response.Message)
+		return server.MessageStatusResponse{}, errors.New(response.Message)
 	}
 
 	statusResponse, ok := response.Data.(*server.MessageStatusResponse)

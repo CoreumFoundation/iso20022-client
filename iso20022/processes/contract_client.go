@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -16,8 +17,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/parallel"
-	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
-	nfttypes "github.com/CoreumFoundation/coreum/v4/x/asset/nft/types"
+	coreumchainclient "github.com/CoreumFoundation/coreum/v5/pkg/client"
+	nfttypes "github.com/CoreumFoundation/coreum/v5/x/asset/nft/types"
 	"github.com/CoreumFoundation/iso20022-client/iso20022-messages/gen/supl_xxx_001_01"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
@@ -364,19 +365,6 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*Me
 			Recipient: p.cfg.CoreumContractAddress.String(),
 		})
 
-		nft := coreum.NFTInfo{
-			ClassId: strings.ToLower(classId),
-			Id:      id,
-		}
-		if !message.AttachedFunds.IsZero() {
-			startSessions = append(startSessions, coreum.StartSession{
-				Uetr:        message.Uetr,
-				Message:     nft,
-				Destination: message.Destination,
-				Funds:       message.AttachedFunds,
-			})
-		}
-
 		switch p.parser.GetTransactionStatus(message.ParsedMessage) {
 		case TransactionStatusCreditorAcceptedSettlementCompleted, TransactionStatusAcceptedCustomerProfile,
 			TransactionStatusAcceptedSettlementCompleted, TransactionStatusAcceptedSettlementInProcess,
@@ -446,12 +434,26 @@ func (p *ContractClientProcess) sendMessages(ctx context.Context, messages []*Me
 			})
 		}
 
-		sendMessages = append(sendMessages, coreum.SendMessage{
-			Uetr:        message.Uetr,
-			ID:          message.Id,
-			Destination: message.Destination,
-			Message:     nft,
-		})
+		nft := coreum.NFTInfo{
+			ClassId: strings.ToLower(classId),
+			Id:      id,
+		}
+		if !message.AttachedFunds.IsZero() {
+			startSessions = append(startSessions, coreum.StartSession{
+				Uetr:        message.Uetr,
+				Message:     nft,
+				MessageID:   message.Id,
+				Destination: message.Destination,
+				Funds:       message.AttachedFunds,
+			})
+		} else {
+			sendMessages = append(sendMessages, coreum.SendMessage{
+				Uetr:        message.Uetr,
+				ID:          message.Id,
+				Destination: message.Destination,
+				Message:     nft,
+			})
+		}
 	}
 
 	_, err := p.contractClient.BroadcastMessages(ctx, p.cfg.ClientAddress, mintMsgs...)
@@ -543,15 +545,15 @@ func (p *ContractClientProcess) ExtractMetadata(rawMessage []byte) (*MessageWith
 		supl, ok := suplMsg.(*supl_xxx_001_01.CryptoCurrencyAndAmountType)
 		if ok {
 			if supl.Cccy != "" {
-				attachedFunds = attachedFunds.Add(sdk.NewCoin(string(supl.Cccy), sdk.NewInt(int64(supl.Value))))
+				attachedFunds = attachedFunds.Add(sdk.NewCoin(string(supl.Cccy), sdkmath.NewInt(int64(supl.Value))))
 			} else if supl.Dti != "" {
 				denom, priceMultiplier, found := p.dtif.LookupByDTI(string(supl.Dti))
 				if found {
 					if priceMultiplier == nil {
 						priceMultiplier = big.NewInt(1)
 					}
-					value := sdk.MustNewDecFromStr(strconv.FormatFloat(float64(supl.Value), 'f', -1, 64)).
-						Mul(sdk.NewDecFromBigInt(priceMultiplier))
+					value := sdkmath.LegacyMustNewDecFromStr(strconv.FormatFloat(float64(supl.Value), 'f', -1, 64)).
+						Mul(sdkmath.LegacyNewDecFromBigInt(priceMultiplier))
 					if !value.IsInteger() {
 						return nil, errors.New("The amount needs more precision than what the token supports")
 					}

@@ -34,6 +34,7 @@ type Chain struct {
 //nolint:lll // breaking down cli flags will make it less readable.
 func init() {
 	flag.StringVar(&coreumCfg.GRPCAddress, "coreum-grpc-address", "localhost:9090", "GRPC address of cored node started by coreum")
+	flag.StringVar(&coreumCfg.RPCAddress, "coreum-rpc-address", "http://localhost:26657", "RPC address of cored node started by znet")
 	flag.StringVar(&coreumCfg.FundingMnemonic, "coreum-funding-mnemonic", "sad hobby filter tray ordinary gap half web cat hard call mystery describe member round trend friend beyond such clap frozen segment fan mistake", "Funding coreum account mnemonic required by tests")
 	flag.StringVar(&coreumCfg.ContractPath, "coreum-contract-path", "../contract/iso_messaging_poc.wasm", "Path to smart contract wasm file")
 	flag.StringVar(&coreumCfg.AddressBookRepoAddress, "address-book-repo-address", "file://../addressbook/addressbook.json", "Path to addressbook json file")

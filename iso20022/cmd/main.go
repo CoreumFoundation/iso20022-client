@@ -5,12 +5,12 @@ import (
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/run"
-	coreumapp "github.com/CoreumFoundation/coreum/v4/app"
-	"github.com/CoreumFoundation/coreum/v4/pkg/config"
+	"github.com/CoreumFoundation/coreum/v5/pkg/config"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/cmd/cli"
 )
 
@@ -38,7 +38,8 @@ func main() {
 //
 //nolint:contextcheck // the context is passed in the command
 func RootCmd(ctx context.Context) (*cobra.Command, error) {
-	encodingConfig := config.NewEncodingConfig(coreumapp.ModuleBasics)
+	modules := auth.AppModuleBasic{}
+	encodingConfig := config.NewEncodingConfig(modules)
 	clientCtx := client.Context{}.
 		WithCodec(encodingConfig.Codec).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).

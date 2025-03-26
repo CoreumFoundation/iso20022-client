@@ -1,6 +1,6 @@
 module github.com/CoreumFoundation/iso20022-client/iso20022-messages
 
-go 1.21.4
+go 1.23.3
 
 require (
 	cloud.google.com/go v0.115.0
@@ -19,7 +19,7 @@ require (
 	github.com/rickar/cal/v2 v2.1.17 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/urfave/cli v1.22.14 // indirect
-	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

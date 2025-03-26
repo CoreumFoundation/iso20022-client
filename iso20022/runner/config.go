@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
-	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
+	coreumchainclient "github.com/CoreumFoundation/coreum/v5/pkg/client"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 )
@@ -79,6 +79,8 @@ type DtifConfig struct {
 	UpdateInterval      time.Duration `yaml:"update_interval"`
 	DistributedLedger   string        `yaml:"distributed_ledger"`
 	CustomSourceAddress string        `yaml:"custom_source_address"`
+	Username            string        `yaml:"username"`
+	Password            string        `yaml:"password"`
 }
 
 // Queue is the message queue config.

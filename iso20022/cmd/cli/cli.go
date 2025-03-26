@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 
-	"github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
+	"github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/buildinfo"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/logger"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/queue"
@@ -174,7 +174,7 @@ func KeyringCmd() (*cobra.Command, error) {
 	sdk.GetConfig().SetCoinType(constant.CoinType)
 
 	// we set it for the keyring manually since it doesn't use the runner which does it for other CLI commands
-	cmd := keys.Commands(DefaultHomeDir)
+	cmd := keys.Commands()
 	for _, childCmd := range cmd.Commands() {
 		childCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 
@@ -479,7 +479,7 @@ func SendMessageCmd() *cobra.Command {
 			}
 
 			if res.StatusCode == http.StatusBadRequest {
-				return errors.Errorf(response.Message)
+				return errors.New(response.Message)
 			}
 
 			statusResponse, ok := response.Data.(*server.MessageStatusResponse)
@@ -612,7 +612,7 @@ func MessageStatusCmd() *cobra.Command {
 			}
 
 			if res.StatusCode == http.StatusBadRequest {
-				return errors.Errorf(response.Message)
+				return errors.New(response.Message)
 			}
 
 			statusResponse, ok := response.Data.(*server.MessageStatusResponse)

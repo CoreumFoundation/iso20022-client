@@ -13,8 +13,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	coreumlogger "github.com/CoreumFoundation/coreum-tools/pkg/logger"
-	coreumchainclient "github.com/CoreumFoundation/coreum/v4/pkg/client"
-	coreumchainconstant "github.com/CoreumFoundation/coreum/v4/pkg/config/constant"
+	coreumchainclient "github.com/CoreumFoundation/coreum/v5/pkg/client"
+	coreumchainconstant "github.com/CoreumFoundation/coreum/v5/pkg/config/constant"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/addressbook"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/compress"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/coreum"
@@ -243,7 +243,7 @@ func TestContractClient_ExtractMetadata(t *testing.T) {
 			comp, err := compress.New()
 			requireT.NoError(err)
 
-			dti := dtif.NewWithSourceAddress(logMock, "S87NJRT7T", "file://../dtif/testdata/data.json")
+			dti := dtif.NewWithSourceAddress(logMock, "S87NJRT7T", "file://../dtif/testdata/data.json", "", "")
 			requireT.NoError(dti.Update(context.Background()))
 
 			client, err := processes.NewContractClientProcess(cfg, logMock, comp, coreumchainclient.Context{}, addressBook, contractClientMock, cryptography, parser, nil, dti)

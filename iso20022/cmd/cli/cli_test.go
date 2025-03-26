@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	coreumapp "github.com/CoreumFoundation/coreum/v4/app"
-	"github.com/CoreumFoundation/coreum/v4/pkg/config"
+	"github.com/CoreumFoundation/coreum/v5/pkg/config"
 	"github.com/CoreumFoundation/iso20022-client/iso20022/runner"
 )
 
@@ -48,7 +48,8 @@ func executeCmdWithOutputOption(t *testing.T, cmd *cobra.Command, outOpt string,
 	cmd.SetOut(buf)
 	cmd.SetArgs(args)
 
-	encodingConfig := config.NewEncodingConfig(coreumapp.ModuleBasics)
+	modules := auth.AppModuleBasic{}
+	encodingConfig := config.NewEncodingConfig(modules)
 	clientCtx := client.Context{}.
 		WithCodec(encodingConfig.Codec).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).

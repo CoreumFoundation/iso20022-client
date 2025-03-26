@@ -29,6 +29,8 @@ processes:
         update_interval: 1m0s
         distributed_ledger: S87NJRT7T
         custom_source_address: ""
+        username: ""
+        password: ""
     queue:
         size: 50
         path: {{QUEUE_PATH}}
